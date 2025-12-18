@@ -52,3 +52,5 @@ Significant changes should be proposed and discussed publicly.
 ---
 
 This document will be refined and finalized over time.
+This document does not represent a final or legally binding governance model.
+
