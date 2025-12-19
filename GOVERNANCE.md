@@ -49,6 +49,12 @@ with the possibility of reinstatement.
 This governance model may evolve as the project matures.
 Significant changes should be proposed and discussed publicly.
 
+## Alignment with organization-level standards
+
+Where applicable, DOS68k references organization-level standards maintained in the pagoPA DX repository
+(e.g., Code of Conduct) to avoid duplication and ensure consistency across projects.
+
+
 ---
 
 This document will be refined and finalized over time.
