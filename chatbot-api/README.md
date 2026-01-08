@@ -24,4 +24,4 @@ docker build -t chatbot-api-service . # To build the docker image
 docker run --rm -p 8000:8000 chatbot-api-service # To run the service and expose it on the port 8000
 ```
 
-Now you can access the service docs at `http://localhost:8000/docs`.
+Now you can access the service docs at `http://localhost:8000`.

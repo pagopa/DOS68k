@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .env import settings
 
-app: FastAPI = FastAPI()
+app: FastAPI = FastAPI(
+    title="Chatbot API",
+    description="API for interacting with the Chatbot service.",
+    docs_url="/",
+)
 
 app.add_middleware(
     CORSMiddleware,
