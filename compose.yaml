@@ -32,3 +32,14 @@ services:
       - .env
     ports:
       - 5432:5432
+
+  minio:
+    image: minio/minio:latest
+    volumes:
+      - ./minio/:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    env_file:
+      - .minio.env
