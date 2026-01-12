@@ -11,6 +11,8 @@ services:
   chatbot-api:
     build:
       context: ./chatbot-api
+    env_file:
+      - ./chatbot-api/.env
     ports:
       - 8000:8000
 
