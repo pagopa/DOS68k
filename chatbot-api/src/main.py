@@ -21,4 +21,7 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     # Simple health check endpoint to verify the service is running
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "Chatbot API",
+    }
