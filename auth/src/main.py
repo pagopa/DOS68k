@@ -1,15 +1,11 @@
 from fastapi import FastAPI
 
+from .routers import health
+
 app: FastAPI = FastAPI(
     title="Auth Service",
     description="Service for user authentication and authorization",
     docs_url="/",
 )
 
-@app.get("/health")
-async def health_check():
-    # Simple health check endpoint to verify the service is running
-    return {
-        "status": "ok",
-        "service": "Auth Service",
-    }
+app.include_router(router=health.router)

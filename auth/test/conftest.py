@@ -6,7 +6,7 @@ from httpx import AsyncClient, ASGITransport
 
 
 @pytest_asyncio.fixture
-async def app_test() -> FastAPI:
+async def app_test():
     from src.main import app
 
     # Override dependencies or setup test-specific configurations here if needed
