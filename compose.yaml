@@ -28,7 +28,7 @@ services:
     env_file:
       - ./chatbot-evaluate/api/.env
     ports:
-      - 8001:8000
+      - 8002:8000
 
   chatbot-index-api:
     build:
@@ -36,7 +36,7 @@ services:
     env_file:
       - ./chatbot-index/api/.env
     ports:
-      - 8002:8000
+      - 8003:8000
 
   db:
     image: postgres:17
@@ -61,3 +61,19 @@ services:
     command: server /data --console-address ":9001"
     env_file:
       - .minio.env
+
+  vector-db:
+    image: redis/redis-stack:7.4.0-v8
+    ports:
+      - 6379:6379
+      - 8001:8001
+    volumes:
+      - ./vector-db/data:/data
+
+  queue:
+    image: redis:8.4
+    ports:
+      - 6380:6379
+    volumes:
+      - ./queue/data:/data
+    command: ["redis-server", "--appendonly", "yes"]
