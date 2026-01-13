@@ -5,7 +5,7 @@ from ..db import get_db_session
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health Checks"])
 
-@router.get(path="")
+@router.get(path="", summary="Check Chatbot API service is running")
 async def health_check():
     # Simple health check endpoint to verify the service is running
     return {
@@ -15,6 +15,7 @@ async def health_check():
 
 @router.get(
     path="/db",
+    summary="Check Chatbot API database connectivity",
     dependencies=[Depends(dependency=get_db_session)],
 )
 async def health_check_db():
