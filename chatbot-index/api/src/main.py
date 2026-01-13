@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .env import settings
+from .routers import health
 
 app: FastAPI = FastAPI(
     title="Chatbot Index API",
@@ -17,11 +18,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/health")
-async def health_check():
-    # Simple health check endpoint to verify the service is running
-    return {
-        "status": "ok",
-        "service": "Chatbot Index API",
-    }
+app.include_router(router=health.router)
