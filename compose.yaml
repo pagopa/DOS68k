@@ -51,7 +51,7 @@ services:
     ports:
       - 5432:5432
 
-  minio:
+  storage:
     image: minio/minio:latest
     volumes:
       - ./minio/:/data
