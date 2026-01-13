@@ -8,6 +8,12 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
+  auth:
+    build:
+      context: ./auth
+    ports:
+      - 3000:3000
+
   chatbot-api:
     build:
       context: ./chatbot-api
@@ -16,11 +22,21 @@ services:
     ports:
       - 8000:8000
 
-  auth:
+  chatbot-evaluate-api:
     build:
-      context: ./auth
+      context: ./chatbot-evaluate/api
+    env_file:
+      - ./chatbot-evaluate/api/.env
     ports:
-      - 3000:3000
+      - 8001:8000
+
+  chatbot-index-api:
+    build:
+      context: ./chatbot-index/api
+    env_file:
+      - ./chatbot-index/api/.env
+    ports:
+      - 8002:8000
 
   db:
     image: postgres:17
