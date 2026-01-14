@@ -12,5 +12,10 @@ class DBSettings(BaseSettings):
     DB_PORT: Annotated[int, Field(default=5432)]
     DB_NAME: Annotated[str, Field(default="db")]
 
+class QueueSettings(BaseSettings):
+    QUEUE_HOST: Annotated[str, Field(default="localhost")]
+    QUEUE_PORT: Annotated[int, Field(default=6379)]
+
 settings: Settings = Settings()
 db_settings: DBSettings = DBSettings()
+queue_settings: QueueSettings = QueueSettings()
