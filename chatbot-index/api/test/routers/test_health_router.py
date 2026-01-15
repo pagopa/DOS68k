@@ -3,10 +3,10 @@ import pytest
 from typing import Tuple
 from httpx import AsyncClient, Response
 
-from src.utils.storage.aws import s3
 from src.routers.health import router as health_router
+from src.routers import health
 
-from test.mocks import RedisMock, AWSClientMock, AWSClientExceptionMock
+from test.mocks import RedisMock, AWSS3ConnectedMock, AWSS3ExceptionMock
 
 @pytest.mark.asyncio
 async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):
@@ -61,7 +61,7 @@ async def test_health_check_queue_exception(client_test: Tuple[AsyncClient, Redi
     assert response.json() == {
         "status": "error",
         "service": "Chatbot Index API",
-        "queue": "connection error: Mocked connection error",
+        "queue": "connection error: Mocked queue connection error",
     }
 
 @pytest.mark.asyncio
@@ -69,7 +69,7 @@ async def test_health_check_storage_connected(
         client_test: Tuple[AsyncClient, RedisMock],
         monkeypatch: pytest.MonkeyPatch,
     ):
-    monkeypatch.setattr(s3, "AWSClient", AWSClientMock)
+    monkeypatch.setattr(health, "AWSS3", AWSS3ConnectedMock)
     client, _ = client_test
 
     response: Response = await client.get(url=f"{health_router.prefix}/storage")
@@ -86,7 +86,7 @@ async def test_health_check_storage_exception(
         client_test: Tuple[AsyncClient, RedisMock],
         monkeypatch: pytest.MonkeyPatch,
     ):
-    monkeypatch.setattr(s3, "AWSClient", AWSClientExceptionMock)
+    monkeypatch.setattr(health, "AWSS3", AWSS3ExceptionMock)
 
     client, _ = client_test
 

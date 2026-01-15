@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends
 from typing import Annotated
 from redis.asyncio import Redis
 
+from dos_utility.storage.aws import AWSS3
+
 from ..queue import get_queue_client
-from ..utils.storage.aws import AWSS3
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
 
