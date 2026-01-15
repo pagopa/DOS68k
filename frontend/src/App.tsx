@@ -1,9 +1,11 @@
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import HealthDashboard from './pages/HealthDashboard'
 
-function App() {
+function Home() {
   const [count, setCount] = useState(0)
 
   return (
@@ -24,11 +26,27 @@ function App() {
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
+        <p>
+          <Link to="/health" style={{ color: '#646cff', textDecoration: 'underline' }}>
+            Go to Health Dashboard
+          </Link>
+        </p>
       </div>
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
     </>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/health" element={<HealthDashboard />} />
+      </Routes>
+    </Router>
   )
 }
 
