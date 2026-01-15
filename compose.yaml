@@ -14,6 +14,11 @@ services:
       - 8080:8080
     volumes:
       - ./krakend:/etc/krakend/
+    depends_on:
+      - auth
+      - chatbot-api
+      - chatbot-evaluate-api
+      - chatbot-index-api
 
   auth:
     build:

@@ -1,8 +1,8 @@
-# Chatbot API
+# Authentication service
 
 ## Prerequisites
 
-In order to interact locally with this service you need the following softwares:
+In order to work locally with this service you need the following softwares:
 
 - uv
 - docker
@@ -12,7 +12,7 @@ In order to interact locally with this service you need the following softwares:
 The following script to run unit tests. Always make sure your coverage % is as close to 100% as possible.
 
 ```bash
-uv run pytest --cov
+uv run pytest --cov=src --cov-report=term-missing
 ```
 
 ## Start service
@@ -20,8 +20,8 @@ uv run pytest --cov
 If you want to independently start this service, run the following commands.
 
 ```bash
-docker build -t chatbot-api-service . # To build the docker image
-docker run --rm -p 3000:3000 chatbot-api-service # To run the service and expose it on the port 3000
+cd .. # Make sure to be at the root level of the repo
+docker compose up -d --build auth
 ```
 
-Now you can access the service docs at `http://localhost:3000`.
+Now you can access the service OpenAPI specification at `http://localhost:3000`.
