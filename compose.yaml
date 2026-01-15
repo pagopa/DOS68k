@@ -8,6 +8,13 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
+  api-gateway:
+    image: krakend
+    ports:
+      - 8080:8080
+    volumes:
+      - ./krakend:/etc/krakend/
+
   auth:
     build:
       context: ./auth
@@ -21,6 +28,8 @@ services:
       - ./chatbot-api/.env
     ports:
       - 8000:8000
+    depends_on:
+      - db
 
   chatbot-evaluate-api:
     build:
@@ -29,6 +38,17 @@ services:
       - ./chatbot-evaluate/api/.env
     ports:
       - 8002:8000
+    depends_on:
+      - queue
+      - db
+
+  # chatbot-evaluate-worker:
+  #   build:
+  #     context: ./chatbot-evaluate/worker
+  #   # env_file:
+  #   #   - ./chatbot-evaluate/worker/.env
+  #   depends_on:
+  #     - queue
 
   chatbot-index-api:
     build:
@@ -37,6 +57,24 @@ services:
       - ./chatbot-index/api/.env
     ports:
       - 8003:8000
+    depends_on:
+      - queue
+
+  # chatbot-index-worker:
+  #   build:
+  #     context: ./chatbot-index/worker
+  #   # env_file:
+  #   #   - ./chatbot-index/worker/.env
+  #   depends_on:
+  #     - queue
+
+  frontend:
+    build:
+      context: ./frontend
+    # env_file:
+    #   - ./frontend/.env
+    ports:
+      - 80:80
 
   db:
     image: postgres:17
