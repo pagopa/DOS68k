@@ -1,16 +1,17 @@
 import pytest
 
 from typing import Tuple
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 
+from src.utils.storage.aws import s3
 from src.routers.health import router as health_router
 
-from test.mocks import RedisMock
+from test.mocks import RedisMock, AWSClientMock, AWSClientExceptionMock
 
 @pytest.mark.asyncio
 async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):
     client, _ = client_test
-    response = await client.get(url=health_router.prefix)
+    response: Response = await client.get(url=health_router.prefix)
 
     assert response.status_code == 200
     assert response.json() == {
@@ -22,7 +23,7 @@ async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):
 async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, RedisMock]):
     client, _ = client_test
 
-    response = await client.get(url=f"{health_router.prefix}/queue")
+    response: Response = await client.get(url=f"{health_router.prefix}/queue")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -38,7 +39,7 @@ async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, R
     # Simulate disconnected queue by setting ping_response to False
     queue_client.ping_response = False
 
-    response = await client.get(url=f"{health_router.prefix}/queue")
+    response: Response = await client.get(url=f"{health_router.prefix}/queue")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -54,11 +55,46 @@ async def test_health_check_queue_exception(client_test: Tuple[AsyncClient, Redi
     # Simulate exception during ping
     queue_client.ping_response = "exception"
 
-    response = await client.get(url=f"{health_router.prefix}/queue")
+    response: Response = await client.get(url=f"{health_router.prefix}/queue")
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "error",
         "service": "Chatbot Index API",
         "queue": "connection error: Mocked connection error",
+    }
+
+@pytest.mark.asyncio
+async def test_health_check_storage_connected(
+        client_test: Tuple[AsyncClient, RedisMock],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+    monkeypatch.setattr(s3, "AWSClient", AWSClientMock)
+    client, _ = client_test
+
+    response: Response = await client.get(url=f"{health_router.prefix}/storage")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "service": "Chatbot Index API",
+        "storage": "connected",
+    }
+
+@pytest.mark.asyncio
+async def test_health_check_storage_exception(
+        client_test: Tuple[AsyncClient, RedisMock],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+    monkeypatch.setattr(s3, "AWSClient", AWSClientExceptionMock)
+
+    client, _ = client_test
+
+    response: Response = await client.get(url=f"{health_router.prefix}/storage")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "error",
+        "service": "Chatbot Index API",
+        "storage": "connection error: Mocked storage connection error",
     }

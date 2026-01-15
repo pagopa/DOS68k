@@ -3,6 +3,7 @@ from typing import Annotated
 from redis.asyncio import Redis
 
 from ..queue import get_queue_client
+from ..utils.storage.aws import AWSS3
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
 
@@ -30,4 +31,24 @@ async def health_check_queue(queue_client: Annotated[Redis, Depends(dependency=g
             "status": "error",
             "service": "Chatbot Index API",
             "queue": f"connection error: {str(e)}",
+        }
+
+@router.get(path="/storage", summary="Check Storage service is reachable")
+async def health_check_storage():
+    # Placeholder for storage health check logic
+
+    try:
+        s3: AWSS3 = AWSS3()
+        s3.health_check()
+
+        return {
+            "status": "ok",
+            "service": "Chatbot Index API",
+            "storage": "connected",
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "service": "Chatbot Index API",
+            "storage": f"connection error: {str(e)}",
         }
