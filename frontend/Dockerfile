@@ -3,10 +3,10 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY ./frontend/package.json ./frontend/package-lock.json* ./
 RUN npm install
 
-COPY . .
+COPY ./frontend .
 RUN npm run build
 
 
@@ -17,7 +17,7 @@ FROM nginx:1.25.4-alpine3.18
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copia config custom
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copia build nella directory corretta
 COPY --from=build /app/dist /usr/share/nginx/html/

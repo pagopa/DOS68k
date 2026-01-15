@@ -6,7 +6,7 @@ WORKDIR /app
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy the application into the container
-COPY . .
+COPY ./chatbot-api .
 
 # Install the application dependencies
 RUN uv sync --no-cache
@@ -26,8 +26,8 @@ USER fastapi
 
 # Copy the application into the container
 COPY --from=builder /app/.venv .venv
-COPY ./src ./src
-COPY ./README.md .
+COPY ./chatbot-api/src ./src
+COPY ./chatbot-api/README.md .
 
 EXPOSE 8000
 

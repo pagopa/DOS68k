@@ -17,13 +17,15 @@ services:
 
   auth:
     build:
-      context: ./auth
+      context: .
+      dockerfile: ./auth/Dockerfile
     ports:
       - 3000:3000
 
   chatbot-api:
     build:
-      context: ./chatbot-api
+      context: .
+      dockerfile: ./chatbot-api/Dockerfile
     env_file:
       - ./chatbot-api/.env
     ports:
@@ -33,7 +35,8 @@ services:
 
   chatbot-evaluate-api:
     build:
-      context: ./chatbot-evaluate/api
+      context: .
+      dockerfile: ./chatbot-evaluate/api/Dockerfile
     env_file:
       - ./chatbot-evaluate/api/.env
     ports:
@@ -41,6 +44,7 @@ services:
     depends_on:
       - queue
       - db
+      - vector-db
 
   # chatbot-evaluate-worker:
   #   build:
@@ -52,13 +56,15 @@ services:
 
   chatbot-index-api:
     build:
-      context: ./chatbot-index/api
+      context: .
+      dockerfile: ./chatbot-index/api/Dockerfile
     env_file:
       - ./chatbot-index/api/.env
     ports:
       - 8003:8000
     depends_on:
       - queue
+      - storage
 
   # chatbot-index-worker:
   #   build:
@@ -70,22 +76,21 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-    # env_file:
-    #   - ./frontend/.env
+      context: .
+      dockerfile: ./frontend/Dockerfile
     ports:
       - 80:80
 
   db:
     image: postgres:17
     restart: always
-    # set shared memory limit when using docker-compose
     shm_size: 128mb
-    # or set shared memory limit when deploy via swarm stack
     volumes:
       - ./db/data:/var/lib/postgresql/data
-    env_file:
-      - .env
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=db
     ports:
       - 5432:5432
 
@@ -97,8 +102,9 @@ services:
       - "9000:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
-    env_file:
-      - .minio.env
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=minioadmin
 
   vector-db:
     image: redis/redis-stack:7.4.0-v8
@@ -115,3 +121,47 @@ services:
     volumes:
       - ./queue/data:/data
     command: ["redis-server", "--appendonly", "yes"]
+
+  langfuse-worker:
+    image: docker.io/langfuse/langfuse-worker:3.115
+    ports:
+      - 3030:3030
+    env_file:
+      - ./.langfuse.env
+    depends_on:
+      - db
+      - storage
+      - valkey
+      - clickhouse
+
+  langfuse-web:
+    image: docker.io/langfuse/langfuse:3.115
+    ports:
+      - 4001:3000
+    env_file:
+      - ./.langfuse.env
+    depends_on:
+      - langfuse-worker
+
+  clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    ports:
+      - 8123:8123
+      - 9002:9000
+
+  valkey:
+    image: valkey/valkey:8.1.4-alpine3.22
+
+volumes:
+  langfuse_clickhouse_data:
+    driver: local
+  langfuse_clickhouse_logs:
+    driver: local
