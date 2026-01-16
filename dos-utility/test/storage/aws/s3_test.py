@@ -2,7 +2,7 @@ import pytest
 
 from dos_utility.storage.aws import s3
 
-from test.mocks import AWSClientMock, AWSStorageSettingsMock
+from test.storage.aws.mocks import AWSClientMock, AWSStorageSettingsMock
 
 def test_s3_health_check_with_endpoint(monkeypatch: pytest.MonkeyPatch):
     aws_storage_settings_mock: AWSStorageSettingsMock = AWSStorageSettingsMock()

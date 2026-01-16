@@ -41,14 +41,14 @@ async def session(engine: AsyncEngine):
 @pytest_asyncio.fixture
 async def app_test(session: AsyncSession):
     from src.main import app
-    from src.db import get_db_session
+    from dos_utility.database.sql import get_async_session
 
     # Override dependencies or setup test-specific configurations here if needed
 
     async def override_get_db_session():
         yield session
 
-    app.dependency_overrides[get_db_session] = override_get_db_session
+    app.dependency_overrides[get_async_session] = override_get_db_session
 
     try:
         yield app

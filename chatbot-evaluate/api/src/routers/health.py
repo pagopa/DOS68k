@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
 from redis.asyncio import Redis
+from dos_utility.database.sql import get_async_session
 
-from ..db import get_db_session
 from ..queue import get_queue_client
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
@@ -18,7 +18,7 @@ async def health_check():
 @router.get(
     path="/db",
     summary="Check Chatbot API database connectivity",
-    dependencies=[Depends(dependency=get_db_session)],
+    dependencies=[Depends(dependency=get_async_session)],
 )
 async def health_check_db():
     # Health check endpoint to verify database connectivity

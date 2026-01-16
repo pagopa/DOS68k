@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .env import settings
-from .db import get_db_session
 from .routers import health
 
 app: FastAPI = FastAPI(

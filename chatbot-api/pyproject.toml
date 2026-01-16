@@ -5,12 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "asyncpg>=0.31.0",
     "fastapi[standard]>=0.128.0",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
-    "sqlalchemy[asyncio]>=2.0.45",
+    "dos-utility",
 ]
+
+[tool.uv.sources]
+dos-utility = { path = "../dos-utility" } # The path is defined within the Dockerfile COPY command
 
 [dependency-groups]
 dev = [
