@@ -10,5 +10,8 @@ class RedisMock(Redis):
     def __init__(self, *args, **kwargs):
         pass
 
+    async def aclose(self) -> None:
+        pass
+
 def get_queue_pool_mock() -> ConnectionPool:
     return ConnectionPoolMock()

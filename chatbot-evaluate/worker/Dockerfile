@@ -1,10 +1,11 @@
 FROM python:3.13-slim AS builder
-WORKDIR /app
+WORKDIR /app/worker
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-COPY . /app
-RUN uv sync   # crea .venv
+COPY ./chatbot-evaluate/worker .
+COPY ./dos-utility ../../dos-utility
+RUN uv sync
 
 FROM python:3.13-slim AS runner
 WORKDIR /app
@@ -18,11 +19,9 @@ ENV PYTHONUNBUFFERED=1
 RUN useradd -m appuser
 
 # Copia tutto già con i permessi giusti
-COPY --from=builder --chown=appuser:appuser /app/app app
-COPY --from=builder --chown=appuser:appuser /app/main.py .
-COPY --from=builder --chown=appuser:appuser /app/.venv .venv
+COPY --from=builder --chown=appuser:appuser /app/worker .
 
 USER appuser
 
 # Niente "source" e usa la exec form
-CMD ["python", "main.py"]
+CMD [".venv/bin/python", "src/worker/main.py"]

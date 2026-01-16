@@ -51,13 +51,14 @@ services:
       - db
       - vector-db
 
-  # chatbot-evaluate-worker:
-  #   build:
-  #     context: ./chatbot-evaluate/worker
-  #   # env_file:
-  #   #   - ./chatbot-evaluate/worker/.env
-  #   depends_on:
-  #     - queue
+  chatbot-evaluate-worker:
+    build:
+      context: .
+      dockerfile: ./chatbot-evaluate/worker/Dockerfile
+    env_file:
+      - ./chatbot-evaluate/worker/.env
+    depends_on:
+      - queue
 
   chatbot-index-api:
     build:
@@ -71,13 +72,14 @@ services:
       - queue
       - storage
 
-  # chatbot-index-worker:
-  #   build:
-  #     context: ./chatbot-index/worker
-  #   # env_file:
-  #   #   - ./chatbot-index/worker/.env
-  #   depends_on:
-  #     - queue
+  chatbot-index-worker:
+    build:
+      context: .
+      dockerfile: ./chatbot-index/worker/Dockerfile
+    env_file:
+      - ./chatbot-index/worker/.env
+    depends_on:
+      - queue
 
   frontend:
     build:
