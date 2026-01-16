@@ -5,7 +5,7 @@ from httpx import AsyncClient
 
 from src.routers.health import router as health_router
 
-from test.mocks import RedisMock
+from test.routers.mocks import RedisMock
 
 @pytest.mark.asyncio
 async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):

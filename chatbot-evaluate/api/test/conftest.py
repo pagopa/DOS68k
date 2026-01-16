@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from test.mocks import RedisMock
+from test.routers.mocks import RedisMock
 
 
 @pytest.fixture(scope="function")
@@ -44,8 +44,8 @@ async def session(engine: AsyncEngine):
 @pytest_asyncio.fixture
 async def app_test(session: AsyncSession):
     from src.main import app
-    from src.queue import get_queue_client
     from dos_utility.database.sql import get_async_session
+    from dos_utility.queue.redis import get_queue_client
 
     # Override dependencies or setup test-specific configurations here if needed
 

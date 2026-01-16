@@ -1,5 +1,5 @@
 **.env
 minio/
 db/
-queue/
+queue-data/
 vector-db/

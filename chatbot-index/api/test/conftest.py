@@ -26,7 +26,7 @@ def event_loop():
 @pytest_asyncio.fixture
 async def app_test():
     from src.main import app
-    from src.queue import get_queue_client
+    from dos_utility.queue.redis import get_queue_client
 
     # Override dependencies or setup test-specific configurations here if needed
 

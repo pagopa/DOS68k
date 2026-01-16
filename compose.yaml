@@ -124,7 +124,7 @@ services:
     ports:
       - 6380:6379
     volumes:
-      - ./queue/data:/data
+      - ./queue-data/data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
   langfuse-worker:

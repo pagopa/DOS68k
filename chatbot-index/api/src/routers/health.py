@@ -3,8 +3,8 @@ from typing import Annotated
 from redis.asyncio import Redis
 
 from dos_utility.storage.aws import AWSS3
+from dos_utility.queue.redis import get_queue_client
 
-from ..queue import get_queue_client
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
 

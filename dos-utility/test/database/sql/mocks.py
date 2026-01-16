@@ -3,9 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 class URLMock(URL):
+    def __new__(cls, *args, **kwargs):
+        pass
+
     @classmethod
     def create(cls, *args, **kwargs) -> URL:
-        return cls
+        return cls() # It calls __new__
 
 class AsyncEngineMock(AsyncEngine):
     def __init__(self, *args, **kwargs):
