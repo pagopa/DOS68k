@@ -1,5 +1,9 @@
 **.env
+**.env.**
+!**.env.template
+!**.env.**.template
 minio/
 db/
 queue-data/
 vector-db/
+.venv
