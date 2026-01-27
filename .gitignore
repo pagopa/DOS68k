@@ -6,4 +6,5 @@ minio/
 db/
 queue-data/
 vector-db/
+localstack/data/
 .venv
