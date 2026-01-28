@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
-from redis.asyncio import Redis
 from dos_utility.database.sql import get_async_session
-from dos_utility.queue.redis import get_queue_client
+from dos_utility.queue import QueueInterface, get_queue_client
 
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
@@ -29,19 +28,12 @@ async def health_check_db():
     }
 
 @router.get(path="/queue", summary="Check Chatbot API queue connectivity")
-async def health_check_queue(queue_client: Annotated[Redis, Depends(dependency=get_queue_client)]):
+async def health_check_queue(queue_client: Annotated[QueueInterface, Depends(dependency=get_queue_client)]):
     # Health check endpoint to verify queue connectivity
-    try:
-        pong: bool = await queue_client.ping()
+    healthy: bool = await queue_client.is_healthy()
 
-        return {
-            "status": "ok",
-            "service": "Chatbot Evaluate API",
-            "queue": "connected" if pong is True else "not connected",
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "service": "Chatbot Evaluate API",
-            "queue": f"connection error: {str(e)}",
-        }
+    return {
+        "status": "ok",
+        "service": "Chatbot Evaluate API",
+        "queue": "connected" if healthy is True else "NOT connected",
+    }
