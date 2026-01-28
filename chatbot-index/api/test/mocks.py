@@ -1,26 +1,26 @@
-from typing import Literal
+from typing import Literal, Self
 
-class RedisMock:
+class QueueMock:
     # Mock Redis client for testing
-    def __init__(self, ping_response: bool | Literal["exception"]=True):
+    def __init__(self: Self, ping_response: bool | Literal["exception"]=True):
         self.ping_response: bool | Literal["exception"] = ping_response # Set the desired ping response
 
-    async def ping(self) -> bool:
+    async def is_healthy(self: Self) -> bool:
         if self.ping_response == "exception":
-            raise Exception("Mocked queue connection error")
+            return False
 
         return self.ping_response
 
 class AWSS3ConnectedMock:
-    def __init__(self, *args, **kwargs):
+    def __init__(self: Self, *args, **kwargs):
         return
 
-    def health_check(self, *args, **kwargs) -> None:
+    def health_check(self: Self, *args, **kwargs) -> None:
         return
 
 class AWSS3ExceptionMock:
-    def __init__(self, *args, **kwargs):
+    def __init__(self: Self, *args, **kwargs):
         return
 
-    def health_check(self, *args, **kwargs) -> None:
+    def health_check(self: Self, *args, **kwargs) -> None:
         raise Exception("Mocked storage connection error")

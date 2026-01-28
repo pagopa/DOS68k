@@ -7,7 +7,7 @@ from typing import Tuple
 from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
 
-from test.mocks import RedisMock
+from test.mocks import QueueMock
 
 # Mock env variables
 os.environ["S3_ENDPOINT"] = "http://storage:9000"
@@ -26,24 +26,24 @@ def event_loop():
 @pytest_asyncio.fixture
 async def app_test():
     from src.main import app
-    from dos_utility.queue.redis import get_queue_client
+    from dos_utility.queue import get_queue_client
 
     # Override dependencies or setup test-specific configurations here if needed
 
-    redis_mock: RedisMock = RedisMock(ping_response=True)
+    queue_mock: QueueMock = QueueMock(ping_response=True)
     async def override_get_queue_client():
-        # Return a RedisMock instance for testing
-        return redis_mock
+        # Return a QueueMock instance for testing
+        return queue_mock
 
     app.dependency_overrides[get_queue_client] = override_get_queue_client
 
     try:
-        yield app, redis_mock
+        yield app, queue_mock
     finally:
         app.dependency_overrides.clear()
 
 @pytest_asyncio.fixture
-async def client_test(app_test: Tuple[FastAPI, RedisMock]):
+async def client_test(app_test: Tuple[FastAPI, QueueMock]):
     app, queue_client = app_test
     # Async client for testing FastAPI app
     async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app)) as client:
