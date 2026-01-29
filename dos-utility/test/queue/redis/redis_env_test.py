@@ -1,6 +1,6 @@
 import pytest
 
-from src.dos_utility.queue.redis.env import RedisQueueSettings, get_redis_queue_settings
+from dos_utility.queue.redis.env import RedisQueueSettings, get_redis_queue_settings
 
 
 def test_get_redis_queue_settings(monkeypatch: pytest.MonkeyPatch) -> None:

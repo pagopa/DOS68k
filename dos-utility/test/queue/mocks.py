@@ -1,5 +1,5 @@
 from typing import Self, Tuple, Optional
-from src.dos_utility.queue import QueueInterface
+from dos_utility.queue import QueueInterface
 
 class MockQueue(QueueInterface):
     async def __aenter__(self: Self) -> Self:

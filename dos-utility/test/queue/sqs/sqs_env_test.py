@@ -1,6 +1,6 @@
 import pytest
 
-from src.dos_utility.queue.sqs.env import SQSQueueSettings, get_sqs_queue_settings
+from dos_utility.queue.sqs.env import SQSQueueSettings, get_sqs_queue_settings
 
 
 def test_get_sqs_queue_settings(monkeypatch: pytest.MonkeyPatch) -> None:

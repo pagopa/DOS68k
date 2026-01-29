@@ -1,6 +1,6 @@
 import pytest
 
-from src.dos_utility.queue.env import QueueType, QueueSettings, get_queue_settings
+from dos_utility.queue.env import QueueType, QueueSettings, get_queue_settings
 
 
 @pytest.mark.parametrize(

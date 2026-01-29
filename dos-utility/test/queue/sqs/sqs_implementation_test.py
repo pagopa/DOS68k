@@ -1,8 +1,8 @@
 import pytest
 
-from src.dos_utility.queue.sqs import implementation
-from src.dos_utility.queue.sqs import SQSQueue, get_sqs_queue
-from src.dos_utility.queue.sqs.env import get_sqs_queue_settings
+from dos_utility.queue.sqs import implementation
+from dos_utility.queue.sqs import SQSQueue, get_sqs_queue
+from dos_utility.queue.sqs.env import get_sqs_queue_settings
 
 from test.queue.sqs.mocks import (
     boto3_client_mock,

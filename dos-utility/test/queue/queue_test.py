@@ -2,9 +2,9 @@ import pytest
 
 from typing import AsyncGenerator, Callable
 
-from src.dos_utility import queue
-from src.dos_utility.queue import QueueInterface, get_queue_client, get_queue_client_ctx
-from src.dos_utility.queue.env import get_queue_settings
+from dos_utility import queue
+from dos_utility.queue import QueueInterface, get_queue_client, get_queue_client_ctx
+from dos_utility.queue.env import get_queue_settings
 
 from test.queue.mocks import get_sqs_queue_mock, get_redis_queue_mock
 

@@ -15,7 +15,7 @@ class QueueInterface(ABC):
             >>> async with queue as qc:
             >>>     # Use qc to interact with the queue
         """
-        raise NotImplementedError
+        ...
 
     @abstractmethod
     async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
@@ -26,7 +26,7 @@ class QueueInterface(ABC):
             >>> async with queue as qc:
             >>>     # Use qc to interact with the queue
         """
-        raise NotImplementedError
+        ...
 
     @abstractmethod
     async def is_healthy(self: Self) -> bool:
@@ -36,7 +36,7 @@ class QueueInterface(ABC):
         Returns:
             bool: True if healthy, False otherwise.
         """
-        raise NotImplementedError
+        ...
 
     @abstractmethod
     async def enqueue(self: Self, msg: bytes) -> str:
@@ -52,7 +52,7 @@ class QueueInterface(ABC):
             >>> msg_id: str = await queue_client.enqueue(msg=b"Hello World!")
             >>> msg_id: str = await queue_client.enqueue(msg=json.dumps({"message": "Hello World!"}).encode("utf-8"))
         """
-        raise NotImplementedError
+        ...
 
     @abstractmethod
     async def dequeue(self: Self) -> Tuple[Optional[bytes], Optional[str]]:
@@ -69,7 +69,7 @@ class QueueInterface(ABC):
             >>>     # Process the message...
             >>>     await queue_client.acknowledge(ack_token=ack_token)
         """
-        raise NotImplementedError
+        ...
 
     @abstractmethod
     async def acknowledge(self: Self, ack_token: str) -> None:
@@ -81,4 +81,4 @@ class QueueInterface(ABC):
 
         Examples: look at `dequeue` method.
         """
-        raise NotImplementedError
+        ...

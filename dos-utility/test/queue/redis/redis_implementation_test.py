@@ -2,9 +2,9 @@ import pytest
 
 from redis import ResponseError
 
-from src.dos_utility.queue.redis import implementation
-from src.dos_utility.queue.redis import RedisQueue, get_redis_queue
-from src.dos_utility.queue.redis.env import get_redis_queue_settings
+from dos_utility.queue.redis import implementation
+from dos_utility.queue.redis import RedisQueue, get_redis_queue
+from dos_utility.queue.redis.env import get_redis_queue_settings
 
 from test.queue.redis.mocks import (
     get_queue_pool_mock,
