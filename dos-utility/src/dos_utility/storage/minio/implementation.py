@@ -17,6 +17,7 @@ class MinIO(StorageInterface):
             access_key=self._settings.MINIO_ACCESS_KEY,
             secret_key=self._settings.MINIO_SECRET_KEY.get_secret_value(),
             region=self._settings.MINIO_REGION,
+            secure=self._settings.MINIO_SECURE,
         )
 
     def is_healthy(self: Self) -> bool:

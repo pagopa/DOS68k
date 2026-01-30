@@ -9,6 +9,7 @@ class MinIOStorageSettings(BaseSettings):
     MINIO_ACCESS_KEY: str
     MINIO_SECRET_KEY: SecretStr
     MINIO_REGION: str
+    MINIO_SECURE: bool = False
 
 @lru_cache()
 def get_minio_storage_settings() -> MinIOStorageSettings:

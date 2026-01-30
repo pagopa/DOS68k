@@ -31,7 +31,7 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#21-env-setup).
 
 ```bash
-export SQS_ENDPOINT=<endpoint>
+export SQS_ENDPOINT=<endpoint> # With format http(s)://host (es: http://localstack)
 export SQS_PORT=<port>
 export SQS_REGION=<region>
 export AWS_ACCESS_KEY_ID=<access-key-id>
@@ -45,7 +45,7 @@ export SQS_QUEUE_URL=<queue-url>
 Add the following env variables to the `.env` file you created [here](#21-env-setup).
 
 ```bash
-export REDIS_HOST=<host>
+export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
 export REDIS_PORT=<port>
 export REDIS_STREAM=<stream-name>
 export REDIS_GROUP=<group-name>
@@ -110,11 +110,12 @@ export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 Add the following env variables to the `.env` file you created [here](#21-env-setup).
 
 ```bash
-export MINIO_ENDPOINT=<endpoint>
+export MINIO_ENDPOINT=<endpoint> # with format <host>, whitout protocol (es. storage - as per docker compose service name)
 export MINIO_PORT=<port>
 export MINIO_ACCESS_KEY=<access-key>
 export MINIO_SECRET_KEY=<secret-key>
 export MINIO_REGION=<region>
+export MINIO_SECURE=<bool> # true/false. true if you want to use HTTPS protocol, false if you use HTTP
 ```
 
 ### 3.2 How to use it
