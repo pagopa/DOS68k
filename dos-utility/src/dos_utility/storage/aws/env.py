@@ -7,7 +7,7 @@ class AWSStorageSettings(BaseSettings):
     S3_ENDPOINT: Annotated[Optional[str], Field(default=None)]
     AWS_ACCESS_KEY_ID: str
     AWS_SECRET_ACCESS_KEY: SecretStr
-    AWS_REGION: str
+    S3_REGION: str
 
 @lru_cache
 def get_aws_storage_settings() -> AWSStorageSettings:

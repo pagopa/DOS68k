@@ -1,20 +1,20 @@
 import pytest
 
-from dos_utility.queue.env import QueueType, QueueSettings, get_queue_settings
+from dos_utility.queue.env import QueueProvider, QueueSettings, get_queue_settings
 
 
 @pytest.mark.parametrize(
-    "queue_type",
+    "queue_provider",
     [
         "sqs",
         "redis"
     ],
 )
-def test_get_queue_settings(monkeypatch: pytest.MonkeyPatch, queue_type: str) -> None:
+def test_get_queue_settings(monkeypatch: pytest.MonkeyPatch, queue_provider: str) -> None:
     get_queue_settings.cache_clear()
 
-    monkeypatch.setenv("QUEUE_TYPE", queue_type)
+    monkeypatch.setenv("QUEUE_PROVIDER", queue_provider)
 
     settings: QueueSettings = get_queue_settings()
 
-    assert settings.queue_type is QueueType(value=queue_type)
+    assert settings.QUEUE_PROVIDER is QueueProvider(value=queue_provider)

@@ -3,12 +3,12 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from enum import StrEnum
 
-class QueueType(StrEnum):
+class QueueProvider(StrEnum):
     REDIS = "redis"
     SQS = "sqs"
 
 class QueueSettings(BaseSettings):
-    queue_type: QueueType
+    QUEUE_PROVIDER: QueueProvider
 
 
 @lru_cache()

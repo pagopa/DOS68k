@@ -15,6 +15,12 @@ The following script to run unit tests. Always make sure your coverage % is as c
 uv run pytest --cov=src --cov-report=term-missing
 ```
 
+## Env config
+
+This service uses a queue to send messages to a worker and a storage service. In order to use them correctly you have to set an `.env` file with the correct configuration. Follow below links for instructions:
+- [queue](../../dos-utility/docs/features.md#2-queue-interface)
+- [storage](../../dos-utility/docs/features.md#3-storage-interface)
+
 ## Start service
 
 If you want to independently start this service, run the following commands.

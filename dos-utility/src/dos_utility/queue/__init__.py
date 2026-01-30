@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-from .env import QueueType, QueueSettings, get_queue_settings
+from .env import QueueProvider, QueueSettings, get_queue_settings
 
 from .interface import QueueInterface
 from .redis import get_redis_queue
@@ -27,9 +27,9 @@ async def get_queue_client_ctx() -> AsyncGenerator[QueueInterface, None]:
     """
     queue_settings: QueueSettings = get_queue_settings() # Get env variable values
 
-    if queue_settings.queue_type is QueueType.REDIS:
+    if queue_settings.QUEUE_PROVIDER is QueueProvider.REDIS:
         queue: QueueInterface = get_redis_queue()
-    elif queue_settings.queue_type is QueueType.SQS:
+    elif queue_settings.QUEUE_PROVIDER is QueueProvider.SQS:
         queue: QueueInterface = get_sqs_queue()
 
     async with queue as queue_client:

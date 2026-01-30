@@ -15,11 +15,11 @@ class AWSS3(StorageInterface):
         if self._settings.S3_ENDPOINT is not None:
             self.client = boto3.client(
                 "s3",
-                region_name=self._settings.AWS_REGION,
+                region_name=self._settings.S3_REGION,
                 endpoint_url=self._settings.S3_ENDPOINT, # Used for localstack or custom S3 endpoints
             )
         else:
-            self.client = boto3.client("s3", region_name=self._settings.AWS_REGION)
+            self.client = boto3.client("s3", region_name=self._settings.S3_REGION)
 
     def is_healthy(self: Self) -> bool:
         # Simple health check to verify S3 connectivity

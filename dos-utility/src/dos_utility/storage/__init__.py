@@ -9,6 +9,12 @@ __all__ = ["StorageInterface", "get_storage", "ObjectInfo"]
 
 
 def get_storage() -> StorageInterface:
+    """Get the appropriate storage interface based on configuration.
+    It can also be used as a dependency in FastAPI via injection.
+
+    Returns:
+        StorageInterface: The storage interface instance.
+    """
     storage_settings: StorageSettings = get_storage_settings()
 
     if storage_settings.STORAGE_PROVIDER is StorageProvider.AWS_S3:

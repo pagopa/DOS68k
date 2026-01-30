@@ -4,11 +4,19 @@ from typing import BinaryIO, List
 from dos_utility.storage.aws import implementation
 from dos_utility.storage.aws.implementation import AWSS3
 
-from test.storage.aws.mocks import get_aws_storage_settings_mock, aws_client_mock, aws_client_list_buckets_exception_mock
+from test.storage.aws.mocks import get_aws_storage_settings_mock, aws_client_mock, aws_client_list_buckets_exception_mock, get_aws_storage_settings_with_endpoint_mock
 
 
 def test_instantiate_aws_s3(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(implementation, "get_aws_storage_settings", get_aws_storage_settings_mock)
+    monkeypatch.setattr(implementation.boto3, "client", aws_client_mock)
+
+    aws_s3: AWSS3 = AWSS3()
+
+    assert isinstance(aws_s3, AWSS3)
+
+def test_instantiate_aws_s3_with_different_endpoint(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(implementation, "get_aws_storage_settings", get_aws_storage_settings_with_endpoint_mock)
     monkeypatch.setattr(implementation.boto3, "client", aws_client_mock)
 
     aws_s3: AWSS3 = AWSS3()

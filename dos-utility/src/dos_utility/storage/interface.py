@@ -5,6 +5,12 @@ from typing import Self, BinaryIO, List
 
 @dataclass
 class ObjectInfo:
+    """
+    Information about an object stored in the storage service.
+
+    Attributes:
+        key (str): The key (name) of the object. It can be use to retrieve the object with the `get_object` method.
+    """
     key: str
 
 

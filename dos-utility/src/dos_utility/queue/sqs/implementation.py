@@ -24,8 +24,8 @@ class SQSQueue(QueueInterface):
                 "sqs",
                 region_name=self._settings.SQS_REGION,
                 endpoint_url=f"{self._settings.SQS_ENDPOINT_URL}:{self._settings.SQS_PORT}",
-                aws_access_key_id=self._settings.SQS_AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=self._settings.SQS_AWS_SECRET_ACCESS_KEY.get_secret_value(),
+                aws_access_key_id=self._settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=self._settings.AWS_SECRET_ACCESS_KEY.get_secret_value(),
             ),
         )
 
