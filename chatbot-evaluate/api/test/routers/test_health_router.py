@@ -1,11 +1,11 @@
 import pytest
 
-from typing import Tuple, Literal
+from typing import Tuple
 from httpx import AsyncClient
 
 from src.routers.health import router as health_router
 
-from test.routers.mocks import QueueMock
+from test.mocks import QueueMock
 
 @pytest.mark.asyncio
 async def test_health_check(client_test: Tuple[AsyncClient, QueueMock]):
@@ -44,18 +44,11 @@ async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, Queu
     }
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "ping_response",
-    [
-        False,
-        "exception"
-    ],
-)
-async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, QueueMock], ping_response: Literal[False, "exception"]):
+async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, QueueMock]):
     client, queue_client = client_test
 
     # Simulate disconnected queue by setting ping_response to False
-    queue_client.ping_response = ping_response
+    queue_client.healthy = False
 
     response = await client.get(url=f"{health_router.prefix}/queue")
 

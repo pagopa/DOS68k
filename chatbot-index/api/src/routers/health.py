@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from typing import Annotated
 
-from dos_utility.storage.aws import AWSS3
+from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
 
 
@@ -27,21 +27,11 @@ async def health_check_queue(queue_client: Annotated[QueueInterface, Depends(dep
     }
 
 @router.get(path="/storage", summary="Check Storage service is reachable")
-async def health_check_storage():
-    # Placeholder for storage health check logic
+async def health_check_storage(storage_client: Annotated[StorageInterface, Depends(dependency=get_storage)]):
+    is_healthy: bool = storage_client.is_healthy()
 
-    try:
-        s3: AWSS3 = AWSS3()
-        s3.health_check()
-
-        return {
-            "status": "ok",
-            "service": "Chatbot Index API",
-            "storage": "connected",
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "service": "Chatbot Index API",
-            "storage": f"connection error: {str(e)}",
-        }
+    return {
+        "status": "ok",
+        "service": "Chatbot Index API",
+        "storage": "connected" if is_healthy is True else "NOT connected",
+    }
