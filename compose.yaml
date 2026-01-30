@@ -50,6 +50,7 @@ services:
       - queue
       - db
       - vector-db
+      - localstack
 
   chatbot-evaluate-worker:
     build:
@@ -59,6 +60,7 @@ services:
       - ./chatbot-evaluate/worker/.env
     depends_on:
       - queue
+      - localstack
 
   chatbot-index-api:
     build:
@@ -71,6 +73,7 @@ services:
     depends_on:
       - queue
       - storage
+      - localstack
 
   chatbot-index-worker:
     build:
@@ -80,6 +83,7 @@ services:
       - ./chatbot-index/worker/.env
     depends_on:
       - queue
+      - localstack
 
   frontend:
     build:
