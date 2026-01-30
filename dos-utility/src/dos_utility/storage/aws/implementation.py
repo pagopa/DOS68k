@@ -11,7 +11,15 @@ from .env import AWSStorageSettings, get_aws_storage_settings
 class AWSS3(StorageInterface):
     def __init__(self: Self) -> None:
         self._settings: AWSStorageSettings = get_aws_storage_settings()
-        self.client = boto3.client("s3", region_name=self._settings.AWS_REGION)
+
+        if self._settings.S3_ENDPOINT is not None:
+            self.client = boto3.client(
+                "s3",
+                region_name=self._settings.AWS_REGION,
+                endpoint_url=self._settings.S3_ENDPOINT, # Used for localstack or custom S3 endpoints
+            )
+        else:
+            self.client = boto3.client("s3", region_name=self._settings.AWS_REGION)
 
     def is_healthy(self: Self) -> bool:
         # Simple health check to verify S3 connectivity
