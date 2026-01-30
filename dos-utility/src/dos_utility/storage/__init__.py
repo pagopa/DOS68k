@@ -1,10 +1,10 @@
 from .env import StorageProvider, StorageSettings, get_storage_settings
-from .interface import StorageInterface
+from .interface import StorageInterface, ObjectInfo
 from .aws import get_aws_s3_storage
 from .minio import get_minio_storage
 
 
-__all__ = ["StorageInterface", "get_storage"]
+__all__ = ["StorageInterface", "get_storage", "ObjectInfo"]
 
 
 
