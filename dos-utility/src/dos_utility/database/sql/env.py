@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings
@@ -9,4 +10,6 @@ class DBSettings(BaseSettings):
     DB_PORT: Annotated[int, Field(default=5432)]
     DB_NAME: Annotated[str, Field(default="db")]
 
-db_settings: DBSettings = DBSettings()
+@lru_cache()
+def get_db_settings() -> DBSettings:
+    return DBSettings()

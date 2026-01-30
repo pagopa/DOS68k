@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .env import settings
+from .env import get_settings
 from .routers import health
 
 app: FastAPI = FastAPI(
@@ -12,7 +12,7 @@ app: FastAPI = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=[get_settings().frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
