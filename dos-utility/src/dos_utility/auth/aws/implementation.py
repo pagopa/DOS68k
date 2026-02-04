@@ -1,32 +1,27 @@
-"""
-AWS Cognito implementation of the authentication provider.
-"""
 import requests
+import logging
+
 from jose import jwk, jwt
 from jose import exceptions as jwt_exceptions
 from jose.utils import base64url_decode
 from fastapi import HTTPException
 from typing import Dict, Any
 
-from .auth_provider_base import BaseAuthProvider
-from src.modules.logger import get_logger
-from src.modules.settings import SETTINGS
-
-LOGGER = get_logger(__name__)
+from ..interface import AuthInterface
+from .env import AWSAuthSettings, get_aws_auth_settings
 
 
-class CognitoAuthProvider(BaseAuthProvider):
-    """
-    AWS Cognito implementation of the BaseAuthProvider.
-    Handles JWT verification using AWS Cognito as the authentication provider.
-    """
 
+
+class CognitoAuthProvider(AuthInterface):
     def __init__(self):
-        """Initialize the Cognito auth provider with settings."""
-        self.region = SETTINGS.aws_cognito_region or SETTINGS.aws_region
-        self.user_pool_id = SETTINGS.auth_cognito_userpool_id
-        self.environment = SETTINGS.environment
-        self.aws_endpoint_url = SETTINGS.aws_endpoint_url
+        self._settings: AWSAuthSettings = get_aws_auth_settings()
+        self.region = self._settings.AWS_REGION
+        self.aws_endpoint_url = self._settings.AWS_ENDPOINT_URL
+        self.access_key_id = self._settings.AWS_ACCESS_KEY_ID
+        self.secret_access_key = self._settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
+        self.user_pool_id = self._settings.AWS_COGNITO_USERPOOL_ID
+        self.environment = self._settings.ENVIRONMENT
 
     def get_jwks(self) -> Dict[str, Any]:
         """
@@ -38,7 +33,7 @@ class CognitoAuthProvider(BaseAuthProvider):
         Raises:
             HTTPException: If the JWKS cannot be retrieved
         """
-        # https://docs.getmoto.org/en/latest/docs/services/cognito-idp.html#cognito-idp
+
         if self.environment == "test":
             keys_url = (
                 f"{self.aws_endpoint_url}/"
@@ -61,11 +56,10 @@ class CognitoAuthProvider(BaseAuthProvider):
             headers = None
 
         response = requests.get(keys_url, headers=headers)
-
         if response.status_code == 200:
             return response.json()
         else:
-            LOGGER.error(
+            logging.error(
                 f"[CognitoAuthProvider.get_jwks] keys_url={keys_url}, "
                 f"Response status code: {response.status_code}"
             )
@@ -108,3 +102,7 @@ class CognitoAuthProvider(BaseAuthProvider):
             raise HTTPException(status_code=401, detail="Token has expired")
         except jwt_exceptions.JWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+def get_aws_auth_provider() -> CognitoAuthProvider:
+    """Get an instance of the AWS Cognito authentication provider."""
+    return CognitoAuthProvider()

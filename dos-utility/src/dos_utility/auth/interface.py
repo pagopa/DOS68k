@@ -1,12 +1,7 @@
-"""
-Abstract base class for authentication providers.
-Implements the Strategy pattern to allow different JWT authentication providers.
-"""
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
-
-class BaseAuthProvider(ABC):
+class AuthInterface(ABC):
     """
     Abstract base class for authentication providers.
     All concrete implementations must extend this class and implement its abstract methods.

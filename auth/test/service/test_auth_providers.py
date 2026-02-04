@@ -6,11 +6,11 @@ import pytest
 from unittest.mock import Mock, patch
 from fastapi import HTTPException
 
-from src.service.auth_provider_base import BaseAuthProvider
+from dos_utility.auth import AuthInterface
 from src.service import get_provider
 
 
-class MockAuthProvider(BaseAuthProvider):
+class MockAuthProvider(AuthInterface):
     """Mock provider per i test."""
     
     def get_jwks(self):
@@ -43,44 +43,36 @@ class TestGetProvider:
     """Test per la funzione get_provider."""
     
     def test_create_cognito_provider(self):
-        """Test creazione provider Cognito."""
-        with patch('src.service.SETTINGS') as mock_settings:
-            mock_settings.auth_provider = "cognito"
-            mock_settings.aws_region = "us-east-1"
-            mock_settings.auth_cognito_userpool_id = "test-pool"
-            mock_settings.environment = "test"
-            mock_settings.aws_endpoint_url = "http://localhost:4566"
+        """Test creazione provider Cognito/AWS."""
+        with patch('dos_utility.auth.get_auth_settings') as mock_get_settings:
+            mock_settings = Mock()
+            mock_settings.AUTH_PROVIDER = "aws"
+            mock_get_settings.return_value = mock_settings
             
             provider = get_provider()
             assert provider.__class__.__name__ == "CognitoAuthProvider"
     
-    def test_create_keycloak_provider(self):
-        """Test creazione provider Keycloak."""
-        with patch('src.service.SETTINGS') as mock_settings:
-            mock_settings.auth_provider = "keycloak"
-            mock_settings.keycloak_url = "http://keycloak:8080"
-            mock_settings.keycloak_realm = "test-realm"
-            
-            provider = get_provider()
-            assert provider.__class__.__name__ == "KeycloakAuthProvider"
-    
     def test_create_local_provider(self):
         """Test creazione provider Local."""
-        with patch('src.service.SETTINGS') as mock_settings:
-            mock_settings.auth_provider = "local"
+        with patch('dos_utility.auth.get_auth_settings') as mock_get_settings:
+            mock_settings = Mock()
+            mock_settings.AUTH_PROVIDER = "local"
+            mock_get_settings.return_value = mock_settings
             
             provider = get_provider()
             assert provider.__class__.__name__ == "LocalAuthProvider"
     
     def test_unsupported_provider(self):
         """Test provider non supportato."""
-        with patch('src.service.SETTINGS') as mock_settings:
-            mock_settings.auth_provider = "unsupported"
+        with patch('dos_utility.auth.get_auth_settings') as mock_get_settings:
+            mock_settings = Mock()
+            mock_settings.AUTH_PROVIDER = "unsupported"
+            mock_get_settings.return_value = mock_settings
             
             with pytest.raises(ValueError) as exc_info:
                 get_provider()
             
-            assert "Unsupported auth provider" in str(exc_info.value)
+            assert "Unsupported AUTH_PROVIDER" in str(exc_info.value)
 
 
 class TestMockAuthProvider:
@@ -172,7 +164,7 @@ class TestLocalAuthProvider:
     
     def test_local_provider_always_succeeds(self):
         """Test che il provider local ritorna sempre successo."""
-        from src.service.local_auth_provider import LocalAuthProvider
+        from dos_utility.auth.local import LocalAuthProvider
         
         provider = LocalAuthProvider()
         
@@ -185,7 +177,7 @@ class TestLocalAuthProvider:
     
     def test_local_provider_with_invalid_token(self):
         """Test che il provider local funziona anche con token invalidi."""
-        from src.service.local_auth_provider import LocalAuthProvider
+        from dos_utility.auth.local import LocalAuthProvider
         
         provider = LocalAuthProvider()
         
@@ -196,7 +188,7 @@ class TestLocalAuthProvider:
     
     def test_local_provider_get_jwks(self):
         """Test recupero JWKS dal provider local."""
-        from src.service.local_auth_provider import LocalAuthProvider
+        from dos_utility.auth.local import LocalAuthProvider
         
         provider = LocalAuthProvider()
         jwks = provider.get_jwks()
@@ -207,7 +199,7 @@ class TestLocalAuthProvider:
     
     def test_jwt_check_endpoint_without_auth_header_local(self, client):
         """Test che con AUTH_PROVIDER=local l'header Authorization è opzionale."""
-        from src.service.local_auth_provider import LocalAuthProvider
+        from dos_utility.auth.local import LocalAuthProvider
         
         with patch('src.routers.jwt_check.SETTINGS') as mock_settings:
             mock_settings.auth_provider = "local"
@@ -222,7 +214,7 @@ class TestLocalAuthProvider:
     
     def test_jwt_check_endpoint_with_auth_header_local(self, client):
         """Test che con AUTH_PROVIDER=local funziona anche con l'header."""
-        from src.service.local_auth_provider import LocalAuthProvider
+        from dos_utility.auth.local import LocalAuthProvider
         
         with patch('src.routers.jwt_check.SETTINGS') as mock_settings:
             mock_settings.auth_provider = "local"

@@ -1,23 +1,19 @@
-"""
-Local authentication provider for development/testing.
-Bypasses actual JWT verification and returns mock claims.
-"""
+import logging
 from typing import Dict, Any
-from .auth_provider_base import BaseAuthProvider
-from src.modules.logger import get_logger
+from ..interface import AuthInterface
 
-LOGGER = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class LocalAuthProvider(BaseAuthProvider):
+class LocalAuthProvider(AuthInterface):
     """
-    Local/Mock implementation of the BaseAuthProvider.
+    Local/Mock implementation of the AuthInterface.
     Used for development and testing - always returns successful verification.
     """
 
     def __init__(self):
         """Initialize the local auth provider."""
-        LOGGER.warning("Using LocalAuthProvider - JWT verification is DISABLED")
+        logger.warning("Using LocalAuthProvider - JWT verification is DISABLED")
 
     def get_jwks(self) -> Dict[str, Any]:
         """
@@ -49,7 +45,7 @@ class LocalAuthProvider(BaseAuthProvider):
         Returns:
             Dict[str, Any]: Mock token claims
         """
-        LOGGER.info("Local auth provider - bypassing JWT verification")
+        logger.info("Local auth provider - bypassing JWT verification")
         
         # Return mock claims that simulate a valid token
         return {
@@ -64,3 +60,7 @@ class LocalAuthProvider(BaseAuthProvider):
             "iss": "https://local-development",
             "client_id": "local-client"
         }
+
+def get_local_auth_provider() -> LocalAuthProvider:
+    """Get an instance of the Local authentication provider."""
+    return LocalAuthProvider()
