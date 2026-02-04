@@ -1,12 +1,7 @@
 from typing import Self, Any
-from redis.asyncio import ConnectionPool, Redis
+from redis.asyncio import Redis
 from redis import ResponseError
 
-
-class ConnectionPoolMock(ConnectionPool):
-    @classmethod
-    def from_url(cls, *args, **kwargs) -> ConnectionPool:
-        return cls()
 
 class RedisMock(Redis):
     def __init__(self: Self, *args, **kwargs) -> None:
@@ -53,5 +48,9 @@ class RedisDequeueNewMessageMock(RedisMock):
             )
         ]
 
-def get_queue_pool_mock() -> ConnectionPool:
-    return ConnectionPoolMock()
+class RedisQueueSettingsMock(RedisMock):
+    REDIS_STREAM: str = "mocked-stream"
+    REDIS_GROUP: str = "mocked-group"
+
+def get_redis_queue_settings_mock() -> RedisQueueSettingsMock:
+    return RedisQueueSettingsMock()

@@ -3,10 +3,10 @@ import logging
 from uuid import uuid4
 from typing import Self, Tuple, List, Optional
 from redis import ResponseError
-from redis.asyncio import Redis
+from redis.asyncio import Redis, ConnectionPool
 
+from ...utils.redis import get_redis_connection_pool
 from ..interface import QueueInterface
-from .connection import get_queue_pool
 from .env import RedisQueueSettings, get_redis_queue_settings
 
 
@@ -15,7 +15,8 @@ class RedisQueue(QueueInterface):
         self._settings: RedisQueueSettings = get_redis_queue_settings() # Load redis env variables
 
     async def __aenter__(self: Self) -> Self:
-        self._redis_client: Redis = Redis(connection_pool=get_queue_pool()) # Create redis client
+        connection_pool: ConnectionPool = get_redis_connection_pool(decode_responses=False)
+        self._redis_client: Redis = Redis(connection_pool=connection_pool) # Create redis client
 
         # Create group if it doesn't exist (id="0" = read old; "$" = only new)
         try:

@@ -5,7 +5,9 @@ import logging
 
 from uuid import uuid4
 from typing import Self, Tuple, Optional
+from asyncio import AbstractEventLoop
 
+from ...utils.aws import get_aws_credentials_settings, AWSCredentialsSettings
 from ..interface import QueueInterface
 from .env import SQSQueueSettings, get_sqs_queue_settings
 
@@ -13,10 +15,11 @@ from .env import SQSQueueSettings, get_sqs_queue_settings
 class SQSQueue(QueueInterface):
     def __init__(self: Self) -> None:
         self._settings: SQSQueueSettings = get_sqs_queue_settings() # Load sqs env variables
+        self._aws_credentials: AWSCredentialsSettings = get_aws_credentials_settings() # Load AWS credentials
 
     async def __aenter__(self: Self) -> Self:
         # Since boto3 is blocking, we run it in a separate thread to respect asyncio interface
-        loop = asyncio.get_event_loop() # Get current event loop
+        loop: AbstractEventLoop = asyncio.get_event_loop() # Get current event loop
         # Initialize SQS client
         self._client = await loop.run_in_executor(
             None,
@@ -24,8 +27,8 @@ class SQSQueue(QueueInterface):
                 "sqs",
                 region_name=self._settings.SQS_REGION,
                 endpoint_url=f"{self._settings.SQS_ENDPOINT_URL}:{self._settings.SQS_PORT}",
-                aws_access_key_id=self._settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=self._settings.AWS_SECRET_ACCESS_KEY.get_secret_value(),
+                aws_access_key_id=self._aws_credentials.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value(),
             ),
         )
 
@@ -36,7 +39,7 @@ class SQSQueue(QueueInterface):
         pass
 
     async def is_healthy(self: Self) -> bool:
-        loop = asyncio.get_event_loop()
+        loop: AbstractEventLoop = asyncio.get_event_loop()
         try:
             await loop.run_in_executor(
                 None,
@@ -50,7 +53,7 @@ class SQSQueue(QueueInterface):
             return False
 
     async def enqueue(self: Self, msg: bytes) -> str:
-        loop = asyncio.get_event_loop()
+        loop: AbstractEventLoop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
             lambda: self._client.send_message(
@@ -64,7 +67,7 @@ class SQSQueue(QueueInterface):
         return response["MessageId"]
 
     async def dequeue(self: Self) -> Tuple[Optional[bytes], Optional[str]]:
-        loop = asyncio.get_event_loop()
+        loop: AbstractEventLoop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
             lambda: self._client.receive_message(
@@ -86,7 +89,7 @@ class SQSQueue(QueueInterface):
         return None, None
 
     async def acknowledge(self: Self, ack_token: str) -> None:
-        loop = asyncio.get_event_loop()
+        loop: AbstractEventLoop = asyncio.get_event_loop()
         # Delete the message from the queue using the receipt handle. In SQS this is how we acknowledge message processing.
         await loop.run_in_executor(
             None,

@@ -46,6 +46,7 @@ class MinioStorageSettingsMock:
     MINIO_ACCESS_KEY: str = "mock-access-key"
     MINIO_SECRET_KEY: SecretStr = SecretStr("mock-secret-key")
     MINIO_REGION: str = "mock-region"
+    MINIO_SECURE: bool = False
 
 def get_minio_storage_settings_mock() -> MinioStorageSettingsMock:
     return MinioStorageSettingsMock()

@@ -1,22 +1,25 @@
 import pytest
 
-from dos_utility.queue.sqs import implementation
-from dos_utility.queue.sqs import SQSQueue, get_sqs_queue
+from dos_utility.queue.sqs import implementation, SQSQueue, get_sqs_queue
 from dos_utility.queue.sqs.env import get_sqs_queue_settings
+from dos_utility.utils.aws import get_aws_credentials_settings
 
 from test.queue.sqs.mocks import (
     boto3_client_mock,
     boto3_client_unhealthy_mock,
     boto3_client_new_message_dequeue_mock,
+    get_sqs_queue_settings_mock,
 )
+from test.utils.aws.mocks import get_aws_credentials_settings_mock
 
 
 
 def test_instantiate_sqs_queue(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
-    
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    get_aws_credentials_settings.cache_clear()
+
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     sqs_queue: SQSQueue = SQSQueue()
 
@@ -25,10 +28,11 @@ def test_instantiate_sqs_queue(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_aenter_aexit(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
 
     async with SQSQueue() as sqs_queue:
@@ -37,10 +41,11 @@ async def test_sqs_aenter_aexit(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_is_healthy(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         is_healthy: bool = await sqs_queue.is_healthy()
@@ -50,10 +55,11 @@ async def test_sqs_is_healthy(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_is_unhealthy(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_unhealthy_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         is_healthy: bool = await sqs_queue.is_healthy()
@@ -63,10 +69,11 @@ async def test_sqs_is_unhealthy(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_enqueue(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         msg_id: str = await sqs_queue.enqueue(b"test-message")
@@ -76,10 +83,11 @@ async def test_sqs_enqueue(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_dequeue_no_message(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         msg, msg_id = await sqs_queue.dequeue()
@@ -90,10 +98,11 @@ async def test_sqs_dequeue_no_message(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_dequeue_new_message(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_new_message_dequeue_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         msg, msg_id = await sqs_queue.dequeue()
@@ -104,10 +113,11 @@ async def test_sqs_dequeue_new_message(monkeypatch: pytest.MonkeyPatch):
 @pytest.mark.asyncio
 async def test_sqs_acknowledge(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
+    get_aws_credentials_settings.cache_clear()
 
     monkeypatch.setattr(implementation.boto3, "client", boto3_client_mock)
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     async with SQSQueue() as sqs_queue:
         await sqs_queue.acknowledge("mocked-msg-id")
@@ -116,8 +126,10 @@ async def test_sqs_acknowledge(monkeypatch: pytest.MonkeyPatch):
 
 def test_get_sqs_queue(monkeypatch: pytest.MonkeyPatch):
     get_sqs_queue_settings.cache_clear()
-    monkeypatch.setenv("SQS_QUEUE_NAME", "my-queue")
-    monkeypatch.setenv("SQS_QUEUE_URL", "http://test-queue-url")
+    get_aws_credentials_settings.cache_clear()
+
+    monkeypatch.setattr(implementation, "get_sqs_queue_settings", get_sqs_queue_settings_mock)
+    monkeypatch.setattr(implementation, "get_aws_credentials_settings", get_aws_credentials_settings_mock)
 
     sqs_queue: SQSQueue = get_sqs_queue()
 

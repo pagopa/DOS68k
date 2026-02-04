@@ -1,5 +1,4 @@
 from typing import Self, Any, Dict
-from boto3 import client
 
 
 class Boto3ClientMock:
@@ -41,3 +40,13 @@ def boto3_client_unhealthy_mock(*args, **kwargs) -> Boto3ClientUnhealthyMock:
 
 def boto3_client_new_message_dequeue_mock(*args, **kwargs) -> Boto3ClientNewMessageDequeueMock:
     return Boto3ClientNewMessageDequeueMock()
+
+class SQSQueueSettingsMock:
+    SQS_ENDPOINT_URL: str = "mocked-endpoint-url"
+    SQS_PORT: int = 4566
+    SQS_REGION: str = "us-east-1"
+    SQS_QUEUE_NAME: str = "mocked-queue-name"
+    SQS_QUEUE_URL: str = "http://mocked-queue-url"
+
+def get_sqs_queue_settings_mock() -> SQSQueueSettingsMock:
+    return SQSQueueSettingsMock()
