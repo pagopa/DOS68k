@@ -1,3 +1,3 @@
-from .connection import get_queue_client, get_queue_client_ctx
+from .implementation import RedisQueue, get_redis_queue
 
-__all__ = ["get_queue_client", "get_queue_client_ctx"]
+__all__ = ["RedisQueue", "get_redis_queue"]

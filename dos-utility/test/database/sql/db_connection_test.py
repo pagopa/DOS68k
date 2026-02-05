@@ -2,12 +2,15 @@ import pytest
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
+from dos_utility.database.sql.env import get_db_settings
 from dos_utility.database.sql import connection
 from dos_utility.database.sql.connection import get_async_engine, get_async_session
 
 from test.database.sql.mocks import URLMock, create_async_engine_mock, sessionmakerMock, get_async_engine_mock
 
 def test_get_async_engine(monkeypatch: pytest.MonkeyPatch):
+    get_db_settings.cache_clear()
+
     monkeypatch.setattr(connection, "URL", URLMock)
     monkeypatch.setattr(connection, "create_async_engine", create_async_engine_mock)
 
@@ -17,6 +20,8 @@ def test_get_async_engine(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.mark.asyncio
 async def test_get_async_session(monkeypatch: pytest.MonkeyPatch):
+    get_db_settings.cache_clear()
+
     monkeypatch.setattr(connection, "get_async_engine", get_async_engine_mock)
     monkeypatch.setattr(connection, "sessionmaker", sessionmakerMock)
 

@@ -1,12 +1,12 @@
+from functools import lru_cache
+from typing import Annotated, Optional
 from pydantic_settings import BaseSettings
-from pydantic import Field
-from typing import Optional, Annotated
+from pydantic import SecretStr, Field
 
 class AWSStorageSettings(BaseSettings):
-    s3_endpoint: Annotated[Optional[str], Field(default=None)]
-    bucket_name: str
-    aws_access_key_id: str
-    aws_secret_access_key: str
-    aws_region: str
+    S3_ENDPOINT: Annotated[Optional[str], Field(default=None)]
+    S3_REGION: str
 
-aws_storage_settings: AWSStorageSettings = AWSStorageSettings()
+@lru_cache
+def get_aws_storage_settings() -> AWSStorageSettings:
+    return AWSStorageSettings()

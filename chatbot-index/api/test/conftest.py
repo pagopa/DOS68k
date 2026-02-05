@@ -7,14 +7,7 @@ from typing import Tuple
 from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
 
-from test.mocks import RedisMock
-
-# Mock env variables
-os.environ["S3_ENDPOINT"] = "http://storage:9000"
-os.environ["BUCKET_NAME"] = "chatbot-index"
-os.environ["AWS_ACCESS_KEY_ID"] = "admin"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin"
-os.environ["AWS_REGION"] = "us-west-1"
+from test.mocks import QueueMock, StorageMock
 
 
 @pytest.fixture(scope="function")
@@ -26,25 +19,31 @@ def event_loop():
 @pytest_asyncio.fixture
 async def app_test():
     from src.main import app
-    from dos_utility.queue.redis import get_queue_client
+    from dos_utility.queue import get_queue_client
+    from dos_utility.storage import get_storage
 
     # Override dependencies or setup test-specific configurations here if needed
 
-    redis_mock: RedisMock = RedisMock(ping_response=True)
+    queue_mock: QueueMock = QueueMock()
     async def override_get_queue_client():
-        # Return a RedisMock instance for testing
-        return redis_mock
+        yield queue_mock
+
+    storage_mock: StorageMock = StorageMock()
+    def override_get_storage():
+        yield storage_mock
 
     app.dependency_overrides[get_queue_client] = override_get_queue_client
+    app.dependency_overrides[get_storage] = override_get_storage
 
     try:
-        yield app, redis_mock
+        yield app, queue_mock, storage_mock
     finally:
         app.dependency_overrides.clear()
 
 @pytest_asyncio.fixture
-async def client_test(app_test: Tuple[FastAPI, RedisMock]):
-    app, queue_client = app_test
+async def client_test(app_test: Tuple[FastAPI, QueueMock, StorageMock]):
+    app, queue_client, storage_client = app_test
+
     # Async client for testing FastAPI app
     async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app)) as client:
-        yield client, queue_client
+        yield client, queue_client, storage_client

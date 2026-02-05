@@ -1,9 +1,12 @@
+from functools import lru_cache
 from typing import Annotated
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-class QueueSettings(BaseSettings):
-    QUEUE_HOST: Annotated[str, Field(default="localhost")]
-    QUEUE_PORT: Annotated[int, Field(default=6379)]
+class RedisQueueSettings(BaseSettings):
+    REDIS_STREAM: Annotated[str, Field(default="my-stream")]
+    REDIS_GROUP: Annotated[str, Field(default="my-group")]
 
-queue_settings: QueueSettings = QueueSettings()
+@lru_cache()
+def get_redis_queue_settings() -> RedisQueueSettings:
+    return RedisQueueSettings()

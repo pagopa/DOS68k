@@ -5,10 +5,10 @@ from httpx import AsyncClient
 
 from src.routers.health import router as health_router
 
-from test.routers.mocks import RedisMock
+from test.mocks import QueueMock
 
 @pytest.mark.asyncio
-async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):
+async def test_health_check(client_test: Tuple[AsyncClient, QueueMock]):
     client, _ = client_test
     response = await client.get(url=health_router.prefix)
 
@@ -19,7 +19,7 @@ async def test_health_check(client_test: Tuple[AsyncClient, RedisMock]):
     }
 
 @pytest.mark.asyncio
-async def test_health_check_db(client_test: Tuple[AsyncClient, RedisMock]):
+async def test_health_check_db(client_test: Tuple[AsyncClient, QueueMock]):
     client, _ = client_test
     response = await client.get(url=f"{health_router.prefix}/db")
 
@@ -31,7 +31,7 @@ async def test_health_check_db(client_test: Tuple[AsyncClient, RedisMock]):
     }
 
 @pytest.mark.asyncio
-async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, RedisMock]):
+async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, QueueMock]):
     client, _ = client_test
 
     response = await client.get(url=f"{health_router.prefix}/queue")
@@ -44,11 +44,11 @@ async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, Redi
     }
 
 @pytest.mark.asyncio
-async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, RedisMock]):
+async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, QueueMock]):
     client, queue_client = client_test
 
     # Simulate disconnected queue by setting ping_response to False
-    queue_client.ping_response = False
+    queue_client.healthy = False
 
     response = await client.get(url=f"{health_router.prefix}/queue")
 
@@ -56,21 +56,5 @@ async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, R
     assert response.json() == {
         "status": "ok",
         "service": "Chatbot Evaluate API",
-        "queue": "not connected",
-    }
-
-@pytest.mark.asyncio
-async def test_health_check_queue_exception(client_test: Tuple[AsyncClient, RedisMock]):
-    client, queue_client = client_test
-
-    # Simulate exception during ping
-    queue_client.ping_response = "exception"
-
-    response = await client.get(url=f"{health_router.prefix}/queue")
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "status": "error",
-        "service": "Chatbot Evaluate API",
-        "queue": "connection error: Mocked connection error",
+        "queue": "NOT connected",
     }
