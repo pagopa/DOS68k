@@ -5,6 +5,7 @@ Here a list of functionalities this package provide:
 - [SQL DB connection](#1-sql-db-connection)
 - [Queue interface](#2-queue-interface)
 - [Storage interface](#3-storage-interface)
+- [VectorDB interface](#4-vector-db)
 
 ## 1. SQL DB connection
 
@@ -68,8 +69,8 @@ In order to have better understanding of each element, checkout [queue.md](./que
 If you want to provide a new implementation for a different provider you are welcome, just make sure to respect some standards:
 
 - create a class which implements the `QueueInterface` ([here](./queue/queue_interface.md) the specs), under `src/dos_utility/queue/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/queue` module.
-- update the `get_queue_client` with your new implementation, under `src/dos_utility/queue/__init__.py`.
-- write unit tests for your new implementation and for the updated `get_queue_client`.
+- update the `get_queue_client_ctx` with your new implementation, under `src/dos_utility/queue/__init__.py`.
+- write unit tests for your new implementation and for the updated `get_queue_client_ctx`.
 - update this doc so that the documentation is up to date.
 
 ### 2.4 Update the interface
@@ -141,3 +142,65 @@ If you want to provide a new implementation for a different provider you are wel
 ### 3.4 Update the interface
 
 It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
+
+## 4. Vector DB
+
+This is an adaptive layer, implemented as an interface, to manage a connection and its methods with a vector database. Actually supported dbs:
+
+- Qdrant
+- Redis
+
+### 4.1 Env setup
+
+First of all, since this is an intermediate layer, which can have multiple implementations, you need to configure your environment variables to select and configure the right provider. In your project create a `.env` file like this:
+
+```bash
+export VECTOR_DB_PROVIDER=<provider>
+```
+
+As for now, valid values are `qdrant`/`redis`.<br>
+Once you decided the provider, you have to set other env variables which are specific to that provider. Below you can find details about each provider.
+
+#### 4.1.1 Qdrant env
+
+Add the following env variables to the `.env` file you created [here](#21-env-setup).
+
+```bash
+export QDRANT_HOST=<host> # With format <host> (es: localhost)
+export QDRANT_PORT=<port>
+```
+
+#### 4.1.2 Redis env
+
+Add the following env variables to the `.env` file you created [here](#21-env-setup).
+
+```bash
+export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
+export REDIS_PORT=<port>
+```
+
+### 4.2 How to use it
+
+You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
+Here a code snipped for the import.
+
+```python
+# You choose whether to use get_vector_db or get_vector_db_ctx, based on your needs
+from dos_utility.vector_db import VectorDBInterface, ObjectData, SemanticSearchResult, get_vector_db_ctx, get_vector_db, IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
+```
+
+In order to have better understanding of each element, checkout [queue.md](./queue/queue.md) to see examples and [queue_interface.md](./queue/queue_interface.md) to find out what methods are available for the interface.
+
+### 4.3 Implement new provider
+
+If you want to provide a new implementation for a different provider you are welcome, just make sure to respect some standards:
+
+- create a class which implements the `VectorDBInterface` ([here](./vector_db/vector_db_interface.md) the specs), under `src/dos_utility/vector_db/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/vector_db` module.
+- update the `get_vector_db_ctx` with your new implementation, under `src/dos_utility/vector_db/__init__.py`.
+- write unit tests for your new implementation and for the updated `get_vector_db_ctx`.
+- update this doc so that the documentation is up to date.
+
+### 2.4 Update the interface
+
+It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
+
