@@ -6,12 +6,10 @@ from dos_utility.storage.aws.env import AWSStorageSettings, get_aws_storage_sett
 def test_get_aws_storage_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     get_aws_storage_settings.cache_clear()
 
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test-access-key")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test-secret-key")
+    monkeypatch.setenv("S3_ENDPOINT", "http://localhost:9000")
     monkeypatch.setenv("S3_REGION", "test-region")
 
     settings: AWSStorageSettings = get_aws_storage_settings()
 
-    assert settings.AWS_ACCESS_KEY_ID == "test-access-key"
-    assert settings.AWS_SECRET_ACCESS_KEY.get_secret_value() == "test-secret-key"
+    assert settings.S3_ENDPOINT == "http://localhost:9000"
     assert settings.S3_REGION == "test-region"

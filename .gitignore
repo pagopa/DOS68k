@@ -8,3 +8,4 @@ queue-data/
 vector-db/
 localstack/data/
 .venv
+qdrant_storage/

@@ -5,6 +5,7 @@ from .interface import VectorDBInterface, ObjectData, SemanticSearchResult
 from .env import get_vector_db_settings, VectorDBSettings, VectorDBProvider
 from .redis import get_redis_vector_db
 from .qdrant import get_qdrant_vector_db
+from .exceptions import IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
 
 __all__ = [
     "VectorDBInterface",
@@ -12,6 +13,10 @@ __all__ = [
     "SemanticSearchResult",
     "get_vector_db_ctx",
     "get_vector_db",
+    "IndexCreationException",
+    "IndexDeletionException",
+    "PutObjectsException",
+    "DeleteObjectsException",
 ]
 
 @asynccontextmanager

@@ -11,6 +11,7 @@ from pydantic import Field, PositiveFloat, PositiveInt
 
 from ...utils.redis.connection import get_redis_connection_pool
 from ..interface import VectorDBInterface, ObjectData, SemanticSearchResult
+from ..exceptions import IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
 
 
 class RedisVectorDB(VectorDBInterface):
@@ -27,54 +28,60 @@ class RedisVectorDB(VectorDBInterface):
         await self._redis_client.aclose()
 
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
-        index_info: IndexInfo = IndexInfo(name=index_name, storage_type=StorageType.JSON)
-        index_schema: IndexSchema = IndexSchema(
-            index=index_info,
-            fields=[
-                {"name": "filename", "type": "text"},
-                {"name": "chunk_id", "type": "numeric"},
-                {"name": "content", "type": "text"},
-                {
-                    "name": "embedding",
-                    "type": "vector",
-                    "attrs": {
-                        "dims": vector_dim,
-                        "algorithm": VectorIndexAlgorithm.HNSW,
-                        "datatype": VectorDataType.FLOAT32,
-                        "distance_metric": VectorDistanceMetric.COSINE,
+        try:
+            index_info: IndexInfo = IndexInfo(name=index_name, storage_type=StorageType.JSON)
+            index_schema: IndexSchema = IndexSchema(
+                index=index_info,
+                fields=[
+                    {"name": "filename", "type": "text"},
+                    {"name": "chunk_id", "type": "numeric"},
+                    {"name": "content", "type": "text"},
+                    {
+                        "name": "embedding",
+                        "type": "vector",
+                        "attrs": {
+                            "dims": vector_dim,
+                            "algorithm": VectorIndexAlgorithm.HNSW,
+                            "datatype": VectorDataType.FLOAT32,
+                            "distance_metric": VectorDistanceMetric.COSINE,
+                        },
                     },
-                },
-            ],
-        )
-        index: AsyncSearchIndex = AsyncSearchIndex(
-            schema=index_schema,
-            redis_client=self._redis_client,
-            validate_on_load=True,
-        )
+                ],
+            )
+            index: AsyncSearchIndex = AsyncSearchIndex(
+                schema=index_schema,
+                redis_client=self._redis_client,
+                validate_on_load=True,
+            )
 
-        await index.create(overwrite=False)
+            await index.create(overwrite=False)
 
-        logging.info(f"Index '{index_name}' created successfully.")
+            logging.info(f"Index '{index_name}' created successfully.")
+        except Exception as e:
+            raise IndexCreationException(msg=str(e))
 
     async def delete_index(self: Self, index_name: str) -> None:
-        index: AsyncSearchIndex = self.__get_index(index_name=index_name)
-
         try:
-            deleted: bool = await index.delete(drop=True) # Delete index and all associated data
+            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
 
-            logging.info(f"Index '{index.name}' deleted successfully.")
-        except RedisSearchError as e:
-            if "Error while deleting index: Unknown Index name" == str(e):
-                logging.warning(f"Index '{index.name}' does not exist. Nothing to delete.")
+            try:
+                deleted: bool = await index.delete(drop=True) # Delete index and all associated data
 
-                pass
-            else:
-                logging.error(f"Failed to delete index '{index.name}': {e}")
+                if deleted is False:
+                    raise Exception(f"Failed to delete index '{index_name}'")
 
-                raise
+                logging.info(f"Index '{index_name}' deleted successfully.")
+            except RedisSearchError as e:
+                if "Error while deleting index: Unknown Index name" == str(e):
+                    logging.warning(f"Index '{index_name}' does not exist. Nothing to delete.")
 
-        if deleted is False:
-            raise Exception(f"Failed to delete index '{index_name}'")
+                    pass
+                else:
+                    logging.error(f"Failed to delete index '{index_name}': {e}")
+
+                    raise
+        except Exception as e:
+            raise IndexDeletionException(msg=str(e))
 
     async def get_indexes(self: Self) -> List[str]:
         indexes: List[bytes] = await self._redis_client.execute_command("FT._LIST")
@@ -82,22 +89,28 @@ class RedisVectorDB(VectorDBInterface):
         return [index.decode("utf-8") for index in indexes]
 
     async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
-        index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+        try:
+            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
 
-        if custom_keys is not None:
-            keys: List[str] = await index.load(data=[obj.model_dump() for obj in data], keys=custom_keys)
-        else:
-            keys: List[str] = await index.load(data=[obj.model_dump() for obj in data])
+            if custom_keys is not None:
+                keys: List[str] = await index.load(data=[obj.model_dump() for obj in data], keys=custom_keys)
+            else:
+                keys: List[str] = await index.load(data=[obj.model_dump() for obj in data])
 
-        logging.info(f"Objects added to index '{index_name}' successfully.")
+            logging.info(f"Objects added to index '{index_name}' successfully.")
 
-        return keys
+            return keys
+        except Exception as e:
+            raise PutObjectsException(msg=str(e))
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
-        index: AsyncSearchIndex = self.__get_index(index_name=index_name)
-        _ = await index.drop_keys(keys=ids)
+        try:
+            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+            _ = await index.drop_keys(keys=ids)
 
-        logging.info(f"Objects deleted from index '{index_name}' successfully.")
+            logging.info(f"Objects deleted from index '{index_name}' successfully.")
+        except Exception as e:
+            raise DeleteObjectsException(msg=str(e))
 
     async def semantic_search(
             self: Self,

@@ -5,8 +5,6 @@ from pydantic import SecretStr, Field
 
 class AWSStorageSettings(BaseSettings):
     S3_ENDPOINT: Annotated[Optional[str], Field(default=None)]
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: SecretStr
     S3_REGION: str
 
 @lru_cache

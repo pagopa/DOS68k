@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from io import BytesIO
 from typing import Self, Dict, Optional
-from pydantic import SecretStr
 
 
 class AWSClientMock:
@@ -23,20 +23,22 @@ class AWSClientListBucketsExceptionMock(AWSClientMock):
     def list_buckets(self: Self, *args, **kwargs) -> Dict:
         raise Exception("Mocked list_buckets exception")
 
+@dataclass
 class AWSStorageSettingsMock:
-    S3_ENDPOINT: Optional[str] = None
-    AWS_ACCESS_KEY_ID: str = "admin"
-    AWS_SECRET_ACCESS_KEY: SecretStr = SecretStr("minioadmin")
-    S3_REGION: str = "us-west-1"
+    S3_ENDPOINT: Optional[str]
+    S3_REGION: str
 
 def get_aws_storage_settings_mock() -> AWSStorageSettingsMock:
-    return AWSStorageSettingsMock()
+    return AWSStorageSettingsMock(
+        S3_ENDPOINT=None,
+        S3_REGION="us-east-1"
+    )
 
 def get_aws_storage_settings_with_endpoint_mock() -> AWSStorageSettingsMock:
-    settings: AWSStorageSettingsMock = AWSStorageSettingsMock()
-    settings.S3_ENDPOINT = "http://localhost:9000"
-
-    return settings
+    return AWSStorageSettingsMock(
+        S3_ENDPOINT="http://localhost:4566",
+        S3_REGION="us-east-1"
+    )
 
 def aws_client_mock(*args, **kwargs) -> AWSClientMock:
     return AWSClientMock()

@@ -4,6 +4,7 @@ import boto3
 from botocore.response import StreamingBody
 from typing import Self, BinaryIO, Dict, List
 
+from ...utils.aws import AWSCredentialsSettings, get_aws_credentials_settings
 from ..interface import StorageInterface, ObjectInfo
 from .env import AWSStorageSettings, get_aws_storage_settings
 
@@ -11,6 +12,7 @@ from .env import AWSStorageSettings, get_aws_storage_settings
 class AWSS3(StorageInterface):
     def __init__(self: Self) -> None:
         self._settings: AWSStorageSettings = get_aws_storage_settings()
+        self._credentials_settings: AWSCredentialsSettings = get_aws_credentials_settings()
 
         if self._settings.S3_ENDPOINT is not None:
             self.client = boto3.client(

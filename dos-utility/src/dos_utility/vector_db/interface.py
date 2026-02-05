@@ -53,10 +53,16 @@ class VectorDBInterface(ABC):
             index_name (str): The name of the index to create.
             vector_dim (int): The dimension of the embedding vectors.
 
+        Raises:
+            IndexCreationException: If index creation fails.
+
         Examples:
             >>> vector_db = MyVectorDBImplementation()
             >>> async with vector_db as vdb:
-            >>>     await vdb.create_index(index_name="my_index", vector_dim=128)
+            >>>     try:
+            >>>         await vdb.create_index(index_name="my_index", vector_dim=128)
+            >>>     except IndexCreationException as e:
+            >>>         ... # handle the exception
         """
         ...
 
@@ -67,10 +73,16 @@ class VectorDBInterface(ABC):
         Args:
             index_name (str): The name of the index to delete.
 
+        Raises:
+            IndexDeletionException: If index deletion fails.
+
         Examples:
             >>> vector_db = MyVectorDBImplementation()
             >>> async with vector_db as vdb:
-            >>>     await vdb.delete_index(index_name="my_index")
+            >>>     try:
+            >>>         await vdb.delete_index(index_name="my_index")
+            >>>     except IndexDeletionException as e:
+            >>>         ... # handle the exception
         """
         ...
 
@@ -89,16 +101,20 @@ class VectorDBInterface(ABC):
         ...
 
     @abstractmethod
-    async def put_objects(self: Self, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
+    async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
         """Put objects into the vector database.
         If custom keys are provided and they match keys of already existing objects, those objects will be overwritten.
 
         Args:
             data (List[ObjectData]): A list of ObjectData to insert.
+            index_name (str): The name of the index to insert the objects into.
             custom_keys (Optional[List[str]]): An optional list of keys to use for the objects. If provided, the objects will be inserted with these keys instead of auto-generated ones.
 
         Returns:
             List[str]: A list of inserted object IDs.
+
+        Raises:
+            PutObjectsException: If putting objects fails.
 
         Examples:
             >>> vector_db = MyVectorDBImplementation()
@@ -112,22 +128,32 @@ class VectorDBInterface(ABC):
             >>>         ),
             >>>         # Add more ObjectData instances as needed
             >>>     ]
-            >>>     ids: List[str] = await vdb.put_objects(data=my_data)
+            >>>     try:
+            >>>         ids: List[str] = await vdb.put_objects(index_name="my_index", data=my_data)
+            >>>     except PutObjectsException as e:
+            >>>         ... # handle the exception
         """
         ...
 
     @abstractmethod
-    async def delete_objects(self: Self, ids: List[str]) -> None:
+    async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         """Delete objects from the vector database.
 
         Args:
+            index_name (str): The name of the index to delete the objects from.
             ids (List[str]): A list of object IDs to delete.
+
+        Raises:
+            DeleteObjectsException: If deleting objects fails.
 
         Examples:
             >>> vector_db = MyVectorDBImplementation()
             >>> async with vector_db as vdb:
             >>>     ids_to_delete: List[str] = ["id1", "id2", "id3"]
-            >>>     await vdb.delete_objects(ids=ids_to_delete)
+            >>>     try:
+            >>>         await vdb.delete_objects(index_name="my_index", ids=ids_to_delete)
+            >>>     except DeleteObjectsException as e:
+            >>>         ... # handle the exception
         """
         ...
 

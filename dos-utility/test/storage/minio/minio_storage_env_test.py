@@ -11,6 +11,7 @@ def test_get_minio_storage_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MINIO_ACCESS_KEY", "test-access-key")
     monkeypatch.setenv("MINIO_SECRET_KEY", "test-secret-key")
     monkeypatch.setenv("MINIO_REGION", "test-region")
+    monkeypatch.setenv("MINIO_SECURE", "false")
 
     settings: MinIOStorageSettings = get_minio_storage_settings()
 
@@ -19,3 +20,4 @@ def test_get_minio_storage_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.MINIO_ACCESS_KEY == "test-access-key"
     assert settings.MINIO_SECRET_KEY.get_secret_value() == "test-secret-key"
     assert settings.MINIO_REGION == "test-region"
+    assert settings.MINIO_SECURE is False
