@@ -97,7 +97,7 @@ Once you decided the provider, you have to set other env variables which are spe
 
 #### 3.1.1 AWS S3 env
 
-Add the following env variables to the `.env` file you created [here](#21-env-setup).
+Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
 export S3_ENDPOINT=<endpoint> # This is optional. If you are working with real AWS S3 then you can omit it, while if you are working with S3 local implementations (say LocalStack) then you have to specify the endpoint
@@ -108,7 +108,7 @@ export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 
 #### 3.1.2 MinIO env
 
-Add the following env variables to the `.env` file you created [here](#21-env-setup).
+Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
 export MINIO_ENDPOINT=<endpoint> # with format <host>, whitout protocol (es. storage - as per docker compose service name)
@@ -163,7 +163,7 @@ Once you decided the provider, you have to set other env variables which are spe
 
 #### 4.1.1 Qdrant env
 
-Add the following env variables to the `.env` file you created [here](#21-env-setup).
+Add the following env variables to the `.env` file you created [here](#41-env-setup).
 
 ```bash
 export QDRANT_HOST=<host> # With format <host> (es: localhost)
@@ -172,7 +172,7 @@ export QDRANT_PORT=<port>
 
 #### 4.1.2 Redis env
 
-Add the following env variables to the `.env` file you created [here](#21-env-setup).
+Add the following env variables to the `.env` file you created [here](#41-env-setup).
 
 ```bash
 export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
