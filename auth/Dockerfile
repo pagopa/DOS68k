@@ -7,7 +7,7 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy the application into the container
 COPY ./auth .
-COPY ./dos-utility ./dos-utility
+COPY ./dos-utility ../dos-utility
 
 # Install the application dependencies
 RUN uv sync --no-cache
