@@ -9,7 +9,7 @@
 # https://github.com/docker/awesome-compose
 services:
   api-gateway:
-    image: krakend
+    image: krakend@sha256:ee484307cc986af2f8bf59fc9a4f7ddeb4ea6507afafe9a16bcde012337bf40d
     ports:
       - 8080:8080
     volumes:
@@ -95,7 +95,7 @@ services:
       - 80:80
 
   db:
-    image: postgres:17
+    image: postgres:17@sha256:2006493727bd5277eece187319af1ef82b4cf82cf4fc1ed00da0775b646ac2a4
     restart: always
     shm_size: 128mb
     volumes:
@@ -111,7 +111,7 @@ services:
       retries: 10
 
   storage:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     volumes:
       - ./minio/:/data
     ports:
@@ -122,7 +122,7 @@ services:
       - ./.env.storage
 
   redis-vdb:
-    image: redis/redis-stack:7.4.0-v8
+    image: redis/redis-stack:7.4.0-v8@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
     ports:
       - 6379:6379
       - 8001:8001
@@ -138,7 +138,7 @@ services:
   #     - ./qdrant_storage:/qdrant_storage
 
   queue:
-    image: redis:8.4
+    image: redis:8.4@sha256:90050675141bfc1d833cd291442d63f137c011522f60b682ffdafe48cb682258
     ports:
       - 6380:6379
     volumes:
@@ -146,7 +146,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
 
   langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3.115
+    image: docker.io/langfuse/langfuse-worker:3.115@sha256:c9dc71559f880bc82d7087ca6515b66ddf904dbf209ea578ea5fa17cd64b6ab0
     ports:
       - 3030:3030
     env_file:
@@ -158,7 +158,7 @@ services:
       - clickhouse
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3.115
+    image: docker.io/langfuse/langfuse:3.115@sha256:48c51b585350a9de1e904df9410f5507afbfd94c079cf23efec1abf242c6f414
     ports:
       - 4001:3000
     env_file:
@@ -170,7 +170,7 @@ services:
         condition: service_healthy
 
   clickhouse:
-    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine
+    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine@sha256:68b9d9eb4cb949a03d1f90b76fd8d396a5999dd57ba1ee914ea36c77716ce937
     user: "101:101"
     environment:
       CLICKHOUSE_DB: default
@@ -184,10 +184,10 @@ services:
       - 9002:9000
 
   valkey:
-    image: valkey/valkey:8.1.4-alpine3.22
+    image: valkey/valkey:8.1.4-alpine3.22@sha256:e706d1213aaba6896c162bb6a3a9e1894e1a435f28f8f856d14fab2e10aa098b
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack@sha256:67798bda46a1c2e1337dae03e0c9d4f426109feea8dc65af4223213301628d00
     ports:
       - "4566:4566"
     env_file:
