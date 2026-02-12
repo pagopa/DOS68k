@@ -1,5 +1,5 @@
 # Stage 1: Build the React app
-FROM node:20-alpine AS build
+FROM node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8 AS build
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN npm run build
 
 
 # Stage 2: Nginx
-FROM nginx:1.25.4-alpine3.18
+FROM nginx:1.25.4-alpine3.18@sha256:31bad00311cb5eeb8a6648beadcf67277a175da89989f14727420a80e2e76742
 
 # Rimuove config di default
 RUN rm /etc/nginx/conf.d/default.conf
