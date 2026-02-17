@@ -1,0 +1,19 @@
+import pytest_asyncio
+
+from fastapi import FastAPI
+from httpx import AsyncClient, ASGITransport
+
+
+@pytest_asyncio.fixture
+async def app_test():
+    from src.main import app
+
+    try:
+        yield app
+    finally:
+        app.dependency_overrides.clear()
+
+@pytest_asyncio.fixture
+async def client_test(app_test: FastAPI):
+    async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app_test)) as client:
+        yield client
