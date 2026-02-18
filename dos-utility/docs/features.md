@@ -6,7 +6,8 @@ Here a list of functionalities this package provide:
 - [Auth interface](#2-auth-interface)
 - [Queue interface](#3-queue-interface)
 - [Storage interface](#4-storage-interface)
-- [VectorDB interface](#5-vector-db)
+- [VectorDB interface](#5-vector-db-interface)
+- [NoSQL DB interface](#6-nosql-db-interface)
 
 ## 1. SQL DB connection
 
@@ -230,7 +231,7 @@ If you want to provide a new implementation for a different provider you are wel
 
 It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
 
-## 5. Vector DB
+## 5. Vector DB interface
 
 This is an adaptive layer, implemented as an interface, to manage a connection and its methods with a vector database. Actually supported dbs:
 
@@ -291,3 +292,58 @@ If you want to provide a new implementation for a different provider you are wel
 
 It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
 
+## 6. NoSQL DB interface
+
+This is an adaptive layer, implemented as an interface, to manage a connection and CRUD operations with a NoSQL database. Actually supported databases:
+
+- AWS DynamoDB
+
+### 6.1 Env setup
+
+First of all, since this is an intermediate layer, which can have multiple implementations, you need to configure your environment variables to select and configure the right provider. In your project create a `.env` file like this:
+
+```bash
+export NOSQL_PROVIDER=<provider>
+```
+
+As for now, valid values are `dynamodb`.<br>
+Once you decided the provider, you have to set other env variables which are specific to that provider. Below you can find details about each provider.
+
+#### 6.1.1 DynamoDB env
+
+Add the following env variables to the `.env` file you created [here](#61-env-setup).
+
+```bash
+export AWS_ACCESS_KEY_ID=<access-key-id>
+export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export DYNAMODB_REGION=<region> # Optional, defaults to us-east-1
+export DYNAMODB_ENDPOINT_URL=<endpoint> # Optional. With format http(s)://host (e.g. http://localhost). Omit for real AWS DynamoDB
+export DYNAMODB_PORT=<port> # Optional. Port for the endpoint URL
+export DYNAMODB_TABLE_PREFIX=<prefix> # Optional. Prefix prepended to all table names
+```
+
+### 6.2 How to use it
+
+You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
+Here a code snippet for the import.
+
+```python
+# You choose whether to use get_nosql_client or get_nosql_client_ctx, based on your needs
+from dos_utility.database.nosql import NoSQLInterface, KeyCondition, ConditionOperator, QueryResult, ScanResult, get_nosql_client, get_nosql_client_ctx
+```
+
+In order to have better understanding of each element, checkout [nosql.md](./database/nosql/nosql.md) to see examples and [nosql_interface.md](./database/nosql/nosql_interface.md) to find out what methods are available for the interface.
+
+### 6.3 Implement new provider
+
+If you want to provide a new implementation for a different provider you are welcome, just make sure to respect some standards:
+
+- create a class which implements the `NoSQLInterface` ([here](./database/nosql/nosql_interface.md) the specs), under `src/dos_utility/database/nosql/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/database/nosql` module.
+- update the `get_nosql_client_ctx` with your new implementation, under `src/dos_utility/database/nosql/__init__.py`.
+- add the new provider to the `NoSQLProvider` enum in `src/dos_utility/database/nosql/env.py`.
+- write unit tests for your new implementation and for the updated `get_nosql_client_ctx`.
+- update this doc so that the documentation is up to date.
+
+### 6.4 Update the interface
+
+It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
