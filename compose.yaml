@@ -19,6 +19,7 @@ services:
       - chatbot-api
       - chatbot-evaluate-api
       - chatbot-index-api
+      - masking
 
   auth:
     build:
@@ -50,8 +51,8 @@ services:
     ports:
       - 8002:8000
     depends_on:
-      - queue
-      - db
+      - redis-queue
+      # - db
       - redis-vdb
       - localstack
 
@@ -62,7 +63,7 @@ services:
     env_file:
       - ./chatbot-evaluate/worker/.env
     depends_on:
-      - queue
+      - redis-queue
       - localstack
 
   chatbot-index-api:
@@ -74,8 +75,8 @@ services:
     ports:
       - 8003:8000
     depends_on:
-      - queue
-      - storage
+      - redis-queue
+      - minio
       - localstack
 
   chatbot-index-worker:
@@ -85,7 +86,7 @@ services:
     env_file:
       - ./chatbot-index/worker/.env
     depends_on:
-      - queue
+      - redis-queue
       - localstack
 
   masking:
@@ -107,7 +108,7 @@ services:
     restart: always
     shm_size: 128mb
     volumes:
-      - ./db/data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     env_file:
       - ./.env.database
     ports:
@@ -118,10 +119,10 @@ services:
       timeout: 5s
       retries: 10
 
-  storage:
+  minio:
     image: minio/minio:latest
     volumes:
-      - ./minio/:/data
+      - minio_data:/data
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -135,7 +136,7 @@ services:
       - 6379:6379
       - 8001:8001
     volumes:
-      - ./vector-db/data:/data
+      - redis_vdb_data:/data
 
   # qdrant:
   #   image: qdrant/qdrant:latest
@@ -145,12 +146,12 @@ services:
   #   volumes:
   #     - ./qdrant_storage:/qdrant_storage
 
-  queue:
+  redis-queue:
     image: redis:8.4
     ports:
       - 6380:6379
     volumes:
-      - ./queue-data/data:/data
+      - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
 
   langfuse-worker:
@@ -161,7 +162,7 @@ services:
       - ./.env.langfuse
     depends_on:
       - db
-      - storage
+      - minio
       - valkey
       - clickhouse
 
@@ -209,4 +210,12 @@ volumes:
   langfuse_clickhouse_data:
     driver: local
   langfuse_clickhouse_logs:
+    driver: local
+  minio_data:
+    driver: local
+  redis_data:
+    driver: local
+  redis_vdb_data:
+    driver: local
+  db_data:
     driver: local
