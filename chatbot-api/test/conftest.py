@@ -4,9 +4,8 @@ import asyncio
 
 from fastapi import FastAPI
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+
+from test.mocks import override_get_nosql_client
 
 
 @pytest.fixture(scope="function")
@@ -15,40 +14,14 @@ def event_loop():
     yield loop
     loop.close()
 
-@pytest_asyncio.fixture(scope="function")
-async def engine():
-    # In-memory SQLite
-    eng: AsyncEngine = create_async_engine(url="sqlite+aiosqlite:///:memory:", poolclass=StaticPool, future=True)
-
-    # # Create tables
-    # async with eng.begin() as conn:
-    #     await conn.run_sync(Base.metadata.create_all)
-
-    try:
-        yield eng
-    finally:
-        await eng.dispose()
-
-# AsyncSession for tests
 @pytest_asyncio.fixture
-async def session(engine: AsyncEngine):
-    session_local = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-
-    async with session_local() as s:
-        yield s
-        await s.rollback() # Per isolamento tra i test
-
-@pytest_asyncio.fixture
-async def app_test(session: AsyncSession):
+async def app_test():
     from src.main import app
-    from dos_utility.database.sql import get_async_session
+    from dos_utility.database.nosql import get_nosql_client
 
     # Override dependencies or setup test-specific configurations here if needed
 
-    async def override_get_db_session():
-        yield session
-
-    app.dependency_overrides[get_async_session] = override_get_db_session
+    app.dependency_overrides[get_nosql_client] = override_get_nosql_client
 
     try:
         yield app
