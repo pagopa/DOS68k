@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Self, Annotated, Dict, Any
+from typing import Self, Annotated
 from fastapi import Depends
 
 from .presidio import get_presidio, PresidioPII

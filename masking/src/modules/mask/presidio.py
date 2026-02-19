@@ -1,19 +1,13 @@
+import yaml
+
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Self, Optional
-
-import yaml
 from langdetect import detect_langs
 from langdetect.language import Language
 from pydantic import BaseModel, ConfigDict, ValidationError
 from presidio_anonymizer.operators import Operator, OperatorType
-
-from presidio_analyzer import (
-    AnalyzerEngine,
-    Pattern,
-    PatternRecognizer,
-    RecognizerResult,
-)
+from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerResult
 from presidio_analyzer.nlp_engine import NlpEngineProvider, NlpEngine
 from presidio_anonymizer import AnonymizerEngine, EngineResult
 from presidio_anonymizer.entities import OperatorConfig

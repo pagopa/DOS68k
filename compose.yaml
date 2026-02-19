@@ -87,7 +87,7 @@ services:
       - queue
       - localstack
 
-  chatbot-masking:
+  masking:
     build:
       context: .
       dockerfile: ./masking/Dockerfile
