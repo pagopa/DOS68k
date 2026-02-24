@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .env import get_settings
 from .routers import health
+from .modules.sessions import sessions_router
 
 app: FastAPI = FastAPI(
     title="Chatbot API",
@@ -19,4 +20,4 @@ app.add_middleware(
 )
 
 app.include_router(router=health.router)
-
+app.include_router(router=sessions_router)
