@@ -23,8 +23,6 @@ class QueryService:
                 json={"text": text},
             )
 
-            print(response)
-
             if response.status_code != status.HTTP_200_OK:
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Masking service error")
 

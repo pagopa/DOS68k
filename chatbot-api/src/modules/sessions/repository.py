@@ -1,7 +1,7 @@
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends
 from datetime import datetime
-from uuid import uuid4
+from uuid import uuid7
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator
 
 class SessionRepository():
@@ -32,7 +32,7 @@ class SessionRepository():
 
     async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> str:
         now: datetime = datetime.now()
-        session_id: str = str(uuid4())
+        session_id: str = str(uuid7())
 
         await self.nosql_client.put_item(
             table_name="sessions",

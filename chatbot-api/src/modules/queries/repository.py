@@ -1,7 +1,7 @@
 from typing import List, Self, Annotated, Dict, Any
-from uuid import uuid4
+from uuid import uuid7
 from fastapi import Depends
-from datetime import datetime, timedelta
+from datetime import datetime
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator
 
 from ..env import get_session_settings, SessionSettings
@@ -23,7 +23,7 @@ class QueryRepository():
         now: datetime = datetime.now()
 
         item: Dict[str, Any] = {
-            "id": str(uuid4()),
+            "id": str(uuid7()),
             "sessionId": session_id,
             "badAnswer": False,
             "createdAt": now.isoformat(),
