@@ -1,8 +1,9 @@
 from typing import Self, List, Annotated, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 
-from ..queries import get_query_repository, QueryRepository
+from ..queries.repository import get_query_repository, QueryRepository
+from ..env import get_settings, Settings
 from .repository import SessionRepository, get_session_repository
 
 
@@ -10,6 +11,7 @@ class SessionService:
     def __init__(self: Self, session_repository: SessionRepository, query_repository: QueryRepository):
         self.session_repository: SessionRepository = session_repository
         self.query_repository: QueryRepository = query_repository
+        self.settings: Settings = get_settings()
 
     async def get_sessions(self: Self, user_id: str) -> List[Dict[str, Any]]:
         sessions: List[Dict[str, Any]] = await self.session_repository.get_sessions(user_id=user_id)
@@ -17,15 +19,25 @@ class SessionService:
         return [
             {
                 "id": session["id"],
+                "user_id": session["userId"],
                 "title": session["title"],
-                "createdAt": session["createdAt"],
-                "expiresAt": datetime.fromtimestamp(float(session["expiresAt"])).isoformat(),
+                "created_at": session["createdAt"],
+                "expires_at": None if session["expiresAt"] is None else datetime.fromtimestamp(float(session["expiresAt"])).isoformat(),
             }
             for session in sessions
         ]
 
-    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> None:
-        await self.session_repository.create_session(user_id=user_id, session_data=session_data)
+    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any], is_temporary: bool) -> str:
+        now: datetime = datetime.now()
+        expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.session_expiration_days)).timestamp())
+
+        return await self.session_repository.create_session(
+            user_id=user_id,
+            session_data={
+                "expiresAt": expiration_dt,
+                **session_data,
+            },
+        )
 
     async def delete_session(self: Self, session_id: str, user_id: str) -> None:
         # Check whether the session exists and belongs to the user
@@ -39,7 +51,7 @@ class SessionService:
 
         # Delete all queries related to the session
         for query in queries:
-            await self.query_repository.delete_query(query_id=query["id"])
+            await self.query_repository.delete_query(query_id=query["id"], session_id=session_id)
 
         await self.session_repository.delete_session(session_id=session_id, user_id=user_id)
 

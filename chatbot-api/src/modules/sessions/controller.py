@@ -12,6 +12,10 @@ router: APIRouter = APIRouter(prefix="/sessions", tags=["Sessions"])
 @router.get(
     path="/",
     response_model=List[SessionResponseDTO],
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Sessions retrieved successfully"},
+    },
     summary="Get all sessions for the authenticated user",
 )
 async def get_sessions(
@@ -22,7 +26,7 @@ async def get_sessions(
 
 @router.post(
     path="/",
-    # response_model=SessionResponseDTO,
+    response_model=UUID,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Session created successfully"},
@@ -32,9 +36,13 @@ async def get_sessions(
 async def create_session(
         session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
         user_id: Annotated[str, Depends(dependency=get_user_id)],
-        create_session_dto: CreateSessionDTO
-    ):
-    await session_service.create_session(user_id=user_id, session_data=create_session_dto.model_dump())
+        create_session_dto: CreateSessionDTO,
+    ) -> str:
+    return await session_service.create_session(
+        user_id=user_id,
+        session_data={"title": create_session_dto.title},
+        is_temporary=create_session_dto.is_temporary,
+    )
 
 @router.delete(
     path="/{session_id}",
