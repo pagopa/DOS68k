@@ -7,7 +7,7 @@ from .dto import MaskRequestBody
 router: APIRouter = APIRouter(prefix="/mask", tags=["Mask"])
 
 @router.post(
-    path="/",
+    path="",
     response_model=str,
     summary="Mask PII",
 )

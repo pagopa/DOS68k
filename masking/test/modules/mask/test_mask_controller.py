@@ -16,7 +16,7 @@ async def test_mask_endpoint_success(app_test: FastAPI, client_test: AsyncClient
 
     app_test.dependency_overrides[get_mask_service] = lambda: mock_service
 
-    response: Response = await client_test.post("/mask/", json={"text": "my secret"})
+    response: Response = await client_test.post("/mask", json={"text": "my secret"})
     assert response.status_code == 200
     assert response.json() == "masked output"
 
@@ -27,7 +27,7 @@ async def test_mask_endpoint_missing_body(app_test: FastAPI, client_test: AsyncC
     mock_service: MaskServiceMock = MaskServiceMock()
     app_test.dependency_overrides[get_mask_service] = lambda: mock_service
 
-    response: Response = await client_test.post("/mask/")
+    response: Response = await client_test.post("/mask")
     assert response.status_code == 422
 
 
@@ -39,6 +39,6 @@ async def test_mask_endpoint_empty_text(app_test: FastAPI, client_test: AsyncCli
 
     app_test.dependency_overrides[get_mask_service] = lambda: mock_service
 
-    response: Response = await client_test.post("/mask/", json={"text": ""})
+    response: Response = await client_test.post("/mask", json={"text": ""})
     assert response.status_code == 200
     assert response.json() == ""
