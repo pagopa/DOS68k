@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 
 from ..queries.repository import get_query_repository, QueryRepository
-from ..env import get_settings, Settings
+from ..env import get_session_settings, SessionSettings
 from .repository import SessionRepository, get_session_repository
 
 
@@ -11,7 +11,7 @@ class SessionService:
     def __init__(self: Self, session_repository: SessionRepository, query_repository: QueryRepository):
         self.session_repository: SessionRepository = session_repository
         self.query_repository: QueryRepository = query_repository
-        self.settings: Settings = get_settings()
+        self.settings: SessionSettings = get_session_settings()
 
     async def get_sessions(self: Self, user_id: str) -> List[Dict[str, Any]]:
         sessions: List[Dict[str, Any]] = await self.session_repository.get_sessions(user_id=user_id)

@@ -6,14 +6,14 @@ from datetime import datetime
 from httpx import AsyncClient, Response, Timeout
 
 from ..sessions.repository import get_session_repository, SessionRepository
-from ..env import get_masking_settings, get_settings, Settings, MaskingSettings
+from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
 from .repository import QueryRepository, get_query_repository
 
 class QueryService:
     def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository):
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
-        self.settings: Settings = get_settings()
+        self.settings: SessionSettings = get_session_settings()
         self.masking_settings: MaskingSettings = get_masking_settings()
 
     async def __mask_pii(self: Self, text: str) -> str:

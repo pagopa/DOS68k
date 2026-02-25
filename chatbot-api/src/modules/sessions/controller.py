@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from .service import SessionService, get_session_service
 from .dto import CreateSessionDTO, SessionResponseDTO
-from ..utils import get_user_id
+from ..auth import get_user_id
 
 
 router: APIRouter = APIRouter(prefix="/sessions", tags=["Sessions"])

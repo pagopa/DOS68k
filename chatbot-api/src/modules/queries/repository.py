@@ -4,12 +4,12 @@ from fastapi import Depends
 from datetime import datetime, timedelta
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator
 
-from ..env import get_settings, Settings
+from ..env import get_session_settings, SessionSettings
 
 class QueryRepository():
     def __init__(self: Self, nosql_client: NoSQLInterface):
         self.nosql_client: NoSQLInterface = nosql_client
-        self.env: Settings = get_settings()
+        self.env: SessionSettings = get_session_settings()
 
     async def get_queries(self: Self, session_id: str) -> List[Dict[str, Any]]:
         query_result: QueryResult = await self.nosql_client.query(

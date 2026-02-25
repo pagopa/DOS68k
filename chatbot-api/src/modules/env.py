@@ -3,7 +3,7 @@ from typing import Optional, Annotated
 from pydantic import PositiveInt, Field
 from pydantic_settings import BaseSettings
 
-class Settings(BaseSettings):
+class SessionSettings(BaseSettings):
     session_expiration_days: PositiveInt
 
 class MaskingSettings(BaseSettings):
@@ -11,8 +11,8 @@ class MaskingSettings(BaseSettings):
     masking_service_url: Annotated[Optional[str], Field(default=None)]
 
 @lru_cache
-def get_settings() -> Settings:
-    return Settings()
+def get_session_settings() -> SessionSettings:
+    return SessionSettings()
 
 @lru_cache
 def get_masking_settings() -> MaskingSettings:
