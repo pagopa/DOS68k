@@ -4,7 +4,7 @@
 
 The chatbot-api service is responsible for generating answers to user questions through an LLM. Each user can create new sessions (chats) and start chatting with the chatbot. Each session can be either temporary or not. If temporary, all queries (messages) within that session will have an expiration date that matches the one of the session.
 
-> !!! IMPORTANT !!! <br>
+> ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️ <br>
 > If you choose to use DynamoDB as database, temporary session will be automatically deleted after the expiration date. If you choose any other db that doesn't have this feature, you have to manually set a job to delete expired chats. See the [env](#env-config) section for more details.
 
 ## Prerequisites
