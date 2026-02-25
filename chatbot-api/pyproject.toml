@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "dos-utility",
     "fastapi[standard]>=0.128.0",
+    "nh3>=0.3.3",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
 ]
