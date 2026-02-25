@@ -14,6 +14,20 @@ class SessionService:
         self.query_repository: QueryRepository = query_repository
         self.settings: SessionSettings = get_session_settings()
 
+    async def get_session(self: Self, session_id: str, user_id: str) -> Dict[str, Any]:
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+
+        if session is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+        return {
+            "id": session["id"],
+            "user_id": session["userId"],
+            "title": session["title"],
+            "created_at": session["createdAt"],
+            "expires_at": format_expiration_dt(session["expiresAt"]),
+        }
+
     async def get_sessions(self: Self, user_id: str) -> List[Dict[str, Any]]:
         sessions: List[Dict[str, Any]] = await self.session_repository.get_sessions(user_id=user_id)
 

@@ -10,7 +10,7 @@ from ..auth import get_user_id
 router: APIRouter = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 @router.get(
-    path="/",
+    path="/all",
     response_model=List[SessionResponseDTO],
     status_code=status.HTTP_200_OK,
     responses={
@@ -24,8 +24,25 @@ async def get_sessions(
     ) -> List[Dict[str, Any]]:
     return await session_service.get_sessions(user_id=user_id)
 
+@router.get(
+    path="/{session_id}",
+    response_model=SessionResponseDTO,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Session retrieved successfully"},
+        status.HTTP_404_NOT_FOUND: {"description": "Session not found"},
+    },
+    summary="Get a session by its ID",
+)
+async def get_session(
+        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+        user_id: Annotated[str, Depends(dependency=get_user_id)],
+        session_id: UUID,
+    ) -> Dict[str, Any]:
+    return await session_service.get_session(session_id=str(session_id), user_id=user_id)
+
 @router.post(
-    path="/",
+    path="",
     response_model=SessionResponseDTO,
     status_code=status.HTTP_201_CREATED,
     responses={
