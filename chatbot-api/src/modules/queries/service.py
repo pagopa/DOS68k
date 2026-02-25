@@ -7,6 +7,7 @@ from httpx import AsyncClient, Response, Timeout
 
 from ..sessions.repository import get_session_repository, SessionRepository
 from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
+from ..utils import format_expiration_dt
 from .repository import QueryRepository, get_query_repository
 
 class QueryService:
@@ -48,12 +49,12 @@ class QueryService:
                 "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
                 "created_at": query["createdAt"],
-                "expires_at": None if query["expiresAt"] is None else datetime.fromtimestamp(float(query["expiresAt"])).isoformat(),
+                "expires_at": format_expiration_dt(query["expiresAt"]),
             }
             for query in queries
         ]
 
-    async def create_query(self: Self, session_id: str, user_id: str, question: str) -> None:
+    async def create_query(self: Self, session_id: str, user_id: str, question: str) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
 
@@ -79,7 +80,7 @@ class QueryService:
             question_masked = await self.__mask_pii(text=question_cleaned)
             answer_masked = await self.__mask_pii(text=answer)
 
-        await self.query_repository.create_query(
+        item: Dict[str, Any] = await self.query_repository.create_query(
             session_id=session_id,
             query_data={
                 "question": question_masked,
@@ -88,6 +89,17 @@ class QueryService:
                 "topic": topic,
             },
         )
+
+        return {
+            "id": item["id"],
+            "session_id": item["sessionId"],
+            "question": item["question"],
+            "answer": item["answer"],
+            "bad_answer": item["badAnswer"],
+            "topic": item["topic"],
+            "created_at": item["createdAt"],
+            "expires_at": format_expiration_dt(item["expiresAt"]),
+        }
 
 def get_query_service(
         query_repository: Annotated[QueryRepository, Depends(dependency=get_query_repository)],

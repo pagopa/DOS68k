@@ -26,7 +26,7 @@ async def get_queries(
 
 @router.post(
     path="/{session_id}",
-    # response_model=QueryResponseDTO,
+    response_model=QueryResponseDTO,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Query created successfully"},
@@ -40,5 +40,5 @@ async def create_query(
         user_id: Annotated[str, Depends(dependency=get_user_id)],
         query_data: CreateQueryDTO,
         session_id: str,
-    ):
-    await query_service.create_query(session_id=session_id, user_id=user_id, question=query_data.question)
+    ) -> Dict[str, Any]:
+    return await query_service.create_query(session_id=session_id, user_id=user_id, question=query_data.question)

@@ -26,7 +26,7 @@ async def get_sessions(
 
 @router.post(
     path="/",
-    response_model=UUID,
+    response_model=SessionResponseDTO,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Session created successfully"},

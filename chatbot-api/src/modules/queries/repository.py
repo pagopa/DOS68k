@@ -19,21 +19,18 @@ class QueryRepository():
 
         return query_result.items
 
-    async def create_query(self: Self, session_id: str, query_data: Dict[str, Any]) -> None:
-        now: datetime = datetime.now()
-
+    async def create_query(self: Self, session_id: str, query_data: Dict[str, Any]) -> Dict[str, Any]:
         item: Dict[str, Any] = {
             "id": str(uuid7()),
             "sessionId": session_id,
             "badAnswer": False,
-            "createdAt": now.isoformat(),
+            "createdAt": datetime.now().isoformat(),
             **query_data,
         }
 
-        await self.nosql_client.put_item(
-            table_name="queries",
-            item=item,
-        )
+        await self.nosql_client.put_item(table_name="queries", item=item)
+
+        return item
 
     async def delete_query(self: Self, query_id: str, session_id: str) -> None:
         await self.nosql_client.delete_item(

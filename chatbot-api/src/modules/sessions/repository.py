@@ -30,21 +30,19 @@ class SessionRepository():
 
         return query_result.items
 
-    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> str:
+    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> Dict[str, Any]:
         now: datetime = datetime.now()
         session_id: str = str(uuid7())
+        item: Dict[str, Any] = {
+            "id": session_id,
+            "userId": user_id,
+            "createdAt": now.isoformat(),
+            **session_data,
+        }
 
-        await self.nosql_client.put_item(
-            table_name="sessions",
-            item={
-                "id": session_id,
-                "userId": user_id,
-                "createdAt": now.isoformat(),
-                **session_data,
-            },
-        )
+        await self.nosql_client.put_item(table_name="sessions", item=item)
 
-        return session_id
+        return item
 
     async def delete_session(self: Self, session_id: str, user_id: str) -> None:
         await self.nosql_client.delete_item(

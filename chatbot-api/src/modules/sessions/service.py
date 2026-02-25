@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 
 from ..queries.repository import get_query_repository, QueryRepository
 from ..env import get_session_settings, SessionSettings
+from ..utils import format_expiration_dt
 from .repository import SessionRepository, get_session_repository
 
 
@@ -22,22 +23,30 @@ class SessionService:
                 "user_id": session["userId"],
                 "title": session["title"],
                 "created_at": session["createdAt"],
-                "expires_at": None if session["expiresAt"] is None else datetime.fromtimestamp(float(session["expiresAt"])).isoformat(),
+                "expires_at": format_expiration_dt(session["expiresAt"]),
             }
             for session in sessions
         ]
 
-    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any], is_temporary: bool) -> str:
+    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any], is_temporary: bool) -> Dict[str, Any]:
         now: datetime = datetime.now()
         expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.session_expiration_days)).timestamp())
 
-        return await self.session_repository.create_session(
+        item: Dict[str, Any] = await self.session_repository.create_session(
             user_id=user_id,
             session_data={
                 "expiresAt": expiration_dt,
                 **session_data,
             },
         )
+
+        return {
+            "id": item["id"],
+            "user_id": item["userId"],
+            "title": item["title"],
+            "created_at": item["createdAt"],
+            "expires_at": format_expiration_dt(item["expiresAt"]),
+        }
 
     async def delete_session(self: Self, session_id: str, user_id: str) -> None:
         # Check whether the session exists and belongs to the user
