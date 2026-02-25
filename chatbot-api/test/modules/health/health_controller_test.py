@@ -2,7 +2,7 @@ import pytest
 
 from httpx import AsyncClient
 
-from src.routers.health import router as health_router
+from src.modules.health.controller import router as health_router
 
 
 @pytest.mark.asyncio

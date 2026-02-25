@@ -54,7 +54,7 @@ async def create_session(
         session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
         user_id: Annotated[str, Depends(dependency=get_user_id)],
         create_session_dto: CreateSessionDTO,
-    ) -> str:
+    ) -> Dict[str, Any]:
     return await session_service.create_session(
         user_id=user_id,
         session_data={"title": create_session_dto.title},

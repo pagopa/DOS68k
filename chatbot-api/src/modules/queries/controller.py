@@ -31,7 +31,6 @@ async def get_queries(
     responses={
         status.HTTP_201_CREATED: {"description": "Query created successfully"},
         status.HTTP_404_NOT_FOUND: {"description": "Session not found"},
-        status.HTTP_410_GONE: {"description": "Session expired"},
     },
     summary="Create a new query for a session",
 )
