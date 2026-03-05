@@ -8,6 +8,7 @@ Here a list of functionalities this package provide:
 - [Storage interface](#4-storage-interface)
 - [VectorDB interface](#5-vector-db-interface)
 - [NoSQL DB interface](#6-nosql-db-interface)
+- [Chatbot API client](#7-chatbot-api-client)
 
 ## 1. SQL DB connection
 

@@ -46,3 +46,8 @@ dev = [
     "pytest-asyncio>=0.23.6",
     "pip-licenses>=5.5.1",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+pythonpath = [".", "../chatbot-api"]

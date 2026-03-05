@@ -16,8 +16,12 @@ In order to work locally with this service you need the following softwares:
 
 ## Test
 
-The following script to run unit tests. Always make sure your coverage % is as close to 100% as possible.
+To run unit tests:
 
+```bash
+pytest test/modules -v
+```
+or with coverage:
 ```bash
 uv run pytest --cov=src --cov-report=term-missing
 ```
@@ -47,4 +51,81 @@ cd .. # Make sure to be at the repo root level
 docker compose up -d --build chatbot-api
 ```
 
-Now you can access the service OpenAPI specification at `http://localhost:8000`.
+The OpenAPI docs are available at `http://localhost:8000/docs`.
+
+---
+
+## API Documentation
+
+All endpoints require the header:
+
+```
+X-User-Id: <uuid>
+```
+
+### Health
+
+- `GET /health` — Service status
+	- Response: `{ "status": "ok", "service": "Chatbot API" }`
+- `GET /health/db` — Database connectivity
+	- Response: `{ "status": "ok", "service": "Chatbot API", "database": "connected" }`
+
+### Sessions
+
+- `GET /sessions/all` — List all sessions for the user
+	- Response: `[{ ...session fields... }]`
+- `GET /sessions/{session_id}` — Get a session by ID
+	- Response: `{ ...session fields... }`
+- `POST /sessions` — Create a new session
+	- Request body:
+		```json
+		{
+			"title": "My chat",
+			"isTemporary": false
+		}
+		```
+	- Response: `{ ...session fields... }`
+- `DELETE /sessions/{session_id}` — Delete a session
+	- Response: `204 No Content`
+
+**Session fields:**
+```json
+{
+	"id": "<uuid>",
+	"userId": "<uuid>",
+	"title": "string",
+	"createdAt": "YYYY-MM-DDTHH:MM:SS",
+	"expiresAt": "YYYY-MM-DDTHH:MM:SS" | null
+}
+```
+
+### Queries
+
+- `GET /queries/{session_id}` — List all queries for a session
+	- Response: `[{ ...query fields... }]`
+- `POST /queries/{session_id}` — Create a new query (send a question)
+	- Request body:
+		```json
+		{
+			"question": "What is the capital of Italy?"
+		}
+		```
+	- Response: `{ ...query fields... }`
+
+**Query fields:**
+```json
+{
+	"id": "<uuid>",
+	"sessionId": "<uuid>",
+	"question": "string",
+	"answer": "string",
+	"badAnswer": false,
+	"topic": ["string"],
+	"createdAt": "YYYY-MM-DDTHH:MM:SS",
+	"expiresAt": "YYYY-MM-DDTHH:MM:SS" | null
+}
+```
+
+---
+
+For more details, see the OpenAPI docs at `/docs` when the service is running.

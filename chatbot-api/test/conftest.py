@@ -1,3 +1,10 @@
+import uuid
+try:
+    uuid.uuid7  # Python 3.14+
+except AttributeError:
+    from uuid6 import uuid7 as _uuid7
+    uuid.uuid7 = _uuid7
+
 import pytest
 import pytest_asyncio
 import asyncio
