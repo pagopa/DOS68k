@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.13-slim
+ARG PYTHON_VERSION=3.14-slim
 FROM python:${PYTHON_VERSION} AS builder
 
 WORKDIR /app
@@ -8,6 +8,9 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Copy the application into the container
 COPY ./chatbot-api .
 COPY ./dos-utility ../dos-utility
+
+# Force uv to use the system Python so the venv symlinks remain valid in the final stage
+ENV UV_PYTHON_PREFERENCE=only-system
 
 # Install the application dependencies
 RUN uv sync --no-cache
@@ -26,7 +29,7 @@ RUN useradd -m fastapi \
 USER fastapi
 
 # Copy the application into the container
-COPY --from=builder /app/.venv .venv
+COPY --from=builder --chown=fastapi:fastapi /app/.venv .venv
 COPY ./chatbot-api/src ./src
 COPY ./chatbot-api/README.md .
 

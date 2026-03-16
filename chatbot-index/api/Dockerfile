@@ -27,7 +27,7 @@ RUN useradd -m fastapi \
 USER fastapi
 
 # Copy the application into the container
-COPY --from=builder /app/chatbot-index/.venv .venv
+COPY --from=builder --chown=fastapi:fastapi /app/chatbot-index/.venv .venv
 COPY ./chatbot-index/api/src ./src
 COPY ./chatbot-index/api/README.md .
 

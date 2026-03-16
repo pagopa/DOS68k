@@ -26,7 +26,7 @@ RUN useradd -m fastapi \
 USER fastapi
 
 # Copy the application into the container
-COPY --from=builder /app/.venv .venv
+COPY --from=builder --chown=fastapi:fastapi /app/.venv .venv
 COPY ./auth/src ./src
 COPY ./auth/README.md .
 
