@@ -1,6 +1,7 @@
 # Build project
 
 The following guide is intended to be used to setup up the whole project, or a single service of it.<br>
+For an overview of all available services, see the [project README](../README.md#services).
 
 ## 1. Env files
 
