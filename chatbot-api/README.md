@@ -64,15 +64,20 @@ The OpenAPI docs are available at `http://localhost:8000/docs`.
 
 ## Post-start activities
 
-This service requires a NoSQL database with pre-existing tables to operate. If you are running DynamoDB via LocalStack (the default in the provided `.env.template`), the tables are not created automatically on first run. You must create them before the service can store or retrieve data.
+This service requires two DynamoDB tables to operate: `sessions` and `queries`.
+
+When running via Docker Compose (the default setup), LocalStack is started as a dependency and the tables are created automatically by an init script — no manual action is needed.
+
+If you are using an external DynamoDB (real AWS or another local emulator), you must create the tables yourself before the service can store or retrieve data:
+
+- `sessions` — partition key: `userId` (S), sort key: `id` (S), TTL attribute: `expiresAt`
+- `queries` — partition key: `sessionId` (S), sort key: `id` (S), TTL attribute: `expiresAt`
 
 To verify the database connection is healthy after starting, call:
 
 ```
 GET http://localhost:8000/health/db
 ```
-
-If it returns `"database": "connected"`, the tables exist and the service is ready. If it fails, check your DynamoDB setup and ensure the required tables have been created.
 
 ---
 
