@@ -13,6 +13,7 @@ DOS68k is a modular, microservice-based platform that provides a RAG-powered cha
 | Chatbot Index Worker | [chatbot-index/worker](./chatbot-index/worker/README.md) | Processes indexing jobs consumed from the queue, interacts with external storage |
 | Auth | [auth](./auth/README.md) | Authentication and authorization service. Supports AWS Cognito, Keycloak, and local development mode |
 | Masking | [masking](./masking/README.md) | PII detection and masking service powered by Microsoft Presidio and spaCy |
+| DOS Utility | [dos-utility](./dos-utility/README.md) | Shared internal package providing common abstractions (auth, queue, storage, NoSQL, vector DB). Not a standalone service — used as a dependency by all other services |
 
 ## Documentation
 

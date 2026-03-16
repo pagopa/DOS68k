@@ -62,6 +62,18 @@ docker compose up -d --build chatbot-api
 
 The OpenAPI docs are available at `http://localhost:8000/docs`.
 
+## Post-start activities
+
+This service requires a NoSQL database with pre-existing tables to operate. If you are running DynamoDB via LocalStack (the default in the provided `.env.template`), the tables are not created automatically on first run. You must create them before the service can store or retrieve data.
+
+To verify the database connection is healthy after starting, call:
+
+```
+GET http://localhost:8000/health/db
+```
+
+If it returns `"database": "connected"`, the tables exist and the service is ready. If it fails, check your DynamoDB setup and ensure the required tables have been created.
+
 ---
 
 ## API Documentation

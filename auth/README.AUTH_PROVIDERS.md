@@ -35,16 +35,40 @@ AUTH_PROVIDER=aws
 AWS_REGION=us-east-1
 AWS_COGNITO_REGION=us-east-1
 AUTH_COGNITO_USERPOOL_ID=us-east-1_XXXXXXXXX
+AWS_ACCESS_KEY_ID=<access-key-id>
+AWS_SECRET_ACCESS_KEY=<secret-access-key>
 
 # Optional: for LocalStack
 AWS_ENDPOINT_URL=http://localstack:4566
+
+# Optional: controls JWKS endpoint resolution (default: dev)
+ENVIRONMENT=dev
 ```
+
+| Variable | Description | Required |
+|---|---|---|
+| `AWS_REGION` | AWS region of your Cognito user pool | yes |
+| `AWS_COGNITO_REGION` | Region used to build the Cognito JWKS URL | yes |
+| `AUTH_COGNITO_USERPOOL_ID` | Your Cognito user pool ID | yes |
+| `AWS_ACCESS_KEY_ID` | AWS credentials | yes |
+| `AWS_SECRET_ACCESS_KEY` | AWS credentials | yes |
+| `AWS_ENDPOINT_URL` | Custom endpoint for local AWS emulation (e.g. LocalStack). Omit for real AWS | no |
+| `ENVIRONMENT` | Set to `test` when using a local AWS emulator (LocalStack, moto). In test mode, JWKS are fetched from `AWS_ENDPOINT_URL` instead of the real AWS Cognito endpoint. Any other value (e.g. `dev`, `production`) uses the real AWS endpoint | no, default `dev` |
 
 ### Local (Development Only)
 
 ```env
 AUTH_PROVIDER=local
+JWT_SECRET_KEY=dev-secret-key-not-for-production
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
+
+| Variable | Description | Default |
+|---|---|---|
+| `JWT_SECRET_KEY` | Secret key used to sign local mock tokens | required |
+| `JWT_ALGORITHM` | Signing algorithm | `HS256` |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Token expiry duration in minutes | `30` |
 
 ⚠️ **WARNING**: The `local` provider bypasses JWT verification entirely and always returns mock claims. **Use only for local development.**
 

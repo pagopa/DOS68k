@@ -2,15 +2,12 @@
 
 Here a list of functionalities this package provide:
 
-- [SQL DB connection](#1-sql-db-connection)
 - [Auth interface](#2-auth-interface)
 - [Queue interface](#3-queue-interface)
 - [Storage interface](#4-storage-interface)
 - [VectorDB interface](#5-vector-db-interface)
 - [NoSQL DB interface](#6-nosql-db-interface)
 - [Chatbot API client](#7-chatbot-api-client)
-
-## 1. SQL DB connection
 
 ## 2. Auth interface
 
@@ -278,7 +275,7 @@ Here a code snipped for the import.
 from dos_utility.vector_db import VectorDBInterface, ObjectData, SemanticSearchResult, get_vector_db_ctx, get_vector_db, IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
 ```
 
-In order to have better understanding of each element, checkout [queue.md](./queue/queue.md) to see examples and [queue_interface.md](./queue/queue_interface.md) to find out what methods are available for the interface.
+In order to have better understanding of each element, checkout [vector_db.md](./vector_db/vector_db.md) to see examples and [vector_db_interface.md](./vector_db/vector_db_interface.md) to find out what methods are available for the interface.
 
 ### 5.3 Implement new provider
 
@@ -348,3 +345,7 @@ If you want to provide a new implementation for a different provider you are wel
 ### 6.4 Update the interface
 
 It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
+
+## 7. Chatbot API client
+
+> 📝 Documentation for this feature is not yet written.

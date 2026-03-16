@@ -30,7 +30,7 @@ task test COV_THREASHOLD=90
 
 ## Env config
 
-This service uses a queue to send messages to a worker. In order to use it correctly you have to set an `.env` file with the correct queue configuration. Follow instructions [here](../../dos-utility/docs/features.md#2-queue-interface).
+This service uses a queue to send messages to a worker. In order to use it correctly you have to set an `.env` file with the correct queue configuration. Follow instructions [here](../../dos-utility/docs/features.md#3-queue-interface).
 
 ## Start service
 
