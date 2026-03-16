@@ -60,7 +60,7 @@ cd .. # Make sure to be at the repo root level
 docker compose up -d --build chatbot-api
 ```
 
-The OpenAPI docs are available at `http://localhost:8000/docs`.
+The OpenAPI docs are available at `http://localhost:8000`.
 
 ## Post-start activities
 
@@ -154,4 +154,4 @@ X-User-Id: <uuid>
 
 ---
 
-For more details, see the OpenAPI docs at `/docs` when the service is running.
+For more details, see the OpenAPI docs at `/` when the service is running.
