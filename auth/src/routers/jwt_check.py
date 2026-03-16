@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from typing import Optional
 from dos_utility.auth import get_auth_provider, AuthProvider, get_auth_settings
-from ..modules.logger import get_logger
+from dos_utility.utils.logger import get_logger
 
 LOGGER = get_logger(__name__)
 

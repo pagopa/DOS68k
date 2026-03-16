@@ -9,11 +9,13 @@ from ..sessions.repository import get_session_repository, SessionRepository
 from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
 from ..utils import format_expiration_dt
 from .repository import QueryRepository, get_query_repository
+from ..chatbot import Chatbot, get_chatbot
 
 class QueryService:
-    def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository):
+    def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository, chatbot: Chatbot):
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
+        self.chatbot: Chatbot = chatbot
         self.settings: SessionSettings = get_session_settings()
         self.masking_settings: MaskingSettings = get_masking_settings()
 
@@ -67,10 +69,12 @@ class QueryService:
         # Get session history
         session_history: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
 
-        #! Simulate LLM call and response generation
-        # In a real implementation, you would call your LLM here and generate an answer based on the question and session history
-        answer: str = "Simulated answer"
-        topic: List[str] = ["simulated", "topic"]
+        response_json: Dict[str, Any] = await self.chatbot.chat_generate(
+            query_str=question_cleaned,
+            messages=session_history,
+        )
+        answer: str = response_json["response"]
+        topic: List[str] = response_json["products"]
 
         # Call masking service to mask PII in question/answer before store it
         question_masked: str = question_cleaned
@@ -104,8 +108,10 @@ class QueryService:
 def get_query_service(
         query_repository: Annotated[QueryRepository, Depends(dependency=get_query_repository)],
         session_repository: Annotated[SessionRepository, Depends(dependency=get_session_repository)],
+        chatbot: Annotated[Chatbot, Depends(dependency=get_chatbot)],
     ) -> QueryService:
     return QueryService(
         query_repository=query_repository,
         session_repository=session_repository,
+        chatbot=chatbot,
     )
