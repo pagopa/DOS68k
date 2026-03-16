@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  test-chatbot-api:
+    name: Test chatbot-api
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-chatbot-evaluate-api:
+    name: Test chatbot-evaluate/api
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-evaluate/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-chatbot-evaluate-worker:
+    name: Test chatbot-evaluate/worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-evaluate/worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-chatbot-index-api:
+    name: Test chatbot-index/api
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-index/api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-chatbot-index-worker:
+    name: Test chatbot-index/worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chatbot-index/worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-auth:
+    name: Test auth
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
+
+  test-masking:
+    name: Test masking
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: masking
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Taskfile
+        uses: go-task/setup-task@v1
+      - name: Run test
+        run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}

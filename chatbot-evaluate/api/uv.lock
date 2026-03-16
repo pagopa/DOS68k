@@ -475,6 +475,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pip-licenses", specifier = ">=5.5.1" },
     { name = "pydoc-markdown", specifier = ">=4.8.2" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-asyncio", specifier = ">=0.23.6" },

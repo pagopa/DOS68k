@@ -6,13 +6,26 @@ In order to work locally with this service you need the following softwares:
 
 - uv
 - docker
+- [task](https://taskfile.dev/)
 
 ## Test
 
-The following script to run unit tests. Always make sure your coverage % is as close to 100% as possible.
+Run unit tests with coverage report, no threshold enforced:
 
 ```bash
-uv run pytest --cov=src --cov-report=term-missing
+task test:quick
+```
+
+Run unit tests enforcing a minimum coverage threshold (default: 80%):
+
+```bash
+task test
+```
+
+To override the minimum coverage threshold:
+
+```bash
+task test COV_THREASHOLD=90
 ```
 
 ## Env config

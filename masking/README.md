@@ -108,7 +108,7 @@ To add a term to the allow list or tune entity recognition, edit `config/presidi
 
 ## Local development
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.13.
+Requires [uv](https://docs.astral.sh/uv/), [task](https://taskfile.dev/), and Python 3.13.
 
 ```bash
 # Install dependencies
@@ -117,9 +117,12 @@ uv sync
 # Run in dev mode (hot reload)
 uv run fastapi dev src/main.py --port 3000
 
-# Run tests
-uv run pytest
+# Run unit tests with coverage report, no threshold enforced
+task test:quick
 
-# Run tests with coverage
-uv run pytest --cov=src --cov-report=term-missing
+# Run unit tests enforcing a minimum coverage threshold (default: 80%)
+task test
+
+# Override the minimum coverage threshold
+task test COV_THREASHOLD=90
 ```
