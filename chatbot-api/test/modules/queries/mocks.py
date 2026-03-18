@@ -2,6 +2,24 @@ from typing import Any, Dict, List, Optional, Self
 from fastapi import HTTPException, status
 from dos_utility.database.nosql import NoSQLInterface, KeyCondition, QueryResult, ScanResult
 
+# ---------------------------------------------------------------------------
+# Shared imports used by test modules
+# ---------------------------------------------------------------------------
+__all__ = [
+    "MockChatbot",
+    "MockQueryRepository",
+    "MockQueryRepositoryEmpty",
+    "MockSessionRepositoryFound",
+    "MockSessionRepositoryNotFound",
+    "MOCK_SESSION_ID",
+    "MOCK_QUERY_ID",
+    "MOCK_USER_ID",
+    "get_query_service_get_queries_200_mock",
+    "get_query_service_get_queries_404_mock",
+    "get_query_service_create_query_201_mock",
+    "get_query_service_create_query_404_mock",
+]
+
 
 # ---------------------------------------------------------------------------
 # Shared data fixtures
@@ -198,3 +216,17 @@ def get_query_service_create_query_404_mock():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     return QueryServiceMock()
+
+
+class MockChatbot:
+    """Mock for Chatbot used in QueryService tests."""
+
+    async def chat_generate(self, query_str: str, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+        return {
+            "response": "Simulated answer",
+            "products": ["product-a"],
+            "references": [],
+            "contexts": [],
+            "chips": [],
+            "spans": [],
+        }

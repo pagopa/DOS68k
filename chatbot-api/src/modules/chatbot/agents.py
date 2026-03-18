@@ -1,8 +1,7 @@
-from typing import Callable, List, Union
-
 from llama_index.core.tools import BaseTool
 from llama_index.core.llms.llm import LLM
 from llama_index.core.agent.workflow import ReActAgent
+from typing import Callable
 
 from src.modules.chatbot.models import get_llm
 from src.modules.chatbot.structured_outputs import DiscoveryOutput
@@ -18,7 +17,7 @@ DEFAULT_DESCRIPTION = (
 
 def get_discovery_agent(
     description: str | None = None,
-    tools: List[Union[BaseTool, Callable]] | None = None,
+    tools: list[BaseTool | Callable] | None = None,
     llm: LLM | None = None,
 ) -> ReActAgent:
     """Create and configure a ReActAgent instance.

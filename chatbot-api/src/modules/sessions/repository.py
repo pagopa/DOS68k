@@ -1,7 +1,10 @@
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends
 from datetime import datetime
-from uuid import uuid7
+try:
+    from uuid import uuid7
+except ImportError:
+    from uuid6 import uuid7  # backport for Python < 3.14
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator
 
 class SessionRepository():

@@ -10,6 +10,7 @@ from test.modules.queries.mocks import (
     MockQueryRepositoryEmpty,
     MockSessionRepositoryFound,
     MockSessionRepositoryNotFound,
+    MockChatbot,
     MOCK_SESSION_ID,
     MOCK_QUERY_ID,
 )
@@ -32,6 +33,7 @@ async def test_get_queries_returns_list():
     service = QueryService(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
     )
     result = await service.get_queries(session_id=MOCK_SESSION_ID, user_id="user-123")
 
@@ -48,6 +50,7 @@ async def test_get_queries_session_not_found():
     service = QueryService(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryNotFound(),
+        chatbot=MockChatbot(),
     )
 
     with pytest.raises(HTTPException) as exc_info:
@@ -62,6 +65,7 @@ async def test_get_queries_empty_when_no_queries():
     service = QueryService(
         query_repository=MockQueryRepositoryEmpty(),
         session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
     )
     result = await service.get_queries(session_id=MOCK_SESSION_ID, user_id="user-123")
 
@@ -77,6 +81,7 @@ async def test_create_query_success():
     service = QueryService(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
     )
     result = await service.create_query(
         session_id=MOCK_SESSION_ID,
@@ -97,6 +102,7 @@ async def test_create_query_sanitizes_html():
     service = QueryService(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
     )
     result = await service.create_query(
         session_id=MOCK_SESSION_ID,
@@ -114,6 +120,7 @@ async def test_create_query_session_not_found():
     service = QueryService(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryNotFound(),
+        chatbot=MockChatbot(),
     )
 
     with pytest.raises(HTTPException) as exc_info:

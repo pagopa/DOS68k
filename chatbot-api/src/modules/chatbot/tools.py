@@ -10,7 +10,6 @@ from src.modules.chatbot.structured_outputs import (
     PRODUCTS,
     RAGOutput,
     FollowUpQuestionsOutput,
-    DiscoveryOutput,
 )
 from src.modules.settings import SETTINGS
 

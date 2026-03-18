@@ -1,6 +1,6 @@
 from functools import lru_cache
 from typing import Annotated, Literal
-from pydantic import Field, PositiveInt, PositiveFloat
+from pydantic import Field, PositiveInt, PositiveFloat, NonNegativeFloat
 from pydantic_settings import BaseSettings
 
 
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     use_async: Annotated[bool, Field(default=True)]
 
     # Agent settings
-    temperature_agent: Annotated[PositiveFloat, Field(default=0.0)]
+    temperature_agent: Annotated[NonNegativeFloat, Field(default=0.0)]  # 0.0 = deterministic
     discovery_system_prompt_str: str
     react_system_str: str
 

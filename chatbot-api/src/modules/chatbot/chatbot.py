@@ -40,7 +40,7 @@ from src.modules.chatbot.agents import get_discovery_agent
 from src.modules.settings import SETTINGS
 
 
-LOGGER = get_logger()
+LOGGER = get_logger(__name__, level=SETTINGS.log_level)
 RESPONSE_TYPE = Union[
     Response,
     StreamingResponse,
