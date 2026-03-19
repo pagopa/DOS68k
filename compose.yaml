@@ -42,6 +42,7 @@ services:
       # - db
       - localstack
       - masking
+      - redis-vdb
 
   chatbot-evaluate-api:
     build:
