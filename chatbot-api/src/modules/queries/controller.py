@@ -40,4 +40,9 @@ async def create_query(
         query_data: CreateQueryDTO,
         session_id: str,
     ) -> Dict[str, Any]:
-    return await query_service.create_query(session_id=session_id, user_id=user_id, question=query_data.question)
+    return await query_service.create_query(
+        session_id=session_id,
+        user_id=user_id,
+        question=query_data.question,
+        knowledge_base=query_data.knowledge_base,
+    )

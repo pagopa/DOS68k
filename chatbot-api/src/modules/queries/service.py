@@ -50,13 +50,14 @@ class QueryService:
                 "answer": query["answer"],
                 "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
+                "contexts": [],  # contexts are not persisted, only returned live on creation
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
             }
             for query in queries
         ]
 
-    async def create_query(self: Self, session_id: str, user_id: str, question: str) -> Dict[str, Any]:
+    async def create_query(self: Self, session_id: str, user_id: str, question: str, knowledge_base: Optional[str]) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
 
@@ -64,7 +65,7 @@ class QueryService:
             # Create a new session for the user if it doesn't exist, or 
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-        question_cleaned = nh3.clean(html=question) # Sanitize from HTML tags and scripts
+        question_cleaned: str = nh3.clean(html=question) # Sanitize from HTML tags and scripts
 
         # Get session history
         session_history: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
@@ -72,9 +73,11 @@ class QueryService:
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(
             query_str=question_cleaned,
             messages=session_history,
+            knowledge_base=knowledge_base,
         )
         answer: str = response_json["response"]
         topic: List[str] = response_json["products"]
+        contexts: List[str] = response_json["contexts"]
 
         # Call masking service to mask PII in question/answer before store it
         question_masked: str = question_cleaned
@@ -101,6 +104,7 @@ class QueryService:
             "answer": item["answer"],
             "bad_answer": item["badAnswer"],
             "topic": item["topic"],
+            "contexts": contexts,
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }
