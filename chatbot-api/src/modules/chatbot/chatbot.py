@@ -1,230 +1,170 @@
-from typing import Union, Tuple, Optional, List, Dict
-
+from functools import lru_cache
+from typing import Optional, List, Dict, Self
 from workflows import Context
-from llama_index.core import PromptTemplate
+from llama_index.core.tools import QueryEngineTool
 from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.core.base.response.schema import (
-    Response,
-    StreamingResponse,
-    AsyncStreamingResponse,
-    PydanticResponse,
-)
-from llama_index.core.agent.workflow import (
-    AgentInput,
-    AgentOutput,
-    ToolCall,
-    ToolCallResult,
-    AgentStream,
-    AgentSetup,
-)
-from llama_index.core.tools.types import ToolOutput
-
-from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-
+from llama_index.core.llms.llm import LLM
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.agent.workflow import AgentOutput as LlamaAgentOutput, ReActAgent
 from dos_utility.utils.logger import get_logger
-from dos_utility.utils.exporter import DictSpanExporter
-from src.modules.chatbot.vector_index import load_index_redis
-from src.modules.chatbot.models import get_llm, get_embed_model
-from src.modules.chatbot.tools import (
-    get_query_engine_tool,
-    follow_up_questions_tool,
-    DEVPORTAL_TOOL_NAME,
-    CITTADINO_TOOL_NAME,
-    CHIPS_TOOL_NAME,
-    DEVPORTAL_RAG_TOOL_DESCRIPTION,
-    CITTADINO_RAG_TOOL_DESCRIPTION,
-)
-from src.modules.chatbot.agents import get_discovery_agent
-from src.modules.settings import SETTINGS
+
+from .models import get_llm, get_embed_model
+from .tool.loader import load_tools
+from .agent import get_agent, load_agent_config, AgentConfig
+from .env import get_chatbot_settings, ChatbotSettings
+from .structured_outputs import AgentOutput
+from ..env import get_logging_settings, LogSettings
 
 
-LOGGER = get_logger(__name__, level=SETTINGS.log_level)
-RESPONSE_TYPE = Union[
-    Response,
-    StreamingResponse,
-    AsyncStreamingResponse,
-    PydanticResponse,
-    AgentInput,
-    AgentOutput,
-    AgentSetup,
-    AgentStream,
-    ToolCall,
-    ToolCallResult,
-    ToolOutput,
-]
-
-TRACE_PROVIDER = TracerProvider()
-EXPORTER = DictSpanExporter()
-TRACE_PROVIDER.add_span_processor(SimpleSpanProcessor(EXPORTER))
-LlamaIndexInstrumentor().instrument(tracer_provider=TRACE_PROVIDER)
-
-
-CHATBOT_INSTANCE: "Chatbot | None" = None
-
-
-def get_chatbot() -> "Chatbot":
-    """Returns a singleton Chatbot instance, initializing it on first call."""
-    global CHATBOT_INSTANCE
-    if CHATBOT_INSTANCE is None:
-        CHATBOT_INSTANCE = Chatbot()
-    return CHATBOT_INSTANCE
+log_settings: LogSettings = get_logging_settings()
+LOGGER = get_logger(name=__name__, level=log_settings.log_level)
 
 
 class Chatbot:
-    def __init__(
-        self,
-    ):
-        self.model = get_llm()
-        self.embed_model = get_embed_model()
-        self.qa_prompt_tmpl, self.ref_prompt_tmpl = self._get_prompt_templates()
+    """RAG-based chatbot backed by a ReActAgent and one or more query engine tools.
 
-        tools = []
-        self.tool_names = []
-        try:
-            devportal_index = load_index_redis(index_id=SETTINGS.devportal_index_id)
-            tools.append(
-                get_query_engine_tool(
-                    index=devportal_index,
-                    name=DEVPORTAL_TOOL_NAME,
-                    description=DEVPORTAL_RAG_TOOL_DESCRIPTION,
-                    text_qa_template=self.qa_prompt_tmpl,
-                    refine_template=self.ref_prompt_tmpl,
-                )
-            )
-            self.tool_names += [DEVPORTAL_TOOL_NAME]
-        except Exception as e:
-            LOGGER.error(f"Failed to load DevPortal index: {e}")
-            raise
+    Tools are loaded from YAML configs at startup (see tool/loader.py).
+    Agent behaviour (system prompt) is loaded from a YAML config (see agent.yaml).
+    A single LLM instance is used for both RAG synthesis and agent reasoning,
+    tuned via temperature_agent.
+    """
 
-        try:
-            cittadino_index = load_index_redis(index_id=SETTINGS.cittadino_index_id)
-            tools += [
-                get_query_engine_tool(
-                    index=cittadino_index,
-                    name=CITTADINO_TOOL_NAME,
-                    description=CITTADINO_RAG_TOOL_DESCRIPTION,
-                    text_qa_template=self.qa_prompt_tmpl,
-                    refine_template=self.ref_prompt_tmpl,
-                ),
-                follow_up_questions_tool(name=CHIPS_TOOL_NAME),
-            ]
-            self.tool_names += [CITTADINO_TOOL_NAME, CHIPS_TOOL_NAME]
-        except Exception as e:
-            LOGGER.error(f"Failed to load Cittadino index: {e}")
-            raise
+    def __init__(self: Self):
+        self.__settings: ChatbotSettings = get_chatbot_settings()
 
-        self.num_tools = len(tools)
+        # LLM for agent reasoning and RAG synthesis.
+        self.model: LLM = get_llm(
+            provider=self.__settings.provider,
+            model_id=self.__settings.model_id,
+            temperature=self.__settings.temperature_agent,
+            max_tokens=self.__settings.max_tokens,
+            api_key=self.__settings.model_api_key,
+        )
+        self.embed_model: BaseEmbedding = get_embed_model(
+            provider=self.__settings.provider,
+            model_id=self.__settings.embed_model_id,
+            embed_batch_size=self.__settings.embed_batch_size,
+            embed_dim=self.__settings.embed_dim,
+            task_type=self.__settings.embed_task,
+            retries=self.__settings.embed_retries,
+            retry_min_seconds=self.__settings.embed_retry_min_seconds,
+            api_key=self.__settings.model_api_key,
+        )
+        # Load all tools from YAML configs. Each tool wraps a vector index.
+        tools_map: Dict[str, QueryEngineTool] = load_tools(
+            llm=self.model,
+            embed_model=self.embed_model,
+            similarity_top_k=self.__settings.similarity_topk,
+            use_async=self.__settings.use_async,
+            config_dir=self.__settings.tools_config_dir,
+        )
+        self.tool_names: List[str] = list(tools_map.keys())
 
-        try:
-            self.discovery = get_discovery_agent(tools=tools)
-        except Exception as e:
-            LOGGER.error(f"Failed to initialize Discovery Agent: {e}")
-            raise
-
-    def _get_prompt_templates(
-        self,
-    ) -> Tuple[PromptTemplate, PromptTemplate]:
-        """Initializes the prompt templates for question-answering and refining responses."""
-
-        qa_prompt_tmpl = PromptTemplate(
-            SETTINGS.qa_prompt_str,
-            template_var_mappings={
-                "context_str": "context_str",
-                "query_str": "query_str",
-            },
+        agent_config: AgentConfig = load_agent_config(path=self.__settings.agent_config_path)
+        self.agent: ReActAgent = get_agent(
+            name=self.__settings.agent_name,
+            description=self.__settings.agent_description,
+            llm=self.model,
+            system_prompt=agent_config.system_prompt,
+            output_cls=AgentOutput,
+            system_header=agent_config.system_header,
+            tools=list(tools_map.values()),
         )
 
-        ref_prompt_tmpl = PromptTemplate(
-            SETTINGS.refine_prompt_str,
-            prompt_type="refine",
-            template_var_mappings={
-                "existing_answer": "existing_answer",
-                "context_msg": "context_msg",
-            },
-        )
+    def __extract_references(self: Self, tool_calls: list) -> List[dict]:
+        """Derives source references from the retrieved nodes of all tool calls.
 
-        return qa_prompt_tmpl, ref_prompt_tmpl
+        Deduplicates by source filename so each document appears once.
 
-    def _get_response_json(self, engine_response: RESPONSE_TYPE) -> dict:
-        """Extracts the relevant information from the engine response and formats it into a JSON structure.
         Args:
-            engine_response (RESPONSE_TYPE): The response object returned by the discovery agent, which may contain a structured response with the answer, products, references, and contexts.
+            tool_calls: List of ToolCallResult objects from the agent response.
+
         Returns:
-            dict: A JSON-formatted dictionary containing the response, products, references, contexts, and spans.
+            List of dicts with key 'source' (the document filename).
         """
+        seen: set = set()
+        refs: List[dict] = []
 
-        if isinstance(engine_response.structured_response, dict):
-            references_list = []
-            if isinstance(engine_response.structured_response["references"], list):
-                for ref in engine_response.structured_response["references"]:
-                    references_list.append(f"[{ref['title']}]({ref['url']})")
+        for tool_call in tool_calls:
+            nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
+            for node in nodes:
+                source = node.metadata.get("filename")
+                if source and source not in seen:
+                    seen.add(source)
+                    refs.append({"source": source})
 
-            retrieved_contexts = []
-            used_tools = [False] * self.num_tools
-            for tool_call in engine_response.tool_calls:
-                raw_output = tool_call.tool_output.raw_output
-                nodes = getattr(raw_output, "source_nodes", [])
-                if (
-                    tool_call.tool_name in [DEVPORTAL_TOOL_NAME, CITTADINO_TOOL_NAME]
-                    and nodes
-                ):
-                    retrieved_contexts.extend(
-                        [
-                            f"-------\nURL: {node.metadata['url']}\n\n{node.text}\n\n"
-                            for node in nodes
-                        ]
-                    )
+        return refs
 
-                tool_index = self.tool_names.index(tool_call.tool_name)
-                used_tools[tool_index] = True
+    def __extract_contexts(self: Self, tool_calls: list) -> List[str]:
+        """Collects the retrieved document chunks from all tool calls.
 
-            if engine_response.structured_response["follow_up_questions"] and all(
-                used_tools
-            ):
-                chips = engine_response.structured_response["follow_up_questions"]
-            else:
-                chips = []
+        Each RAG tool call attaches source nodes to its raw output. This method
+        walks all calls and formats each node as a labelled text block.
 
-            response_json = {
-                "response": engine_response.structured_response["response"],
-                "products": engine_response.structured_response["products"],
-                "references": references_list,
-                "contexts": retrieved_contexts,
-                "chips": chips,
-                "spans": EXPORTER.spans,
-            }
+        Args:
+            tool_calls: List of ToolCallResult objects from the agent response.
 
-        else:
-            response_json = {
-                "response": "Scusa, non posso elaborare la tua richiesta.\n"
-                + "Prova a formulare una nuova domanda.",
-                "products": ["none"],
+        Returns:
+            List of formatted context strings, one per source node.
+        """
+        contexts = []
+
+        for tool_call in tool_calls:
+            nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
+            contexts.extend(
+                f"-------\nFile: {node.metadata.get('filename', 'unknown')} "
+                f"(chunk {node.metadata.get('chunk_id', '?')})\n\n{node.text}\n\n"
+                for node in nodes
+            )
+
+        return contexts
+
+    def __get_response_json(self: Self, engine_response: LlamaAgentOutput) -> dict:
+        """Converts the agent's raw output into the API response dict.
+
+        Args:
+            engine_response: The AgentOutput returned by agent.run(). Its
+                structured_response field holds the validated AgentOutput Pydantic
+                model as a dict when parsing succeeded, or a non-dict value on failure.
+
+        Returns:
+            Dict with keys: response, tags, references, contexts.
+        """
+        structured = engine_response.structured_response
+
+        if not isinstance(structured, dict):
+            # Structured output parsing failed — return a safe fallback.
+            return {
+                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "tags": [],
                 "references": [],
                 "contexts": [],
-                "chips": [],
-                "spans": [],
             }
 
-        return response_json
+        return {
+            "response": structured["response"],
+            "tags": structured.get("tags", []),
+            "references": self.__extract_references(engine_response.tool_calls),
+            "contexts": self.__extract_contexts(engine_response.tool_calls),
+        }
 
-    def _messages_to_chathistory(
-        self, messages: Optional[List[Dict[str, str]]] = None
-    ) -> List[ChatMessage]:
-        """Converts a list of message dictionaries into a list of ChatMessage objects for the chat history.
+    def __messages_to_chathistory(self: Self, messages: Optional[List[Dict[str, str]]] = None) -> List[ChatMessage]:
+        """Converts the API chat history format into LlamaIndex ChatMessage objects.
+
         Args:
-            messages (Optional[List[Dict[str, str]]]): A list of message dictionaries, where each dictionary has a "question" key for user messages and an "answer" key for assistant messages.
-        Returns:
-            List[ChatMessage]: A list of ChatMessage objects representing the chat history, with alternating user and assistant messages. The assistant messages are processed to remove any reference sections (indicated by "
-        """
+            messages: List of dicts with "question" and "answer" keys, ordered oldest first.
+                The "answer" value may be None for the last turn if the assistant hasn't replied yet.
 
-        chat_history = []
-        if messages:
+        Returns:
+            Flat list of alternating USER / ASSISTANT ChatMessage objects.
+        """
+        chat_history: List[ChatMessage] = []
+
+        if messages is not None:
             for message in messages:
-                user_content = message["question"]
-                assistant_content = (
-                    message["answer"].split("Rif:")[0].strip()
+                user_content: str = message["question"]
+                assistant_content: Optional[str] = (
+                    message["answer"].strip()
                     if (
                         message
                         and message.get("answer")
@@ -233,60 +173,55 @@ class Chatbot:
                     else None
                 )
                 chat_history += [
-                    ChatMessage(
-                        role=MessageRole.USER,
-                        content=user_content,
-                    ),
-                    ChatMessage(
-                        role=MessageRole.ASSISTANT,
-                        content=assistant_content,
-                    ),
+                    ChatMessage(role=MessageRole.USER, content=user_content),
+                    ChatMessage(role=MessageRole.ASSISTANT, content=assistant_content),
                 ]
 
         return chat_history
 
     async def chat_generate(
-        self,
-        query_str: str,
-        messages: Optional[List[Dict[str, str]]] | None = None,
-        knowledge_base: str | None = None,
-    ) -> dict:
-        """Generates a response to the user's query by running the discovery agent with the provided query and chat history, and formats the response into a JSON structure.
+            self: Self,
+            query_str: str,
+            messages: Optional[List[Dict[str, str]]] = None,
+            knowledge_base: Optional[str] = None,
+        ) -> dict:
+        """Generates a response to the user's query.
+
         Args:
-            query_str (str): The user's query string.
-            messages (Optional[List[Dict[str, str]]]): A list of message dictionaries representing the chat history. Each dictionary should have a "question" key for user messages and an "answer" key for assistant messages.
-            knowledge_base (str | None): An optional knowledge base string to provide additional context for the query.
+            query_str: The user's query string.
+            messages: Chat history. Each dict has "question" and "answer" keys.
+            knowledge_base: Optional knowledge base identifier appended to the query
+                to hint the agent toward a specific tool.
+
         Returns:
-            dict: A JSON-formatted dictionary containing the response, products, references, contexts, and spans.
+            Dict with keys: response, tags, references, contexts.
         """
+        chat_history: List[ChatMessage] = self.__messages_to_chathistory(messages=messages)
 
-        chat_history = self._messages_to_chathistory(messages)
-
-        if knowledge_base:
+        if knowledge_base is not None:
             query_str = query_str + f" | Knowledge Base: {knowledge_base}"
 
         try:
-            ctx = Context.from_dict(self.discovery, {})
-            engine_response = await self.discovery.run(
+            ctx: Context = Context.from_dict(workflow=self.agent, data={})
+            engine_response = await self.agent.run(
                 user_msg=query_str,
                 chat_history=chat_history,
                 ctx=ctx,
                 early_stopping_method="generate",
             )
-            response_json = self._get_response_json(engine_response)
+            response_json = self.__get_response_json(engine_response=engine_response)
         except Exception as e:
             response_json = {
-                "response": "Scusa, non posso elaborare la tua richiesta.\n"
-                + "Prova a formulare una nuova domanda.",
-                "products": ["none"],
+                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "tags": [],
                 "references": [],
                 "contexts": [],
-                "chips": [],
-                "spans": [],
             }
             LOGGER.warning(f"Exception: {e}")
 
-        response_json["products"].append(f"chatbot@{SETTINGS.chatbot_release}")
-        EXPORTER.spans = []
-
         return response_json
+
+
+@lru_cache
+def get_chatbot() -> Chatbot:
+    return Chatbot()

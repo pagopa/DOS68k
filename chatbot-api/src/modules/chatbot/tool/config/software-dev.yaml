@@ -1,0 +1,8 @@
+index_id: software-dev
+name: SoftwareDevTool
+description: >
+  RAG tool that retrieves software engineering knowledge.
+  Use this tool for questions about REST APIs, Docker, FastAPI, Python asyncio,
+  vector databases, LlamaIndex, RAG pipelines, and Pydantic.
+  Do NOT use this tool for questions about company HR policies, football clubs,
+  or any topic unrelated to software development.

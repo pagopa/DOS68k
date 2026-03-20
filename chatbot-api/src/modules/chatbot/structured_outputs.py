@@ -1,30 +1,18 @@
-from typing import List
+from typing import List, Annotated
 from pydantic import BaseModel, Field
 
 
-# Product names used in tool descriptions and response metadata
-PRODUCTS = "pagoPA, IO, SEND"
-
-
 class Reference(BaseModel):
-    title: str
-    url: str
+    """A source document retrieved from the vector database."""
+    source: str
 
 
 class RAGOutput(BaseModel):
     """Structured output for individual RAG tool calls."""
     response: str
-    references: List[Reference] = Field(default_factory=list)
 
 
-class FollowUpQuestionsOutput(BaseModel):
-    """Structured output for the follow-up questions (chips) tool."""
-    questions: List[str] = Field(default_factory=list)
-
-
-class DiscoveryOutput(BaseModel):
-    """Final structured output produced by the discovery agent."""
-    response: str
-    products: List[str] = Field(default_factory=list)
-    references: List[Reference] = Field(default_factory=list)
-    follow_up_questions: List[str] = Field(default_factory=list)
+class AgentOutput(BaseModel):
+    """Final structured output produced by the agent."""
+    response: Annotated[str, Field(description="The generated answer to the user's query in Markdown format.")]
+    tags: Annotated[List[str], Field(default=[], description="Topic tags extracted from the response, useful for categorization and filtering of conversation history.")]
