@@ -2,13 +2,12 @@ import nh3
 
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
-from datetime import datetime
 from httpx import AsyncClient, Response, Timeout
 
+from .repository import QueryRepository, get_query_repository
 from ..sessions.repository import get_session_repository, SessionRepository
 from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
 from ..utils import format_expiration_dt
-from .repository import QueryRepository, get_query_repository
 from ..chatbot import Chatbot, get_chatbot
 
 class QueryService:
@@ -70,6 +69,7 @@ class QueryService:
         # Get session history
         session_history: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
 
+        # Generate answer from AI Agent
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(
             query_str=question_cleaned,
             messages=session_history,

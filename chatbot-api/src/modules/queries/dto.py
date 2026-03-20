@@ -3,8 +3,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 
 class CreateQueryDTO(BaseModel):
+    model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)
+
     question: str
-    knowledge_base: Optional[str]
+    knowledge_base: Annotated[Optional[str], Field(alias="knowledgeBase")]
 
 class QueryResponseDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from typing import List, Dict, Any, Annotated
 
-from ..auth import get_user_id
 from .service import QueryService, get_query_service
 from .dto import QueryResponseDTO, CreateQueryDTO
+from ..auth import get_user_id
 
 router: APIRouter = APIRouter(prefix="/queries", tags=["Queries"])
 
