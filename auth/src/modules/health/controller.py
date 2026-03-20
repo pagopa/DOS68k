@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 
 
-router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
+router: APIRouter = APIRouter(prefix="/health", tags=["Health Checks"])
+
 
 @router.get(path="", summary="Check Auth service is running")
 async def health_check():
