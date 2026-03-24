@@ -1,4 +1,4 @@
-from typing import overload, Literal, Optional, Any, Sequence, Type, Self
+from typing import overload, Literal, Optional, Any, Sequence, Type, Self, List
 from pydantic import BaseModel
 from google.genai import types
 from llama_index.core.llms.llm import LLM
@@ -89,12 +89,32 @@ def get_llm(
     """
     if provider == "google":
         from llama_index.llms.google_genai import GoogleGenAI
+        from google.genai.types import GenerateContentConfig, HarmCategory, HarmBlockThreshold, SafetySetting
 
-        llm = GoogleGenAI(
+        safety_settings: List[SafetySetting] = [
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HARASSMENT,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+            SafetySetting(
+                category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                threshold=HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            ),
+        ]
+        llm: GoogleGenAI = GoogleGenAI(
             model=model_id,
             temperature=temperature,
             max_tokens=max_tokens,
             api_key=api_key,
+            generation_config=GenerateContentConfig(safety_settings=safety_settings),
         )
         # LOGGER.info(f"{model_id} LLM loaded successfully from Google!")
     elif provider == "mock":
