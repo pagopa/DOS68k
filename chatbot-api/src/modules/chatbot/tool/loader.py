@@ -8,7 +8,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.tools import QueryEngineTool
 from pydantic import BaseModel
-from dos_utility.vector_db import VectorDBInterface, get_vector_db
+from dos_utility.vector_db import VectorDBInterface, get_vector_db_instance
 
 from .factory import get_query_engine_tool
 from .vector_index import load_index
@@ -95,7 +95,7 @@ def load_tools(
             else None
         )
 
-        vector_db: VectorDBInterface = get_vector_db(index_name=config.index_id)
+        vector_db: VectorDBInterface = get_vector_db_instance(index_name=config.index_id)
         index: VectorStoreIndex = load_index(vector_db=vector_db, embed_model=embed_model)
         tool: QueryEngineTool = get_query_engine_tool(
             index=index,

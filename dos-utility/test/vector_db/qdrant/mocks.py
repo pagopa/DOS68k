@@ -1,7 +1,13 @@
-from typing import Self, Dict, Any, List
+from dataclasses import dataclass, field
+from typing import Self, Dict, Any, List, Optional
 from qdrant_client.conversions.common_types import Points
 from qdrant_client.http.models import CollectionDescription, UpdateResult, UpdateStatus, CollectionsResponse, QueryResponse, ScoredPoint
 
+
+@dataclass
+class ScrollRecordMock:
+    id: str
+    payload: dict = field(default_factory=dict)
 
 
 class QdrantVectorDBSettingsMock:
@@ -39,7 +45,7 @@ class AsyncQdrantClientMock:
     async def delete(self: Self, collection_name: str, points_selector: List[str], wait: bool) -> UpdateResult:
         return UpdateResult(status=UpdateStatus.COMPLETED)
 
-    async def query_points(self: Self, collection_name: str, query: List[float], limit: int, using: str) -> QueryResponse:
+    async def query_points(self: Self, collection_name: str, query: List[float], limit: int, using: str, query_filter=None) -> QueryResponse:
         return QueryResponse(points=[
             ScoredPoint(
                 id="obj1",
@@ -72,6 +78,13 @@ class AsyncQdrantClientMock:
                 },
             ),
         ])
+
+    async def scroll(self: Self, collection_name: str, scroll_filter, limit: int, with_payload: bool):
+        records = [
+            ScrollRecordMock(id="obj1", payload={"filename": "file1.txt", "chunk_id": 0, "content": "Content of file 1."}),
+            ScrollRecordMock(id="obj2", payload={"filename": "file2.txt", "chunk_id": 1, "content": "Content of file 2."}),
+        ]
+        return records, None
 
 class AsyncQdrantClientCollectionAlreadyExistsMock(AsyncQdrantClientMock):
     async def collection_exists(self: Self, collection_name: str) -> bool:

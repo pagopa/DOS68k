@@ -33,7 +33,7 @@ class AsyncSearchIndexMock:
     async def drop_keys(self: Self, *args, **kwargs) -> int:
         return 2
 
-    async def search(self: Self, *args, **kwargs) -> List[dict]:
+    async def query(self: Self, *args, **kwargs) -> List[dict]:
         return [
             {
                 "id": "key1",
