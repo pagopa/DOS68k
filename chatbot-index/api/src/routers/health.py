@@ -3,6 +3,7 @@ from typing import Annotated
 
 from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
+from dos_utility.vector_db import VectorDBInterface, get_vector_db
 
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
@@ -34,4 +35,14 @@ async def health_check_storage(storage_client: Annotated[StorageInterface, Depen
         "status": "ok",
         "service": "Chatbot Index API",
         "storage": "connected" if is_healthy is True else "NOT connected",
+    }
+
+@router.get(path="/vdb", summary = "Check Vector DB storage is running")
+async def health_check_vector_db(vdb: Annotated[VectorDBInterface, Depends(dependency=get_vector_db)]):
+    is_healthy: bool = await vdb.is_healthy()
+
+    return {
+        "status": "ok",
+        "service": "Chatbot Index API",
+        "vector_db": "connected" if is_healthy is True else "NOT connected",
     }

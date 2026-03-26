@@ -27,6 +27,14 @@ class RedisVectorDB(VectorDBInterface):
     async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
         await self._redis_client.aclose()
 
+    async def is_healthy(self: Self) -> bool:
+        try:
+            response = await self._redis_client.ping()
+            return response
+        except Exception as e:
+            logging.error(f"Redis health check failed: {e}")
+            return False
+
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         try:
             index_info: IndexInfo = IndexInfo(name=index_name, storage_type=StorageType.JSON)
