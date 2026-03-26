@@ -56,7 +56,14 @@ class QueryService:
             for query in queries
         ]
 
-    async def create_query(self: Self, session_id: str, user_id: str, question: str, knowledge_base: Optional[str]) -> Dict[str, Any]:
+    async def create_query(
+            self: Self,
+            session_id: str,
+            user_id: str,
+            question: str,
+            knowledge_base: Optional[str],
+            session_history: Optional[List[Dict[str, str]]],
+        ) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
 
@@ -67,7 +74,8 @@ class QueryService:
         question_cleaned: str = nh3.clean(html=question) # Sanitize from HTML tags and scripts
 
         # Get session history
-        session_history: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
+        if session_history is None:
+            session_history = await self.query_repository.get_queries(session_id=session_id)
 
         # Generate answer from AI Agent
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(

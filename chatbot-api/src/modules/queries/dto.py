@@ -2,11 +2,16 @@ from typing import Annotated, List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 
+class Query(BaseModel):
+    question: str
+    answer: str
+
 class CreateQueryDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)
 
     question: str
     knowledge_base: Annotated[Optional[str], Field(alias="knowledgeBase")]
+    session_history: Annotated[Optional[List[Query]], Field(alias="sessionHistory", default=None)]
 
 class QueryResponseDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)
