@@ -1,3 +1,4 @@
+from logging import Logger
 from functools import lru_cache
 from typing import Optional, List, Dict, Self
 from workflows import Context
@@ -10,14 +11,14 @@ from dos_utility.utils.logger import get_logger
 
 from .models import get_llm, get_embed_model
 from .tool.loader import load_tools
-from .agent import get_agent, load_agent_config, AgentConfig
+from .agent import get_agent, get_agent_yaml_settings, AgentYamlSettings
 from .env import get_chatbot_settings, ChatbotSettings
 from .structured_outputs import AgentOutput
 from ..env import get_logging_settings, LogSettings
 
 
 log_settings: LogSettings = get_logging_settings()
-LOGGER = get_logger(name=__name__, level=log_settings.log_level)
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 class Chatbot:
@@ -60,10 +61,10 @@ class Chatbot:
         )
         self.tool_names: List[str] = list(tools_map.keys())
 
-        agent_config: AgentConfig = load_agent_config(path=self.__settings.agent_config_path)
+        agent_config: AgentYamlSettings = get_agent_yaml_settings(file=self.__settings.agent_config_path)
         self.agent: ReActAgent = get_agent(
-            name=self.__settings.agent_name,
-            description=self.__settings.agent_description,
+            name=agent_config.name,
+            description=agent_config.description,
             llm=self.model,
             system_prompt=agent_config.system_prompt,
             output_cls=AgentOutput,
@@ -217,7 +218,7 @@ class Chatbot:
                 "references": [],
                 "contexts": [],
             }
-            LOGGER.warning(f"Exception: {e}")
+            logger.warning(f"Exception: {e}")
 
         return response_json
 

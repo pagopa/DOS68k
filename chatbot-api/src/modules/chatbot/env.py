@@ -32,11 +32,9 @@ class ChatbotSettings(BaseSettings):
 
     # Agent settings
     temperature_agent: Annotated[NonNegativeFloat, Field(default=0.0)]  # 0.0 = deterministic
-    agent_name: Annotated[Optional[str], Field(default=None)]
-    agent_description: Annotated[Optional[str], Field(default=None)]
-    # Path to a YAML agent config file (system_prompt, system_header).
+    # Path to a YAML agent config file (name, description, system_prompt, system_header).
     # Defaults to the built-in agent.yaml shipped with this module.
-    agent_config_path: Annotated[Optional[Path], Field(default=None)]
+    agent_config_path: Annotated[Optional[Path], Field(default=Path(__file__).parent / "agent" / "agent.yaml")]
 
 
 @lru_cache

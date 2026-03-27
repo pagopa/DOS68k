@@ -1,30 +1,18 @@
-import yaml
-
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from llama_index.core import PromptTemplate, VectorStoreIndex
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.tools import QueryEngineTool
-from pydantic import BaseModel
 from dos_utility.vector_db import VectorDBInterface, get_vector_db_instance
 
+from .settings import get_yaml_settings, YamlSettings
 from .factory import get_query_engine_tool
 from .vector_index import load_index
 
 
 DEFAULT_CONFIG_DIR: Path = Path(__file__).parent / "config"
-
-
-class ToolConfig(BaseModel):
-    index_id: str
-    name: str
-    description: str
-    similarity_top_k: Optional[int] = None
-    qa_prompt: Optional[str] = None
-    refine_prompt: Optional[str] = None
-
 
 def load_tools(
         llm: LLM,
@@ -58,6 +46,7 @@ def load_tools(
     if not resolved_dir.exists():
         raise FileNotFoundError(f"Tool config directory not found: {resolved_dir}")
 
+    # List all YAML files
     yaml_files: List[Path] = sorted(f for f in resolved_dir.glob("*.yaml") if f.name != "template.yaml")
 
     if len(yaml_files) == 0:
@@ -65,13 +54,10 @@ def load_tools(
 
     tools: Dict[str, QueryEngineTool] = {}
 
+    # For each YAML file create a custom RAG tool
     for yaml_file in yaml_files:
-        with open(yaml_file) as f:
-            data: Any = yaml.safe_load(f)
-
-        config: ToolConfig = ToolConfig.model_validate(obj=data)
-
-        qa_template = (
+        config: YamlSettings = get_yaml_settings(file=yaml_file) # Get each YAML file through Pydantic Settings
+        qa_template: PromptTemplate = (
             PromptTemplate(
                 template=config.qa_prompt,
                 template_var_mappings={
@@ -82,7 +68,7 @@ def load_tools(
             if config.qa_prompt
             else None
         )
-        refine_template = (
+        refine_template: PromptTemplate = (
             PromptTemplate(
                 template=config.refine_prompt,
                 prompt_type="refine",

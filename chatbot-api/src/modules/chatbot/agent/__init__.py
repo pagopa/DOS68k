@@ -1,42 +1,15 @@
-import yaml
-
-from pathlib import Path
 from typing import Callable, Type, Optional, Dict, Any, List
-from pydantic import BaseModel
 from llama_index.core.tools import BaseTool
 from llama_index.core.llms.llm import LLM
 from llama_index.core.agent.workflow import ReActAgent
 
+from .settings import AgentYamlSettings, get_agent_yaml_settings
 
-DEFAULT_AGENT_CONFIG: Path = Path(__file__).parent / "agent.yaml"
-
-
-class AgentConfig(BaseModel):
-    system_prompt: Optional[str] = None
-    system_header: Optional[str] = None
-
-
-def load_agent_config(path: Optional[Path] = None) -> AgentConfig:
-    """Load agent configuration from a YAML file.
-
-    Args:
-        path: Path to the YAML config file. Defaults to the built-in agent.yaml.
-
-    Returns:
-        AgentConfig with system_prompt and system_header.
-
-    Raises:
-        FileNotFoundError: If the resolved config file does not exist.
-    """
-    resolved: Path = path or DEFAULT_AGENT_CONFIG
-
-    if not resolved.exists():
-        raise FileNotFoundError(f"Agent config file not found: {resolved}")
-
-    with open(resolved) as f:
-        data = yaml.safe_load(f) or {}
-
-    return AgentConfig.model_validate(data)
+__all__ = [
+    "get_agent",
+    "AgentYamlSettings",
+    "get_agent_yaml_settings",
+]
 
 
 def get_agent(
