@@ -166,17 +166,12 @@ class Chatbot:
                 user_content: str = message["question"]
                 assistant_content: Optional[str] = (
                     message["answer"].strip()
-                    if (
-                        message
-                        and message.get("answer")
-                        and message.get("answer") is not None
-                    )
+                    if message.get("answer") is not None
                     else None
                 )
-                chat_history += [
-                    ChatMessage(role=MessageRole.USER, content=user_content),
-                    ChatMessage(role=MessageRole.ASSISTANT, content=assistant_content),
-                ]
+                chat_history.append(ChatMessage(role=MessageRole.USER, content=user_content))
+                if assistant_content is not None:
+                    chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=assistant_content))
 
         return chat_history
 

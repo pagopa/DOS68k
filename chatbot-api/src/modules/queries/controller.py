@@ -45,5 +45,5 @@ async def create_query(
         user_id=user_id,
         question=query_data.question,
         knowledge_base=query_data.knowledge_base,
-        session_history=query_data.session_history,
+        session_history=query_data.model_dump(by_alias=False)["session_history"],
     )
