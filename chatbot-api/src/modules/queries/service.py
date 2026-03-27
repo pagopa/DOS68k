@@ -84,7 +84,6 @@ class QueryService:
             knowledge_base=knowledge_base,
         )
         answer: str = response_json["response"]
-        topic: List[str] = response_json["products"]
         contexts: List[str] = response_json["contexts"]
 
         # Call masking service to mask PII in question/answer before store it
@@ -101,7 +100,7 @@ class QueryService:
                 "question": question_masked,
                 "answer": answer_masked,
                 "expiresAt": session["expiresAt"],
-                "topic": topic,
+                "topic": [],
             },
         )
 
