@@ -43,8 +43,8 @@ class RedisVectorDB(VectorDBInterface):
     async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
         await self._redis_aclient.aclose()
 
-    def __get_index(self: Self, index_name: str) -> AsyncSearchIndex:
-        return AsyncSearchIndex.from_existing(name=index_name, redis_client=self._redis_aclient)
+    async def __get_index(self: Self, index_name: str) -> AsyncSearchIndex:
+        return await AsyncSearchIndex.from_existing(name=index_name, redis_client=self._redis_aclient)
 
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         try:
@@ -85,7 +85,7 @@ class RedisVectorDB(VectorDBInterface):
 
     async def delete_index(self: Self, index_name: str) -> None:
         try:
-            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+            index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
             try:
                 deleted: bool = await index.delete(drop=True) # Delete index and all associated data
@@ -113,7 +113,7 @@ class RedisVectorDB(VectorDBInterface):
 
     async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
         try:
-            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+            index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
             if custom_keys is not None:
                 keys: List[str] = await index.load(data=[obj.model_dump() for obj in data], keys=custom_keys)
@@ -128,7 +128,7 @@ class RedisVectorDB(VectorDBInterface):
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         try:
-            index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+            index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
             _ = await index.drop_keys(keys=ids)
 
@@ -144,7 +144,7 @@ class RedisVectorDB(VectorDBInterface):
             score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
             filters: Optional[MetadataFilters] = None,
         ) -> List[SearchResult]:
-        index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+        index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
         query: VectorQuery = VectorQuery(
             vector=embedding_query,
@@ -174,7 +174,7 @@ class RedisVectorDB(VectorDBInterface):
             filters: MetadataFilters,
             max_results: PositiveInt,
         ) -> List[SearchResult]:
-        index: AsyncSearchIndex = self.__get_index(index_name=index_name)
+        index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
         query: FilterQuery = FilterQuery(
             filter_expression=self.__build_filter_expression(filters),
