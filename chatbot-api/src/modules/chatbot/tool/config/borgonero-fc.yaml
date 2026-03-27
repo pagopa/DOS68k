@@ -1,7 +1,0 @@
-index_id: borgonero-fc
-name: BorgoneroFCTool
-description: >
-  RAG tool that retrieves information about Borgonero FC, a fictional Italian
-  football club. Use this tool for questions about Borgonero FC history,
-  stadium, season results, player statistics, and transfers.
-  Do NOT use this tool for software development or HR policy questions.

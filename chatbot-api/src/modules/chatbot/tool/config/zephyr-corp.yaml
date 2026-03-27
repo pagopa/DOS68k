@@ -1,7 +1,0 @@
-index_id: zephyr-corp
-name: ZephyrCorpTool
-description: >
-  RAG tool that retrieves internal Zephyr Corp company documentation.
-  Use this tool for questions about Zephyr Corp onboarding, leave policy,
-  remote work rules, expense reimbursement, and internal HR processes.
-  Do NOT use this tool for software development topics or football questions.
