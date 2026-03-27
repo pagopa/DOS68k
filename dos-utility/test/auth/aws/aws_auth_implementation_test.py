@@ -237,3 +237,16 @@ def test_verify_jwt_valid_token_returns_claims(monkeypatch: pytest.MonkeyPatch, 
     result = provider.verify_jwt(token="header.payload.signature")
 
     assert result == mock_claims
+
+
+def test_get_aws_auth_provider(monkeypatch: pytest.MonkeyPatch):
+    from dos_utility.auth.aws.implementation import get_aws_auth_provider
+
+    monkeypatch.setattr(
+        "dos_utility.auth.aws.implementation.get_aws_auth_settings",
+        lambda: _MockAWSSettings(),
+    )
+
+    provider = get_aws_auth_provider()
+
+    assert isinstance(provider, CognitoAuthProvider)

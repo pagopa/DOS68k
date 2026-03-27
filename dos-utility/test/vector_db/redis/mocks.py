@@ -18,7 +18,7 @@ class AsyncSearchIndexMock:
         pass
 
     @classmethod
-    def from_existing(cls, *args, **kwargs) -> Self:
+    async def from_existing(cls, *args, **kwargs) -> Self:
         return cls()
 
     async def create(self: Self, *args, **kwargs) -> None:

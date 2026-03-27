@@ -17,7 +17,7 @@ class AuthInterface(ABC):
         Raises:
             HTTPException: If the JWKS endpoint is unreachable or returns an error.
         """
-        pass
+        ...
 
     @abstractmethod
     def verify_jwt(self, token: str) -> Dict[str, Any]:
@@ -36,4 +36,4 @@ class AuthInterface(ABC):
             TokenExpiredException: If the token has expired.
             InvalidTokenException: If the token is malformed or otherwise invalid.
         """
-        pass
+        ...

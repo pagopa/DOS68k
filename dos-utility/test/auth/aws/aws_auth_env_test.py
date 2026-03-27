@@ -50,3 +50,16 @@ def test_aws_auth_settings_missing_region_raises(monkeypatch: pytest.MonkeyPatch
 
     with pytest.raises(ValidationError):
         AWSAuthSettings()
+
+
+def test_get_aws_auth_settings(monkeypatch: pytest.MonkeyPatch):
+    from dos_utility.auth.aws.env import get_aws_auth_settings
+    get_aws_auth_settings.cache_clear()
+
+    for key, value in _REQUIRED_ENV.items():
+        monkeypatch.setenv(key, value)
+
+    settings = get_aws_auth_settings()
+
+    assert settings.AWS_REGION == "us-east-1"
+    assert settings.AWS_COGNITO_USERPOOL_ID == "us-east-1_TestPool"

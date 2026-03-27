@@ -69,11 +69,18 @@ def test_vector_db_interface_delete_raises(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(NotImplementedError):
         vdb.delete(ref_doc_id="id1")
 
-def test_vector_db_interface_sync_query_raises(monkeypatch: pytest.MonkeyPatch):
-    from llama_index.core.vector_stores.types import VectorStoreQuery
+def test_vector_db_interface_sync_query(monkeypatch: pytest.MonkeyPatch):
+    from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult
     vdb = QdrantVectorDBMock()
-    with pytest.raises(NotImplementedError):
-        vdb.query(query=VectorStoreQuery(similarity_top_k=5))
+    result = vdb.query(query=VectorStoreQuery(similarity_top_k=5))
+    assert isinstance(result, VectorStoreQueryResult)
+
+@pytest.mark.asyncio
+async def test_vector_db_interface_sync_query_within_running_loop():
+    from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult
+    vdb = QdrantVectorDBMock()
+    result = vdb.query(query=VectorStoreQuery(similarity_top_k=5))
+    assert isinstance(result, VectorStoreQueryResult)
 
 def test_get_vector_db_instance_qdrant(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()

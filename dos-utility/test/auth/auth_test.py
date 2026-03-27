@@ -37,3 +37,5 @@ def test_get_auth_returns_auth_interface(monkeypatch: pytest.MonkeyPatch):
     result = get_auth()
 
     assert isinstance(result, AuthInterface)
+
+

@@ -31,3 +31,14 @@ def test_auth_settings_missing_provider_raises(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("AUTH_PROVIDER", raising=False)
     with pytest.raises(ValidationError):
         AuthSettings()
+
+
+def test_get_auth_settings(monkeypatch: pytest.MonkeyPatch):
+    from dos_utility.auth.env import get_auth_settings
+    get_auth_settings.cache_clear()
+
+    monkeypatch.setenv("AUTH_PROVIDER", "aws")
+
+    settings = get_auth_settings()
+
+    assert settings.AUTH_PROVIDER is AuthProvider.AWS
