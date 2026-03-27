@@ -10,7 +10,7 @@ class CreateQueryDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)
 
     question: str
-    knowledge_base: Annotated[Optional[str], Field(alias="knowledgeBase")]
+    knowledge_base: Annotated[Optional[str], Field(alias="knowledgeBase", default=None)]
     session_history: Annotated[Optional[List[Query]], Field(alias="sessionHistory", default=None)]
 
 class QueryResponseDTO(BaseModel):
