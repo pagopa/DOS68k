@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod
 from typing import Self, List, Annotated, Optional, Any
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
@@ -51,7 +52,19 @@ class VectorDBInterface(BasePydanticVectorStore):
         raise NotImplementedError
 
     def query(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        raise NotImplementedError("Use aquery instead")
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Inside an already-running event loop (e.g. FastAPI) — create a new
+            # thread to avoid "cannot run nested event loop" errors.
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                return pool.submit(asyncio.run, self.aquery(query, **kwargs)).result()
+        else:
+            return asyncio.run(self.aquery(query, **kwargs))
 
     @abstractmethod
     async def __aenter__(self: Self) -> Self:

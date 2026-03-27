@@ -47,7 +47,7 @@ class QdrantVectorDB(VectorDBInterface):
                 created: bool = await self._client.create_collection(
                     collection_name=index_name,
                     vectors_config={
-                        "embedding": VectorParams(
+                        "vector": VectorParams(
                             size=vector_dim,
                             distance=Distance.COSINE,
                             datatype=Datatype.FLOAT32,

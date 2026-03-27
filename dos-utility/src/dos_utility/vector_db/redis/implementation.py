@@ -60,7 +60,7 @@ class RedisVectorDB(VectorDBInterface):
                     {"name": "doc_id", "type": "tag", "attrs": {"sortable": False}},
                     {"name": "text", "type": "text", "attrs": {"weight": 1.0}},
                     {
-                        "name": "vector",
+                        "name": "embedding",
                         "type": "vector",
                         "attrs": {
                             "dims": vector_dim,
