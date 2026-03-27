@@ -62,13 +62,7 @@ class SessionService:
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }
 
-    async def delete_session(self: Self, session_id: str, user_id: str) -> None:
-        # Check whether the session exists and belongs to the user
-        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
-
-        if session is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-
+    async def __delete_session_queries(self: Self, session_id: str) -> None:
         # Get all queries related to the session to delete
         queries: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
 
@@ -76,6 +70,26 @@ class SessionService:
         for query in queries:
             await self.query_repository.delete_query(query_id=query["id"], session_id=session_id)
 
+
+    async def clear_session(self: Self, session_id: str, user_id: str) -> Dict[str, Any]:
+        # Check whether the session exists and belongs to the user
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+
+        if session is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+        await self.__delete_session_queries(session_id=session_id)
+
+        return session
+
+    async def delete_session(self: Self, session_id: str, user_id: str) -> None:
+        # Check whether the session exists and belongs to the user
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+
+        if session is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+        await self.__delete_session_queries(session_id=session_id)
         await self.session_repository.delete_session(session_id=session_id, user_id=user_id)
 
 def get_session_service(
