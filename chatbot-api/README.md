@@ -51,6 +51,106 @@ export MASK_PII=true # Boolean. If true, the chatbot-api service will call the m
 export MASKING_SERVICE_URL=<masking-url> # With format http(s)://masking-host:<port>. Only populate this variable if MASK_PII is true
 ```
 
+## Customization
+
+### Custom RAG tools
+
+The chatbot agent discovers its RAG tools at startup by reading YAML config files from a tools directory. Each YAML file registers one tool backed by a vector DB index. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the full schema and field descriptions.
+
+To provide your own tools, create one YAML file per tool and make them available to the container using **one** of the following methods:
+
+**Option A — Docker volume mount** (recommended for local development)
+
+Uncomment the volumes section in `compose.yaml` under the `chatbot-api` service:
+
+```yaml
+chatbot-api:
+  volumes:
+    - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
+```
+
+This mounts the local folder into the container, replacing the built-in config directory. Sample tool configs matching the [populate script](#populate-vector-db) topics are available in [`scripts/tool_config/`](./scripts/tool_config/).
+
+**Option B — `TOOLS_CONFIG_DIR` environment variable**
+
+Set the `TOOLS_CONFIG_DIR` env var in your `.env` file to point to a custom directory inside the container:
+
+```bash
+export TOOLS_CONFIG_DIR=/app/my-tools
+```
+
+### Custom agent configuration
+
+The agent's identity, behavioral rules (`system_prompt`), and reasoning format (`system_header`) are defined in a YAML config file. The default config is [`src/modules/chatbot/agent/agent.yaml`](./src/modules/chatbot/agent/agent.yaml).
+
+To override it:
+
+**Option A — Docker volume mount**
+
+Uncomment the agent volume line in `compose.yaml`:
+
+```yaml
+chatbot-api:
+  volumes:
+    - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
+```
+
+**Option B — `AGENT_CONFIG_PATH` environment variable**
+
+Set the `AGENT_CONFIG_PATH` env var in your `.env` file:
+
+```bash
+export AGENT_CONFIG_PATH=/app/my-agent.yaml
+```
+
+The YAML file must contain the fields: `name`, `description`, `system_prompt`, and `system_header`. See the default [`agent.yaml`](./src/modules/chatbot/agent/agent.yaml) for reference.
+
+---
+
+## Scripts
+
+### Populate vector DB
+
+The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds the vector database with sample documents so you can test the full pipeline (vector DB &rarr; LlamaIndex &rarr; ReAct agent) without a real document ingestion flow.
+
+**Available topics:**
+
+| Topic | Index name | Content |
+|---|---|---|
+| software-dev | `software-dev` | REST APIs, Docker, FastAPI, asyncio, vector databases, RAG, Pydantic |
+| zephyr-corp | `zephyr-corp` | Fictional company HR policies: onboarding, leave, remote work, expenses |
+| borgonero-fc | `borgonero-fc` | Fictional football club: history, stadium, seasons, players, transfers |
+
+**Prerequisites:**
+
+- A running vector DB (Redis or Qdrant). Start Redis with: `docker compose up -d redis-vdb`
+- Run the script from the `chatbot-api` directory so that `uv` picks up the local `.venv` and `dos-utility` dependency
+
+**Usage:**
+
+```bash
+cd chatbot-api
+
+# Use real Google embeddings instead of random vectors
+uv run python scripts/populate_vector_db.py --provider redis --embed-provider google --google-api-key YOUR_KEY
+```
+
+**Environment variables and CLI flags:**
+
+| Flag / Env var | Default | Description |
+|---|---|---|
+| `--provider` | (required) | `redis` or `qdrant` |
+| `--topic` | `all` | Topic to populate (`software-dev`, `zephyr-corp`, `borgonero-fc`, or `all`) |
+| `--embed-dim` | `768` | Embedding vector dimension (must match `EMBED_DIM`) |
+| `--host` / `REDIS_HOST` / `QDRANT_HOST` | `localhost` | DB hostname |
+| `--port` / `REDIS_PORT` / `QDRANT_PORT` | `6379` / `6333` | DB port |
+| `--embed-provider` | `mock` | `mock` (random vectors) or `google` (real embeddings) |
+| `--google-api-key` / `GOOGLE_API_KEY` | — | Required when `--embed-provider=google` |
+
+After populating, mount the matching tool configs from [`scripts/tool_config/`](./scripts/tool_config/) as described in [Custom RAG tools](#custom-rag-tools).
+
+---
+
 ## Start service
 
 If you want to independently start this service, run the following commands.
