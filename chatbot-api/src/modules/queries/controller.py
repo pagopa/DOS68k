@@ -1,9 +1,15 @@
+from logging import Logger
 from fastapi import APIRouter, Depends, status
 from typing import List, Dict, Any, Annotated
+from dos_utility.utils.logger import get_logger
 
 from .service import QueryService, get_query_service
 from .dto import QueryResponseDTO, CreateQueryDTO
 from ..auth import get_user_id
+from ..env import get_logging_settings, LogSettings
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 router: APIRouter = APIRouter(prefix="/queries", tags=["Queries"])
 
@@ -22,6 +28,7 @@ async def get_queries(
         user_id: Annotated[str, Depends(dependency=get_user_id)],
         session_id: str,
     ) -> List[Dict[str, Any]]:
+    logger.debug("GET /queries/%s - user_id=%s", session_id, user_id)
     return await query_service.get_queries(session_id=session_id, user_id=user_id)
 
 @router.post(
@@ -40,6 +47,10 @@ async def create_query(
         query_data: CreateQueryDTO,
         session_id: str,
     ) -> Dict[str, Any]:
+    logger.debug(
+        "POST /queries/%s - user_id=%s, question=%r, knowledge_base=%s",
+        session_id, user_id, query_data.question, query_data.knowledge_base,
+    )
     return await query_service.create_query(
         session_id=session_id,
         user_id=user_id,

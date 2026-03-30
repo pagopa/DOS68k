@@ -49,6 +49,8 @@ export SESSION_EXPIRATION_DAYS=30 # Number of days after wich the session will b
 
 export MASK_PII=true # Boolean. If true, the chatbot-api service will call the masking service to mask PII within user question and agent answer before storing them to the DB.
 export MASKING_SERVICE_URL=<masking-url> # With format http(s)://masking-host:<port>. Only populate this variable if MASK_PII is true
+
+export LOG_LEVEL=20 # Python logging level (10=DEBUG, 20=INFO, 30=WARNING, 40=ERROR, 50=CRITICAL). Defaults to 20 (INFO). Set to 10 to enable debug logs across the service, useful for tracing incoming requests, agent reasoning, tool usage, retrieved chunks and generated responses.
 ```
 
 ## Customization

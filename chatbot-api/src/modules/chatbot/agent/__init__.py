@@ -1,9 +1,15 @@
+from logging import Logger
 from typing import Callable, Type, Optional, Dict, Any, List
 from llama_index.core.tools import BaseTool
 from llama_index.core.llms.llm import LLM
 from llama_index.core.agent.workflow import ReActAgent
+from dos_utility.utils.logger import get_logger
 
 from .settings import AgentYamlSettings, get_agent_yaml_settings
+from ...env import get_logging_settings, LogSettings
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 __all__ = [
     "get_agent",
@@ -53,4 +59,8 @@ def get_agent(
     if system_header is not None:
         agent.formatter.system_header = system_header
 
+    logger.debug(
+        "ReActAgent created - name=%s, tools_count=%d, has_system_prompt=%s, has_system_header=%s",
+        name, len(tools) if tools else 0, system_prompt is not None, system_header is not None,
+    )
     return agent

@@ -60,6 +60,10 @@ class Chatbot:
             config_dir=self.__settings.tools_config_dir,
         )
         self.tool_names: List[str] = list(tools_map.keys())
+        logger.debug(
+            "Chatbot initialized - provider=%s, model_id=%s, tools=%s",
+            self.__settings.provider, self.__settings.model_id, self.tool_names,
+        )
 
         agent_config: AgentYamlSettings = get_agent_yaml_settings(file=self.__settings.agent_config_path)
         self.agent: ReActAgent = get_agent(
@@ -86,6 +90,7 @@ class Chatbot:
         seen: set = set()
         refs: List[dict] = []
 
+        logger.debug("Extracting references from %d tool call(s)", len(tool_calls))
         for tool_call in tool_calls:
             nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
             for node in nodes:
@@ -94,6 +99,7 @@ class Chatbot:
                     seen.add(source)
                     refs.append({"source": source})
 
+        logger.debug("Extracted %d unique reference(s): %s", len(refs), [r["source"] for r in refs])
         return refs
 
     def __extract_contexts(self: Self, tool_calls: list) -> List[str]:
@@ -112,6 +118,12 @@ class Chatbot:
 
         for tool_call in tool_calls:
             nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
+            logger.debug(
+                "Tool call %s returned %d chunk(s): %s",
+                getattr(tool_call, "tool_name", "unknown"),
+                len(nodes),
+                [(n.metadata.get("filename", "?"), n.metadata.get("chunk_id", "?")) for n in nodes],
+            )
             contexts.extend(
                 f"-------\nFile: {node.metadata.get('filename', 'unknown')} "
                 f"(chunk {node.metadata.get('chunk_id', '?')})\n\n{node.text}\n\n"
@@ -134,6 +146,7 @@ class Chatbot:
         structured = engine_response.structured_response
 
         if not isinstance(structured, dict):
+            logger.debug("Structured output parsing failed - got type=%s, falling back to error response", type(structured).__name__)
             # Structured output parsing failed — return a safe fallback.
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
@@ -142,6 +155,7 @@ class Chatbot:
                 "contexts": [],
             }
 
+        logger.debug("Structured output parsed successfully - tool_calls=%d", len(engine_response.tool_calls))
         return {
             "response": structured["response"],
             "tags": structured.get("tags", []),
@@ -194,18 +208,22 @@ class Chatbot:
             Dict with keys: response, tags, references, contexts.
         """
         chat_history: List[ChatMessage] = self.__messages_to_chathistory(messages=messages)
+        logger.debug("chat_generate - query=%r, knowledge_base=%s, chat_history_length=%d", query_str, knowledge_base, len(chat_history))
 
         if knowledge_base is not None:
             query_str = query_str + f" | Knowledge Base: {knowledge_base}"
+            logger.debug("Query with KB hint: %r", query_str)
 
         try:
             ctx: Context = Context.from_dict(workflow=self.agent, data={})
+            logger.debug("Running agent...")
             engine_response = await self.agent.run(
                 user_msg=query_str,
                 chat_history=chat_history,
                 ctx=ctx,
                 early_stopping_method="generate",
             )
+            logger.debug("Agent run completed - response type=%s", type(engine_response).__name__)
             response_json = self.__get_response_json(engine_response=engine_response)
         except Exception as e:
             response_json = {

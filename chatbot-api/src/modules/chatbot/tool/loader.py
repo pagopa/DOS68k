@@ -12,8 +12,10 @@ from dos_utility.utils.logger import get_logger
 from .settings import get_yaml_settings, YamlSettings
 from .factory import get_query_engine_tool
 from .vector_index import load_index
+from ...env import get_logging_settings, LogSettings
 
-logger: Logger = get_logger(name=__name__)
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 DEFAULT_CONFIG_DIR: Path = Path(__file__).parent / "config"
 
@@ -57,9 +59,15 @@ def load_tools(
 
     tools: Dict[str, QueryEngineTool] = {}
 
+    logger.debug("Found %d tool config(s) in %s", len(yaml_files), resolved_dir)
+
     # For each YAML file create a custom RAG tool
     for yaml_file in yaml_files:
         config: YamlSettings = get_yaml_settings(file=yaml_file) # Get each YAML file through Pydantic Settings
+        logger.debug(
+            "Loading tool %r - index_id=%s, similarity_top_k=%s, has_qa_prompt=%s, has_refine_prompt=%s",
+            config.name, config.index_id, config.similarity_top_k, config.qa_prompt is not None, config.refine_prompt is not None,
+        )
         qa_template: PromptTemplate = (
             PromptTemplate(
                 template=config.qa_prompt,
@@ -100,5 +108,7 @@ def load_tools(
             verbose=verbose,
         )
         tools[config.name] = tool
+        logger.debug("Tool %r loaded successfully", config.name)
 
+    logger.debug("Total tools loaded: %d - %s", len(tools), list(tools.keys()))
     return tools

@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List, Optional
 from llama_index.core import PromptTemplate, VectorStoreIndex
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -8,7 +9,12 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import AutoMergingRetriever
 from llama_index.core.tools import QueryEngineTool
 
+from dos_utility.utils.logger import get_logger
 from ..structured_outputs import RAGOutput
+from ...env import get_logging_settings, LogSettings
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 def get_query_engine_tool(
@@ -67,6 +73,10 @@ def get_query_engine_tool(
         use_async=use_async,
     )
 
+    logger.debug(
+        "Creating QueryEngineTool %r - similarity_top_k=%d, use_async=%s, verbose=%s",
+        name, similarity_top_k, use_async, verbose,
+    )
     return QueryEngineTool.from_defaults(
         query_engine=query_engine,
         name=name,

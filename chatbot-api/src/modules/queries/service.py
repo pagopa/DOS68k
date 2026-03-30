@@ -1,14 +1,19 @@
 import nh3
 
+from logging import Logger
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
 from httpx import AsyncClient, Response, Timeout
+from dos_utility.utils.logger import get_logger
 
 from .repository import QueryRepository, get_query_repository
 from ..sessions.repository import get_session_repository, SessionRepository
-from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
+from ..env import get_masking_settings, get_session_settings, get_logging_settings, SessionSettings, MaskingSettings, LogSettings
 from ..utils import format_expiration_dt
 from ..chatbot import Chatbot, get_chatbot
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 class QueryService:
     def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository, chatbot: Chatbot):
@@ -72,12 +77,15 @@ class QueryService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         question_cleaned: str = nh3.clean(html=question) # Sanitize from HTML tags and scripts
+        logger.debug("Sanitized question: %r", question_cleaned)
 
         # Get session history
         if session_history is None:
             session_history = await self.query_repository.get_queries(session_id=session_id)
+        logger.debug("Session history length: %d messages", len(session_history) if session_history else 0)
 
         # Generate answer from AI Agent
+        logger.debug("Calling chatbot.chat_generate - knowledge_base=%s", knowledge_base)
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(
             query_str=question_cleaned,
             messages=session_history,
@@ -85,14 +93,20 @@ class QueryService:
         )
         answer: str = response_json["response"]
         contexts: List[str] = response_json["contexts"]
+        logger.debug(
+            "Agent response - answer_length=%d, tags=%s, references_count=%d, contexts_count=%d",
+            len(answer), response_json.get("tags", []), len(response_json.get("references", [])), len(contexts),
+        )
 
         # Call masking service to mask PII in question/answer before store it
         question_masked: str = question_cleaned
         answer_masked: str = answer
 
         if self.masking_settings.mask_pii is True:
+            logger.debug("PII masking enabled, calling masking service")
             question_masked = await self.__mask_pii(text=question_cleaned)
             answer_masked = await self.__mask_pii(text=answer)
+            logger.debug("PII masking completed")
 
         item: Dict[str, Any] = await self.query_repository.create_query(
             session_id=session_id,
@@ -103,6 +117,8 @@ class QueryService:
                 "topic": [],
             },
         )
+
+        logger.debug("Query stored - id=%s, session_id=%s", item["id"], item["sessionId"])
 
         return {
             "id": item["id"],

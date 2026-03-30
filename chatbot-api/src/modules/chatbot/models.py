@@ -1,5 +1,8 @@
+from logging import Logger
 from typing import overload, Literal, Optional, Any, Sequence, Type, Self, List
 from pydantic import BaseModel
+from dos_utility.utils.logger import get_logger
+from ..env import get_logging_settings, LogSettings
 from google.genai import types
 from llama_index.core.llms.llm import LLM
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -18,6 +21,10 @@ _REACT_TEXT = (
     "Answer: Mock response for testing purposes."
 )
 _JSON_TEXT = '{"response": "Mock response for testing purposes."}'
+
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 class _JsonMockLLM(MockLLM):
@@ -116,10 +123,10 @@ def get_llm(
             api_key=api_key,
             generation_config=GenerateContentConfig(safety_settings=safety_settings),
         )
-        # LOGGER.info(f"{model_id} LLM loaded successfully from Google!")
+        logger.debug("LLM loaded - provider=google, model_id=%s", model_id)
     elif provider == "mock":
         llm = _MockLLM(max_tokens=256)
-        # LOGGER.info("Mock LLM loaded successfully!")
+        logger.debug("LLM loaded - provider=mock")
 
     return llm
 
@@ -178,12 +185,12 @@ def get_embed_model(
                 task_type=task_type,
             ),
         )
-        # LOGGER.info(f"{model_id} embedding model loaded successfully from Google!")
+        logger.debug("Embedding model loaded - provider=google, model_id=%s, embed_dim=%s", model_id, embed_dim)
 
     elif provider == "mock":
         from llama_index.core import MockEmbedding
 
         embed_model = MockEmbedding(embed_dim=embed_dim)
-        # LOGGER.info("Mock embedding model loaded successfully!")
+        logger.debug("Embedding model loaded - provider=mock, embed_dim=%s", embed_dim)
 
     return embed_model
