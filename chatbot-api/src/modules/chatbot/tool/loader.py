@@ -1,3 +1,4 @@
+from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional
 from llama_index.core import PromptTemplate, VectorStoreIndex
@@ -6,11 +7,13 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.tools import QueryEngineTool
 from dos_utility.vector_db import VectorDBInterface, get_vector_db_instance
+from dos_utility.utils.logger import get_logger
 
 from .settings import get_yaml_settings, YamlSettings
 from .factory import get_query_engine_tool
 from .vector_index import load_index
 
+logger: Logger = get_logger(name=__name__)
 
 DEFAULT_CONFIG_DIR: Path = Path(__file__).parent / "config"
 
@@ -50,7 +53,7 @@ def load_tools(
     yaml_files: List[Path] = sorted(f for f in resolved_dir.glob("*.yaml") if f.name != "template.yaml")
 
     if len(yaml_files) == 0:
-        raise ValueError(f"No YAML tool configs found in: {resolved_dir}")
+        logger.warning(f"No YAML tool configs found in: {resolved_dir}")
 
     tools: Dict[str, QueryEngineTool] = {}
 

@@ -170,6 +170,7 @@ class Chatbot:
                     else None
                 )
                 chat_history.append(ChatMessage(role=MessageRole.USER, content=user_content))
+
                 if assistant_content is not None:
                     chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=assistant_content))
 
