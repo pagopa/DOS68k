@@ -26,7 +26,6 @@ def load_tools(
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         use_async: bool = True,
         config_dir: Optional[Path] = None,
-        verbose: bool = False,
     ) -> Dict[str, QueryEngineTool]:
     """Loads all RAG tools from YAML config files in config_dir.
 
@@ -37,7 +36,6 @@ def load_tools(
         node_postprocessors: Optional list of postprocessors (e.g. rerankers) applied to all tools.
         use_async: Whether to use async query engine.
         config_dir: Directory containing YAML tool configs. Defaults to tool/config/.
-        verbose: Whether to enable verbose logging in retrievers.
 
     Returns:
         Mapping of tool name to QueryEngineTool, one entry per YAML file.
@@ -105,7 +103,6 @@ def load_tools(
             refine_template=refine_template,
             node_postprocessors=node_postprocessors,
             use_async=use_async,
-            verbose=verbose,
         )
         tools[config.name] = tool
         logger.debug("Tool %r loaded successfully", config.name)

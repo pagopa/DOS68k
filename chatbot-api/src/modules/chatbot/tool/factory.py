@@ -6,7 +6,6 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms.llm import LLM
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.query_engine import RetrieverQueryEngine
-from llama_index.core.retrievers import AutoMergingRetriever
 from llama_index.core.tools import QueryEngineTool
 
 from dos_utility.utils.logger import get_logger
@@ -28,11 +27,10 @@ def get_query_engine_tool(
         refine_template: Optional[PromptTemplate] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
         use_async: bool = True,
-        verbose: bool = False,
     ) -> QueryEngineTool:
-    """Builds a QueryEngineTool backed by an AutoMergingRetriever.
+    """Builds a QueryEngineTool backed by a VectorStoreIndex retriever.
 
-    Wraps the given index in an AutoMergingRetriever, feeds it into a
+    Creates a retriever from the given index, feeds it into a
     RetrieverQueryEngine with structured output, and exposes the result
     as a named tool the agent can invoke.
 
@@ -42,14 +40,13 @@ def get_query_engine_tool(
         description: Natural-language description that tells the agent when to use this tool.
         llm: Language model used to synthesise the final answer.
         embed_model: Embedding model used to encode the query at retrieval time.
-        similarity_top_k: Number of candidate chunks retrieved before merging. Defaults to 5.
+        similarity_top_k: Number of candidate chunks to retrieve. Defaults to 5.
         text_qa_template: Optional prompt template for the initial QA step.
             Must expose {context_str} and {query_str} variables.
         refine_template: Optional prompt template for the answer-refinement step.
             Must expose {existing_answer} and {context_msg} variables.
         node_postprocessors: Optional postprocessors applied after retrieval (e.g. rerankers).
         use_async: Whether to run the query engine in async mode. Defaults to True.
-        verbose: Whether to enable verbose logging in the retriever. Defaults to False.
 
     Returns:
         A QueryEngineTool ready to be registered with a ReActAgent.
@@ -58,13 +55,8 @@ def get_query_engine_tool(
         similarity_top_k=similarity_top_k,
         embed_model=embed_model,
     )
-    retriever: AutoMergingRetriever = AutoMergingRetriever(
-        vector_retriever=base_retriever,
-        storage_context=index.storage_context,
-        verbose=verbose,
-    )
     query_engine: RetrieverQueryEngine = RetrieverQueryEngine.from_args(
-        retriever=retriever,
+        retriever=base_retriever,
         llm=llm,
         output_cls=RAGOutput,
         text_qa_template=text_qa_template,
@@ -74,8 +66,8 @@ def get_query_engine_tool(
     )
 
     logger.debug(
-        "Creating QueryEngineTool %r - similarity_top_k=%d, use_async=%s, verbose=%s",
-        name, similarity_top_k, use_async, verbose,
+        "Creating QueryEngineTool %r - similarity_top_k=%d, use_async=%s",
+        name, similarity_top_k, use_async,
     )
     return QueryEngineTool.from_defaults(
         query_engine=query_engine,
