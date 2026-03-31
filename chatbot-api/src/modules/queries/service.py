@@ -54,7 +54,7 @@ class QueryService:
                 "answer": query["answer"],
                 "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
-                "contexts": [],  # contexts are not persisted, only returned live on creation
+                "context": {},  # contexts are not persisted, only returned live on creation. It will be saved in the monitoring service
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
             }
@@ -92,11 +92,6 @@ class QueryService:
             knowledge_base=knowledge_base,
         )
         answer: str = response_json["response"]
-        contexts: List[str] = response_json["contexts"]
-        logger.debug(
-            "Agent response - answer_length=%d, tags=%s, references_count=%d, contexts_count=%d",
-            len(answer), response_json.get("tags", []), len(response_json.get("references", [])), len(contexts),
-        )
 
         # Call masking service to mask PII in question/answer before store it
         question_masked: str = question_cleaned
@@ -127,7 +122,7 @@ class QueryService:
             "answer": item["answer"],
             "bad_answer": item["badAnswer"],
             "topic": item["topic"],
-            "contexts": contexts,
+            "context": response_json["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }

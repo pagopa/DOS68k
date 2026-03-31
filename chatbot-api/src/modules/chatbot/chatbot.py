@@ -1,19 +1,19 @@
 from logging import Logger
 from functools import lru_cache
-from typing import Optional, List, Dict, Self
+from typing import Optional, List, Dict, Self, Any
 from workflows import Context
 from llama_index.core.tools import QueryEngineTool
 from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.core.llms.llm import LLM
+from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.agent.workflow import AgentOutput as LlamaAgentOutput, ReActAgent
+from llama_index.core.agent.workflow import AgentOutput, ReActAgent
 from dos_utility.utils.logger import get_logger
 
 from .models import get_llm, get_embed_model
 from .tool.loader import load_tools
 from .agent import get_agent, get_agent_yaml_settings, AgentYamlSettings
 from .env import get_chatbot_settings, ChatbotSettings
-from .structured_outputs import AgentOutput
+from .structured_outputs import DOS68KAgentOutput
 from ..env import get_logging_settings, LogSettings
 
 
@@ -71,68 +71,54 @@ class Chatbot:
             description=agent_config.description,
             llm=self.model,
             system_prompt=agent_config.system_prompt,
-            output_cls=AgentOutput,
+            output_cls=DOS68KAgentOutput,
             system_header=agent_config.system_header,
             tools=list(tools_map.values()),
         )
 
-    def __extract_references(self: Self, tool_calls: list) -> List[dict]:
-        """Derives source references from the retrieved nodes of all tool calls.
-
-        Deduplicates by source filename so each document appears once.
+    def __get_context(self: Self, tool_calls: List[ToolSelection]) -> Dict[str, List[Dict[str, Any]]]:
+        """Retrieve context for the answer, if any RAG tool has been called.
 
         Args:
-            tool_calls: List of ToolCallResult objects from the agent response.
+            tool_calls (List[ToolSelection]): tool called
 
         Returns:
-            List of dicts with key 'source' (the document filename).
+            Dict[str, Dict[str, Any]]: for each file (saved in the vector db), it returns the retrieved chunk.
+                                        Example: {
+                                            "file1": [
+                                                {
+                                                    "chunk_id": 1,
+                                                    "content": "some content",
+                                                    "score": 0.9,
+                                                },
+                                            ],
+                                            ...
+                                        }
         """
-        seen: set = set()
-        refs: List[dict] = []
+        context: Dict[str, List[Dict[str, Any]]] = {}
 
-        logger.debug("Extracting references from %d tool call(s)", len(tool_calls))
         for tool_call in tool_calls:
             nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
             for node in nodes:
-                source = node.metadata.get("filename")
-                if source and source not in seen:
-                    seen.add(source)
-                    refs.append({"source": source})
+                filename: str = node.metadata.get("filename", "")
+                chunk_id: str = node.metadata.get("chunk_id", "")
+                score: Optional[float] = node.metadata.get("score", None)
+                content: str = node.text
 
-        logger.debug("Extracted %d unique reference(s): %s", len(refs), [r["source"] for r in refs])
-        return refs
+                # Create empty if not exists
+                if filename not in context.keys():
+                    context[filename] = []
 
-    def __extract_contexts(self: Self, tool_calls: list) -> List[str]:
-        """Collects the retrieved document chunks from all tool calls.
+                # Add new chunk
+                context[filename].append({
+                    "chunk_id": chunk_id,
+                    "content": content,
+                    "score": score,
+                })
 
-        Each RAG tool call attaches source nodes to its raw output. This method
-        walks all calls and formats each node as a labelled text block.
+        return context
 
-        Args:
-            tool_calls: List of ToolCallResult objects from the agent response.
-
-        Returns:
-            List of formatted context strings, one per source node.
-        """
-        contexts = []
-
-        for tool_call in tool_calls:
-            nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
-            logger.debug(
-                "Tool call %s returned %d chunk(s): %s",
-                getattr(tool_call, "tool_name", "unknown"),
-                len(nodes),
-                [(n.metadata.get("filename", "?"), n.metadata.get("chunk_id", "?")) for n in nodes],
-            )
-            contexts.extend(
-                f"-------\nFile: {node.metadata.get('filename', 'unknown')} "
-                f"(chunk {node.metadata.get('chunk_id', '?')})\n\n{node.text}\n\n"
-                for node in nodes
-            )
-
-        return contexts
-
-    def __get_response_json(self: Self, engine_response: LlamaAgentOutput) -> dict:
+    def __get_response_json(self: Self, engine_response: AgentOutput) -> Dict[str, Any]:
         """Converts the agent's raw output into the API response dict.
 
         Args:
@@ -141,9 +127,9 @@ class Chatbot:
                 model as a dict when parsing succeeded, or a non-dict value on failure.
 
         Returns:
-            Dict with keys: response, tags, references, contexts.
+            Dict with keys: response, tags, contexts.
         """
-        structured = engine_response.structured_response
+        structured: Optional[Dict[str, Any]] = engine_response.structured_response # This is the DOS68KAgentOutput class
 
         if not isinstance(structured, dict):
             logger.debug("Structured output parsing failed - got type=%s, falling back to error response", type(structured).__name__)
@@ -151,16 +137,16 @@ class Chatbot:
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "references": [],
                 "contexts": [],
             }
+
+        print(engine_response.tool_calls)
 
         logger.debug("Structured output parsed successfully - tool_calls=%d", len(engine_response.tool_calls))
         return {
             "response": structured["response"],
-            "tags": structured.get("tags", []),
-            "references": self.__extract_references(engine_response.tool_calls),
-            "contexts": self.__extract_contexts(engine_response.tool_calls),
+            "tags": [], # Left missing for now
+            "context": self.__get_context(tool_calls=engine_response.tool_calls),
         }
 
     def __messages_to_chathistory(self: Self, messages: Optional[List[Dict[str, str]]] = None) -> List[ChatMessage]:
@@ -195,7 +181,7 @@ class Chatbot:
             query_str: str,
             messages: Optional[List[Dict[str, str]]] = None,
             knowledge_base: Optional[str] = None,
-        ) -> dict:
+        ) -> Dict[str, Any]:
         """Generates a response to the user's query.
 
         Args:
@@ -217,19 +203,18 @@ class Chatbot:
         try:
             ctx: Context = Context.from_dict(workflow=self.agent, data={})
             logger.debug("Running agent...")
-            engine_response = await self.agent.run(
+            engine_response: AgentOutput = await self.agent.run(
                 user_msg=query_str,
                 chat_history=chat_history,
                 ctx=ctx,
                 early_stopping_method="generate",
             )
             logger.debug("Agent run completed - response type=%s", type(engine_response).__name__)
-            response_json = self.__get_response_json(engine_response=engine_response)
+            response_json: Dict[str, Any] = self.__get_response_json(engine_response=engine_response)
         except Exception as e:
             response_json = {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "references": [],
                 "contexts": [],
             }
             logger.warning(f"Exception: {e}")

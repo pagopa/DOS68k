@@ -181,7 +181,6 @@ class RedisVectorDB(VectorDBInterface):
         ) -> List[SearchResult]:
         index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
-
         filter_expression = self.__build_filter_expression(metadata_filters=filters)
         query: FilterQuery = FilterQuery(
             filter_expression=filter_expression,
@@ -241,14 +240,14 @@ class RedisVectorDB(VectorDBInterface):
             raise ValueError("Either query_embedding or filters must be provided")
 
         if query.query_embedding is None:
-            results = await self.filter_search(
+            results: List[SearchResult] = await self.filter_search(
                 index_name=self.index_name,
                 filters=query.filters,
                 max_results=query.similarity_top_k,
             )
             similarities = None
         else:
-            results = await self.semantic_search(
+            results: List[SearchResult] = await self.semantic_search(
                 index_name=self.index_name,
                 embedding_query=query.query_embedding,
                 max_results=query.similarity_top_k,
@@ -262,7 +261,7 @@ class RedisVectorDB(VectorDBInterface):
                 TextNode(
                     id_=r.id,
                     text=r.content,
-                    metadata={"filename": r.filename, "chunk_id": r.chunk_id},
+                    metadata={"filename": r.filename, "chunk_id": r.chunk_id, "score": r.score},
                 )
                 for r in results
             ],
