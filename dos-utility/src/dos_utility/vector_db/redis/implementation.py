@@ -150,13 +150,14 @@ class RedisVectorDB(VectorDBInterface):
         ) -> List[SearchResult]:
         index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
+        filter_expression = self.__build_filter_expression(filters) if filters else None
         query: VectorQuery = VectorQuery(
             vector=embedding_query,
             vector_field_name="vector",
             num_results=max_results,
             return_fields=["id", "filename", "chunk_id", "content"],
             return_score=True,
-            filter_expression=self.__build_filter_expression(filters) if filters else None,
+            filter_expression=filter_expression,
         )
         results = await index.query(query=query)
 
@@ -180,8 +181,10 @@ class RedisVectorDB(VectorDBInterface):
         ) -> List[SearchResult]:
         index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
+
+        filter_expression = self.__build_filter_expression(metadata_filters=filters)
         query: FilterQuery = FilterQuery(
-            filter_expression=self.__build_filter_expression(filters),
+            filter_expression=filter_expression,
             return_fields=["id", "filename", "chunk_id", "content"],
             num_results=max_results,
         )
