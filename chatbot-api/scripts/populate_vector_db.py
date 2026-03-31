@@ -466,7 +466,7 @@ async def populate(
     embeddings = get_embeddings(texts, embed_provider, api_key, embed_dim)
     print(f"        Done ({len(embeddings)} vectors, dim={len(embeddings[0])}).\n")
 
-    async with get_vector_db_ctx(index_name=index_name) as vdb:
+    async with get_vector_db_ctx() as vdb:
         # ------------------------------------------------------------------ #
         # 2. Create index
         # ------------------------------------------------------------------ #
