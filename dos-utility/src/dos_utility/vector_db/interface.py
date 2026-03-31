@@ -12,7 +12,7 @@ class ObjectData(BaseModel):
     filename: Annotated[str, Field(description="The name of the file the object comes from.")]
     chunk_id: Annotated[int, Field(description="The chunk ID within the file. If the file is not chunked set it to 0.")]
     content: Annotated[str, Field(description="The content of the chunk.")]
-    embedding: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
+    vector: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
 
 class SearchResult(BaseModel):
     """Represents a single result from a vector DB search (semantic or filter-based).

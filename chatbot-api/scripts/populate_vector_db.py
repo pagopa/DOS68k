@@ -483,7 +483,7 @@ async def populate(
                 filename=doc["filename"],
                 chunk_id=doc["chunk_id"],
                 content=doc["content"],
-                embedding=embeddings[i],
+                vector=embeddings[i],
             )
             for i, doc in enumerate(docs)
         ]
