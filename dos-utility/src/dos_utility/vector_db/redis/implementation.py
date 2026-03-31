@@ -44,7 +44,11 @@ class RedisVectorDB(VectorDBInterface):
         await self._redis_aclient.aclose()
 
     async def __get_index(self: Self, index_name: str) -> AsyncSearchIndex:
-        return await AsyncSearchIndex.from_existing(name=index_name, redis_client=self._redis_aclient)
+        index = await AsyncSearchIndex.from_existing(
+            name=index_name, redis_client=self._redis_aclient, validate_on_load=True,
+        )
+        index.schema.index.prefix = f"{index_name}/vector"
+        return index
 
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         try:
@@ -56,11 +60,11 @@ class RedisVectorDB(VectorDBInterface):
             index_schema: IndexSchema = IndexSchema(
                 index=index_info,
                 fields=[
-                    {"name": "id", "type": "tag", "attrs": {"sortable": False}},
-                    {"name": "doc_id", "type": "tag", "attrs": {"sortable": False}},
-                    {"name": "text", "type": "text", "attrs": {"weight": 1.0}},
+                    {"name": "filename", "type": "text"},
+                    {"name": "chunk_id", "type": "numeric"},
+                    {"name": "content", "type": "text", "attrs": {"weight": 1.0}},
                     {
-                        "name": "embedding",
+                        "name": "vector",
                         "type": "vector",
                         "attrs": {
                             "dims": vector_dim,
@@ -148,7 +152,7 @@ class RedisVectorDB(VectorDBInterface):
 
         query: VectorQuery = VectorQuery(
             vector=embedding_query,
-            vector_field_name="embedding",
+            vector_field_name="vector",
             num_results=max_results,
             return_fields=["id", "filename", "chunk_id", "content"],
             return_score=True,
