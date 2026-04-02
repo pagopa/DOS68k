@@ -1,14 +1,10 @@
 from fastapi import APIRouter, Depends, status
-from datetime import datetime
-from typing import List, Dict, Any, Annotated
+from typing import List, Annotated
 
-from dos_utility.vector_db import VectorDBInterface, get_vector_db
 from ..auth import get_user_id
 
 from .dto import CreateIndexResponse
-from .env import settings
-
-
+from .service import IndexService, get_index_service
 
 
 router: APIRouter = APIRouter(prefix="/index", tags=["indices"])
@@ -19,21 +15,34 @@ router: APIRouter = APIRouter(prefix="/index", tags=["indices"])
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Index created successfully"},
+        status.HTTP_409_CONFLICT: {"description": "Index already exists"},
     },
     summary="Create a new index for the authenticated user",
 )
-async def post_index(index_id: str, 
-                     vdb = Depends(get_vector_db),
-                     user = Depends(get_user_id)):
-    
-    await vdb.create_index(index_id, settings.embed_dim)
+async def post_index(
+        index_id: str,
+        service: Annotated[IndexService, Depends(dependency=get_index_service)],
+        user: Annotated[str, Depends(dependency=get_user_id)],
+    ) -> CreateIndexResponse:
+    return await service.create_index(index_id=index_id, user_id=user)
 
-    return CreateIndexResponse(
-        index_id = index_id,
-        user_id = user,
-        created_at = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-    )
 
+@router.delete(
+    path = "/{index_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Index deleted successfully"}, 
+        status.HTTP_404_NOT_FOUND: {"description": "Index not found"},
+    },
+    summary="Delete an existing index",
+)
+async def delete_index(
+        index_id: str,
+        service: Annotated[IndexService, Depends(dependency=get_index_service)],
+        user: Annotated[str, Depends(dependency=get_user_id)],
+    ) -> dict:
+    await service.delete_index(index_id=index_id)
+    return {"message": f"Index '{index_id}' deleted successfully"}
 
 
 @router.get(
@@ -43,8 +52,9 @@ async def post_index(index_id: str,
     },
     summary="Get all existing indexes",
 )
-async def get_all_indexes(vdb = Depends(get_vector_db),
-                     user = Depends(get_user_id)):
-    indexes = await vdb.get_indexes()
-    return indexes
+async def get_all_indexes(
+        service: Annotated[IndexService, Depends(dependency=get_index_service)],
+        user: Annotated[str, Depends(dependency=get_user_id)],
+    ) -> List[str]:
+    return await service.get_indexes()
 
