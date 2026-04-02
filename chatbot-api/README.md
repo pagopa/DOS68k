@@ -37,8 +37,10 @@ task test COV_THREASHOLD=90
 
 ## Env config
 
-This service uses a NoSQL database to store users chats and queries. In order to use it correctly you have to set an `.env` file with the correct configuration. Follow below links for instructions:
+This service uses multiple modules from the dos-utility package. In order to use it correctly you have to set an `.env` file with the correct configuration. Follow below links for instructions:
+
 - [NoSQL database](../dos-utility/docs/features.md#6-nosql-db-interface)
+- [Vector db](../dos-utility/docs/features.md#5-vector-db-interface)
 
 Once you've done that, update your .env with these:
 
