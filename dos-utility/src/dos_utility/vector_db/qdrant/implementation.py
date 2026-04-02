@@ -92,7 +92,7 @@ class QdrantVectorDB(VectorDBInterface):
                 points=[
                     PointStruct(
                         id=ids[i],
-                        vector=point.vector,
+                        vector={"vector": point.vector},
                         payload={
                             "filename": point.filename,
                             "chunk_id": point.chunk_id,
@@ -141,7 +141,7 @@ class QdrantVectorDB(VectorDBInterface):
             query=embedding_query,
             query_filter=self._build_filter_condition(filters),
             limit=max_results,
-            using="embedding",
+            using="vector",
         )
 
         return [
