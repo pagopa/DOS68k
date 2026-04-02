@@ -131,7 +131,7 @@ async def test_put_objects_with_custom_keys(monkeypatch: pytest.MonkeyPatch):
                     filename="file1.txt",
                     chunk_id=0,
                     content="This is the content of file 1.",
-                    embedding=[0.1] * 128,
+                    vector=[0.1] * 128,
                 ),
             ],
             custom_keys=["key1", "key2"],
@@ -154,7 +154,7 @@ async def test_put_objects_without_custom_keys(monkeypatch: pytest.MonkeyPatch):
                     filename="file1.txt",
                     chunk_id=0,
                     content="This is the content of file 1.",
-                    embedding=[0.1] * 128,
+                    vector=[0.1] * 128,
                 ),
             ],
         )
@@ -179,7 +179,7 @@ async def test_put_objects_upsert_failed(monkeypatch: pytest.MonkeyPatch):
                         filename="file1.txt",
                         chunk_id=0,
                         content="This is the content of file 1.",
-                        embedding=[0.1] * 128,
+                        vector=[0.1] * 128,
                     ),
                 ],
             )

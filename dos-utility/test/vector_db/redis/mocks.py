@@ -2,6 +2,14 @@ from typing import Self, List
 from redisvl.exceptions import RedisSearchError
 
 
+class _IndexInfoMock:
+    def __init__(self: Self):
+        self.prefix = ""
+
+class _SchemaMock:
+    def __init__(self: Self):
+        self.index = _IndexInfoMock()
+
 class RedisClientMock:
     def __init__(self: Self, *args, **kwargs):
         pass
@@ -15,7 +23,7 @@ class RedisClientMock:
 
 class AsyncSearchIndexMock:
     def __init__(self: Self, *args, **kwargs):
-        pass
+        self.schema = _SchemaMock()
 
     @classmethod
     async def from_existing(cls, *args, **kwargs) -> Self:
