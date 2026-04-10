@@ -306,6 +306,251 @@ TOPICS: dict[str, list[dict]] = {
         },
     ],
 
+    "cittadino-index": [
+        {
+            "filename": "app-io-citizen.md",
+            "chunk_id": 0,
+            "content": (
+                "IO è l'app dei servizi pubblici italiani, disponibile gratuitamente su App Store "
+                "e Google Play. Permette ai cittadini di ricevere messaggi dalla Pubblica "
+                "Amministrazione, pagare tributi e tasse tramite pagoPA, firmare documenti con "
+                "Firma con IO e accedere a servizi digitali degli enti. Per accedere è necessario "
+                "autenticarsi con SPID o CIE (Carta d'Identità Elettronica). L'app è sviluppata "
+                "e gestita da PagoPA S.p.A."
+            ),
+        },
+        {
+            "filename": "app-io-citizen.md",
+            "chunk_id": 1,
+            "content": (
+                "I messaggi ricevuti sull'app IO provengono direttamente dagli enti pubblici "
+                "abilitati al servizio. Ogni messaggio può contenere testo, allegati e, "
+                "se l'ente lo prevede, un avviso di pagamento pagoPA. Le notifiche push possono "
+                "essere abilitate o disabilitate per ogni singolo servizio nelle impostazioni "
+                "dell'app. I messaggi rimangono accessibili nell'app fino alla loro scadenza "
+                "o fino a quando il servizio non viene disattivato."
+            ),
+        },
+        {
+            "filename": "app-io-citizen.md",
+            "chunk_id": 2,
+            "content": (
+                "Per salvare un metodo di pagamento su IO, vai nella sezione 'Portafoglio' "
+                "dell'app e tocca 'Aggiungi'. Puoi aggiungere carte di credito/debito, PayPal "
+                "o altri metodi supportati. I dati della carta sono trasmessi in modo sicuro e "
+                "non vengono memorizzati sull'app, ma gestiti dai circuiti di pagamento abilitati. "
+                "Puoi usare il metodo salvato per pagare avvisi pagoPA direttamente dall'app "
+                "senza dover reinserire i dati ogni volta."
+            ),
+        },
+        {
+            "filename": "send-citizen.md",
+            "chunk_id": 0,
+            "content": (
+                "SEND (Servizio Notifiche Digitali) è la piattaforma nazionale che consente agli "
+                "enti pubblici di inviare notifiche digitali con valore legale al posto delle "
+                "raccomandate cartacee. Come cittadino, ricevi le notifiche sull'app IO, via "
+                "email o PEC. Se non leggi la notifica digitalmente entro i termini, SEND "
+                "provvede all'invio della raccomandata fisica come canale di riserva, garantendo "
+                "sempre la validità legale della comunicazione."
+            ),
+        },
+        {
+            "filename": "send-citizen.md",
+            "chunk_id": 1,
+            "content": (
+                "Per accedere alle notifiche ricevute tramite SEND puoi usare l'app IO oppure "
+                "il portale cittadini all'indirizzo notifiche.send.pagopa.it, autenticandoti con "
+                "SPID o CIE. Sul portale puoi visualizzare tutte le notifiche ricevute, scaricare "
+                "i documenti allegati e, se presente, procedere al pagamento dell'avviso pagoPA "
+                "collegato. L'accesso alla notifica sul portale o sull'app IO costituisce prova "
+                "legale di avvenuta consegna."
+            ),
+        },
+        {
+            "filename": "send-citizen.md",
+            "chunk_id": 2,
+            "content": (
+                "Se ricevi una notifica SEND ma non riesci ad aprire l'allegato, verifica di "
+                "avere una connessione attiva e l'app IO aggiornata all'ultima versione. "
+                "Se il problema persiste, accedi al portale notifiche.send.pagopa.it con SPID "
+                "o CIE per scaricare i documenti da browser. In caso di notifica già scaduta o "
+                "non più disponibile, contatta direttamente l'ente mittente per richiedere una "
+                "nuova copia del documento."
+            ),
+        },
+        {
+            "filename": "pagopa-payment-citizen.md",
+            "chunk_id": 0,
+            "content": (
+                "pagoPA è il sistema di pagamenti della Pubblica Amministrazione italiana. "
+                "Permette ai cittadini di pagare tasse, tributi, multe e qualsiasi altro "
+                "servizio pubblico in modo semplice e sicuro. Puoi pagare tramite l'app IO, "
+                "il sito checkout.pagopa.it, le app bancarie o fintech abilitate, i tabaccai "
+                "e le ricevitorie convenzionate, oppure agli sportelli bancari o agli ATM "
+                "abilitati al circuito pagoPA."
+            ),
+        },
+        {
+            "filename": "pagopa-payment-citizen.md",
+            "chunk_id": 1,
+            "content": (
+                "Per pagare un avviso pagoPA hai bisogno del codice avviso (18 cifre) e del "
+                "codice fiscale dell'ente creditore, entrambi presenti sull'avviso cartaceo o "
+                "digitale. Sul sito checkout.pagopa.it inserisci questi dati, scegli il metodo "
+                "di pagamento preferito e conferma il pagamento. Al termine ricevi una ricevuta "
+                "di pagamento scaricabile in formato PDF, che costituisce prova dell'avvenuto "
+                "versamento."
+            ),
+        },
+        {
+            "filename": "pagopa-payment-citizen.md",
+            "chunk_id": 2,
+            "content": (
+                "Se un pagamento pagoPA risulta 'in attesa' o non compare nella ricevuta, "
+                "attendi almeno 24 ore prima di riprovare: i tempi di aggiornamento dipendono "
+                "dall'ente creditore. Se l'importo è stato addebitato ma non hai ricevuto la "
+                "ricevuta, controlla la cartella spam della tua email. In caso di doppio addebito "
+                "o di pagamento non andato a buon fine, contatta il tuo istituto bancario o il "
+                "canale di pagamento utilizzato per richiedere il rimborso."
+            ),
+        },
+    ],
+
+    "devportal-index": [
+        {
+            "filename": "app-io.md",
+            "chunk_id": 0,
+            "content": (
+                "IO is the public services app developed by PagoPA S.p.A. that allows Italian "
+                "citizens to interact with the Public Administration directly from their smartphone. "
+                "Through IO, citizens can receive messages and communications from public entities, "
+                "make payments via pagoPA, sign documents with Firma con IO, and access digital "
+                "services. Institutions (Enti) integrate with IO via REST APIs using an API Key "
+                "obtained through the IO Back-Office portal."
+            ),
+        },
+        {
+            "filename": "app-io.md",
+            "chunk_id": 1,
+            "content": (
+                "To send messages to citizens via the IO app, an institution must first onboard "
+                "onto the IO platform through the Self-Care portal. After onboarding, the institution "
+                "creates a Service in the IO Back-Office, obtains an API Key, and calls the "
+                "Messages API (POST /messages/{fiscalCode}) to deliver notifications. Each message "
+                "can include a subject, a markdown body, and optionally a payment notice or a "
+                "due date. The API supports both individual (per fiscal code) and bulk delivery."
+            ),
+        },
+        {
+            "filename": "firma-con-io.md",
+            "chunk_id": 0,
+            "content": (
+                "Firma con IO is a Qualified Electronic Signature (QES) service integrated in the "
+                "IO app. It allows citizens to sign documents directly from their smartphone with "
+                "the maximum legal value, equivalent to a handwritten signature. The signature is "
+                "generated by a qualified signature creation device and is based on a qualified "
+                "certificate issued by a QTSP (Qualified Trust Service Provider) registered in the "
+                "AgID list under art. 29 of the Codice dell'Amministrazione Digitale."
+            ),
+        },
+        {
+            "filename": "firma-con-io.md",
+            "chunk_id": 1,
+            "content": (
+                "Institutions integrate Firma con IO via the Signature REST API. The flow is: "
+                "(1) the institution creates a Dossier (set of documents to sign) via POST /api/v1/sign/dossiers, "
+                "(2) creates a Signature Request linked to the dossier and the citizen's fiscal code, "
+                "(3) the citizen receives a push notification in the IO app, reviews the documents, "
+                "and signs them using biometric authentication. The institution can poll the "
+                "Signature Request status or receive a webhook callback when signing is complete."
+            ),
+        },
+        {
+            "filename": "pdnd-interoperabilita.md",
+            "chunk_id": 0,
+            "content": (
+                "PDND Interoperabilità (Piattaforma Digitale Nazionale Dati) is the national "
+                "interoperability platform that enables secure data exchange between Italian public "
+                "administrations and authorised private entities. It provides a catalogue of "
+                "e-services (APIs) that institutions expose and subscribe to. Access tokens are "
+                "issued via a voucher mechanism (client_credentials OAuth 2.0 flow with a signed "
+                "JWT assertion) and are used to call the target API."
+            ),
+        },
+        {
+            "filename": "send.md",
+            "chunk_id": 0,
+            "content": (
+                "SEND (Servizio Notifiche Digitali), also known as Piattaforma Notifiche, is the "
+                "national digital notification service operated by PagoPA S.p.A. It allows public "
+                "administrations to send legally valid digital notifications (raccomandate digitali) "
+                "to citizens and businesses, replacing traditional registered mail. Notifications "
+                "are delivered via the IO app, email, PEC, or physical mail as a fallback."
+            ),
+        },
+        {
+            "filename": "send.md",
+            "chunk_id": 1,
+            "content": (
+                "Institutions integrate with SEND through the Notification API. The main steps are: "
+                "(1) upload attachment documents to the SEND safe storage (PUT /delivery/attachments/preloaded), "
+                "(2) create a notification request (POST /delivery/notifications) specifying recipients "
+                "by fiscal code, the attached documents, and the payment notice if applicable, "
+                "(3) SEND returns a notificationRequestId; the institution polls for the IUN "
+                "(Identificativo Unico Notifica) once the notification is accepted and ingested."
+            ),
+        },
+        {
+            "filename": "pago-pa.md",
+            "chunk_id": 0,
+            "content": (
+                "pagoPA is the national payment platform that allows citizens to pay fees and taxes "
+                "to any Italian public administration through a standardised infrastructure. "
+                "Creditor institutions (Enti Creditori) integrate via the nodo-dei-pagamenti-SPC "
+                "node, using either direct connection or through an intermediary (Partner Tecnologico). "
+                "The platform supports payment notices (avvisi di pagamento) identified by a "
+                "payment code (IUV - Identificativo Univoco Versamento) and a creditor fiscal code."
+            ),
+        },
+        {
+            "filename": "pago-pa.md",
+            "chunk_id": 1,
+            "content": (
+                "PSPs (Payment Service Providers) connect to pagoPA to allow citizens to pay via "
+                "their banking or fintech apps. The integration uses the WISP 2.0 protocol or the "
+                "newer eCommerce checkout. pagoPA eCommerce exposes REST APIs for PSPs to handle "
+                "payment sessions, authorise transactions, and confirm payment outcomes. "
+                "The checkout experience can be embedded by institutions via the pagoPA Checkout "
+                "widget or accessed at checkout.pagopa.it."
+            ),
+        },
+        {
+            "filename": "api-keys.md",
+            "chunk_id": 0,
+            "content": (
+                "Most PagoPA Developer Portal products use API Key authentication for institution "
+                "integrations. API Keys are generated in the respective Back-Office or Self-Care "
+                "portal and must be included in the Ocp-Apim-Subscription-Key HTTP header (or "
+                "x-api-key depending on the product). Keys are scoped per service or environment "
+                "(test vs production) and should be rotated regularly. Never expose API Keys in "
+                "client-side code or public repositories."
+            ),
+        },
+        {
+            "filename": "webinars.md",
+            "chunk_id": 0,
+            "content": (
+                "PagoPA organises periodic technical webinars for developers and institutions "
+                "integrating with its products. Webinars cover topics such as new API versions, "
+                "migration guides, best practices for IO message delivery, SEND notification "
+                "lifecycle, and PDND voucher issuance. Recordings and slide decks are published "
+                "on the PagoPA Developer Portal under the 'Webinar' section. Upcoming sessions "
+                "can be registered for via the portal's event calendar."
+            ),
+        },
+    ],
+
     "borgonero-fc": [
         {
             "filename": "history.md",
@@ -480,9 +725,9 @@ async def populate(
         print("[ 3/4 ] Inserting documents...")
         data = [
             ObjectData(
-                filename=doc["filename"],
-                chunk_id=doc["chunk_id"],
-                content=doc["content"],
+                doc_id=doc["filename"],
+                id=str(doc["chunk_id"]),
+                text=doc["content"],
                 vector=embeddings[i],
             )
             for i, doc in enumerate(docs)

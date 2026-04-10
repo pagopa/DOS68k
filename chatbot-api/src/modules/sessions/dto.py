@@ -6,7 +6,6 @@ class CreateSessionDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(validate_by_alias=True)
 
     title: str
-    is_temporary: Annotated[bool, Field(alias="isTemporary", default=False)]
 
 class SessionResponseDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(serialize_by_alias=True, validate_by_name=True)

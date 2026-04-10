@@ -58,7 +58,7 @@ async def create_session(
     return await session_service.create_session(
         user_id=user_id,
         session_data={"title": create_session_dto.title},
-        is_temporary=create_session_dto.is_temporary,
+        is_temporary=False,
     )
 
 @router.post(

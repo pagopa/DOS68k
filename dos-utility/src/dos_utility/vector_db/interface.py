@@ -9,9 +9,9 @@ from llama_index.core.vector_stores.types import BasePydanticVectorStore, Vector
 class ObjectData(BaseModel):
     """Represents a single object to be stored in the vector database. Each object corresponds to a chunk of text from a file, along with its embedding vector.
     """
-    filename: Annotated[str, Field(description="The name of the file the object comes from.")]
-    chunk_id: Annotated[int, Field(description="The chunk ID within the file. If the file is not chunked set it to 0.")]
-    content: Annotated[str, Field(description="The content of the chunk.")]
+    doc_id: Annotated[str, Field(description="The name of the file the object comes from.")]
+    id: Annotated[str, Field(description="The chunk ID within the file. If the file is not chunked set it to 0.")]
+    text: Annotated[str, Field(description="The content of the chunk.")]
     vector: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
 
 class SearchResult(BaseModel):

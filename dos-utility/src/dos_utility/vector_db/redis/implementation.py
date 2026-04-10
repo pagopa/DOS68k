@@ -60,9 +60,9 @@ class RedisVectorDB(VectorDBInterface):
             index_schema: IndexSchema = IndexSchema(
                 index=index_info,
                 fields=[
-                    {"name": "filename", "type": "text"},
-                    {"name": "chunk_id", "type": "numeric"},
-                    {"name": "content", "type": "text", "attrs": {"weight": 1.0}},
+                    {"name": "id", "type": "tag", "attrs": {"sortable": False}},
+                    {"name": "doc_id", "type": "tag", "attrs": {"sortable": False}},
+                    {"name": "text", "type": "text", "attrs": {"weight": 1.0}},
                     {
                         "name": "vector",
                         "type": "vector",
@@ -155,7 +155,7 @@ class RedisVectorDB(VectorDBInterface):
             vector=embedding_query,
             vector_field_name="vector",
             num_results=max_results,
-            return_fields=["id", "filename", "chunk_id", "content"],
+            return_fields=["id", "doc_id", "text"],
             return_score=True,
             filter_expression=filter_expression,
         )
@@ -164,9 +164,9 @@ class RedisVectorDB(VectorDBInterface):
         return [
             SearchResult(
                 id=result["id"],
-                filename=result["filename"],
-                chunk_id=result["chunk_id"],
-                content=result["content"],
+                filename=result["doc_id"],
+                chunk_id=0,
+                content=result["text"],
                 score=1 - float(result["vector_distance"]), # Redis returns distance, we convert it to similarity score between 0 and 1
             )
             for result in results
@@ -184,7 +184,7 @@ class RedisVectorDB(VectorDBInterface):
         filter_expression = self.__build_filter_expression(metadata_filters=filters)
         query: FilterQuery = FilterQuery(
             filter_expression=filter_expression,
-            return_fields=["id", "filename", "chunk_id", "content"],
+            return_fields=["id", "filename", "content"],
             num_results=max_results,
         )
         results = await index.query(query=query)
@@ -192,9 +192,9 @@ class RedisVectorDB(VectorDBInterface):
         return [
             SearchResult(
                 id=r.get("id", ""),
-                filename=r.get("filename", ""),
-                chunk_id=r.get("chunk_id", 0),
-                content=r.get("content", ""),
+                filename=r.get("doc_id", ""),
+                chunk_id=0,
+                content=r.get("text", ""),
                 score=None,
             )
             for r in results

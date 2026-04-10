@@ -48,13 +48,13 @@ async def create_query(
         session_id: str,
     ) -> Dict[str, Any]:
     logger.debug(
-        "POST /queries/%s - user_id=%s, question=%r, knowledge_base=%s",
-        session_id, user_id, query_data.question, query_data.knowledge_base,
+        "POST /queries/%s - user_id=%s, question=%r",
+        session_id, user_id, query_data.question,
     )
     return await query_service.create_query(
         session_id=session_id,
         user_id=user_id,
         question=query_data.question,
-        knowledge_base=query_data.knowledge_base,
-        session_history=query_data.model_dump(by_alias=False)["session_history"],
+        knowledge_base=None,
+        session_history=None,
     )

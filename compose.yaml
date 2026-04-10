@@ -42,11 +42,11 @@ services:
     # See chatbot-api/README.md#customization for details.
     # volumes:
     #   - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
-    #   - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
+      # - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
     depends_on:
       # - db
       - localstack
-      - masking
+      # - masking
       - redis-vdb
 
   chatbot-evaluate-api:
@@ -151,7 +151,7 @@ services:
   #   ports:
   #     - "6333:6333"
   #   volumes:
-  #     - ./qdrant_storage:/qdrant_storage
+  #     - qdrant_data:/qdrant_storage
 
   redis-queue:
     image: redis:8.4
@@ -225,4 +225,6 @@ volumes:
   redis_vdb_data:
     driver: local
   db_data:
+    driver: local
+  qdrant_data:
     driver: local
