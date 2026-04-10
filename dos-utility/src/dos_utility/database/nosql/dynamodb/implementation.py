@@ -23,9 +23,14 @@ class DynamoDBNoSQL(NoSQLInterface):
 
         kwargs: Dict[str, Any] = {
             "region_name": self._settings.DYNAMODB_REGION,
-            "aws_access_key_id": self._aws_credentials.AWS_ACCESS_KEY_ID,
-            "aws_secret_access_key": self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value(),
         }
+
+        if self._aws_credentials.AWS_ACCESS_KEY_ID is not None:
+            kwargs["aws_access_key_id"] = self._aws_credentials.AWS_ACCESS_KEY_ID
+
+        if self._aws_credentials.AWS_SECRET_ACCESS_KEY is not None:
+            kwargs["aws_secret_access_key"] = self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+
         if self._settings.DYNAMODB_ENDPOINT_URL is not None:
             kwargs["endpoint_url"] = self._settings.DYNAMODB_ENDPOINT_URL + (f":{self._settings.DYNAMODB_PORT}" if self._settings.DYNAMODB_PORT else "")
 
