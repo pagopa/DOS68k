@@ -1,6 +1,6 @@
 import pytest
 
-from src.modules.queries.repository import QueryRepository
+from src.modules.queries.repository import QueryRepository, get_query_repository
 from src.modules.env import get_session_settings
 
 from test.modules.queries.mocks import (
@@ -91,3 +91,13 @@ async def test_delete_query_does_not_raise():
 
     # Should complete without raising any exception
     await repo.delete_query(query_id=MOCK_QUERY_ID, session_id=MOCK_SESSION_ID)
+
+
+# ---------------------------------------------------------------------------
+# get_query_repository
+# ---------------------------------------------------------------------------
+
+def test_get_query_repository_returns_instance():
+    repo = get_query_repository(nosql_client=MockNoSQLClientEmpty())
+
+    assert isinstance(repo, QueryRepository)
