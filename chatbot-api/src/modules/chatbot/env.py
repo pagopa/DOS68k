@@ -24,7 +24,6 @@ class ChatbotSettings(BaseSettings):
 
     # Retrieval settings
     similarity_topk: Annotated[PositiveInt, Field(default=5)]
-    use_async: Annotated[bool, Field(default=True)]
 
     # Tool config directory — mount a volume here to provide your own YAML tool configs.
     # Defaults to the chatbot module's built-in config/ folder.

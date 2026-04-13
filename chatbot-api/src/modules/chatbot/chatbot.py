@@ -56,7 +56,6 @@ class Chatbot:
             llm=self.model,
             embed_model=self.embed_model,
             similarity_top_k=self.__settings.similarity_topk,
-            use_async=self.__settings.use_async,
             config_dir=self.__settings.tools_config_dir,
         )
         self.tool_names: List[str] = list(tools_map.keys())

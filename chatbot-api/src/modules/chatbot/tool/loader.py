@@ -24,7 +24,6 @@ def load_tools(
         embed_model: BaseEmbedding,
         similarity_top_k: int = 5,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        use_async: bool = True,
         config_dir: Optional[Path] = None,
     ) -> Dict[str, QueryEngineTool]:
     """Loads all RAG tools from YAML config files in config_dir.
@@ -34,7 +33,6 @@ def load_tools(
         embed_model: The embedding model to use for all tools.
         similarity_top_k: Number of top results to retrieve per query.
         node_postprocessors: Optional list of postprocessors (e.g. rerankers) applied to all tools.
-        use_async: Whether to use async query engine.
         config_dir: Directory containing YAML tool configs. Defaults to tool/config/.
 
     Returns:
@@ -102,7 +100,7 @@ def load_tools(
             text_qa_template=qa_template,
             refine_template=refine_template,
             node_postprocessors=node_postprocessors,
-            use_async=use_async,
+            use_async=True,
         )
         tools[config.name] = tool
         logger.debug("Tool %r loaded successfully", config.name)
