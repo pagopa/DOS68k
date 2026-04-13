@@ -8,7 +8,7 @@ index_id: my-index
 name: MyRAGTool
 
 # description: Tells the agent when and how to use this tool. Be specific.
-description: >
+description: |
   RAG tool that retrieves information about <topic>.
   Use this tool when the user asks about <specific use cases>.
   Do NOT use this tool for <out-of-scope queries>.
