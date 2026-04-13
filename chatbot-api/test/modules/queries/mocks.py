@@ -263,3 +263,24 @@ class MockChatbot:
             "response": "Simulated answer",
             "context": {},
         }
+
+class MockMaskingResponse: ...
+
+class MockMaskingResponse200(MockMaskingResponse):
+    status_code = 200
+    def json(self):
+        return "masked text"
+
+class MockMaskingErrorResponse500(MockMaskingResponse):
+    status_code = 500
+    def json(self):
+        return {}
+
+def get_mock_async_client(mock_masking_response: MockMaskingResponse):
+    class MockAsyncClient:
+        def __init__(self, **kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def post(self, url, json): return mock_masking_response()
+
+    return MockAsyncClient
