@@ -6,16 +6,16 @@ from pydantic_settings import BaseSettings
 
 
 class ChatbotSettings(BaseSettings):
-    # LLM / Embedding provider ("google", "mock")
-    provider: Annotated[Literal["google", "mock"], Field(default="mock")]
-    model_id: Annotated[Optional[str], Field(default=None, description="Do not set if provider is 'mock'")]
-    model_api_key: Annotated[Optional[str], Field(default=None, description="API key for the chosen provider. Do not set if provider is 'mock'")]
+    # LLM / Embedding provider
+    provider: Literal["google"]
 
     # LLM settings
     max_tokens: Annotated[PositiveInt, Field(default=1024)]
+    model_id: Annotated[Optional[str], Field(description="ID of the model for the chosen provider")]
+    model_api_key: Annotated[Optional[str], Field(description="API key for the chosen provider")]
 
     # Embedding settings
-    embed_model_id: Annotated[str, Field(default="mock")]
+    embed_model_id: Annotated[str, Field(default="ID of the embedding model for the chose provider")]
     embed_batch_size: Annotated[PositiveInt, Field(default=100)]
     embed_dim: Annotated[PositiveInt, Field(default=768)]
     embed_task: Annotated[str, Field(default="RETRIEVAL_QUERY")]
