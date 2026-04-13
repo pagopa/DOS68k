@@ -87,6 +87,8 @@ async def test_create_query_success():
         session_id=MOCK_SESSION_ID,
         user_id="user-123",
         question="What is Python?",
+        knowledge_base=None,
+        session_history=None,
     )
 
     assert "id" in result
@@ -108,6 +110,8 @@ async def test_create_query_sanitizes_html():
         session_id=MOCK_SESSION_ID,
         user_id="user-123",
         question="<script>alert('xss')</script>Clean question",
+        knowledge_base=None,
+        session_history=None,
     )
 
     # nh3 strips script tags
@@ -128,6 +132,8 @@ async def test_create_query_session_not_found():
             session_id=MOCK_SESSION_ID,
             user_id="user-123",
             question="What is Python?",
+            knowledge_base=None,
+            session_history=None,
         )
 
     assert exc_info.value.status_code == 404

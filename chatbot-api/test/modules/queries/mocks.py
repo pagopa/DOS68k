@@ -171,7 +171,7 @@ class MockSessionRepositoryNotFound:
 
 def get_query_service_get_queries_200_mock():
     class QueryServiceMock:
-        async def get_queries(self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
+        async def get_queries(self: Self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
             return [
                 {
                     "id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
@@ -180,6 +180,15 @@ def get_query_service_get_queries_200_mock():
                     "answer": "The capital of France is Paris.",
                     "bad_answer": False,
                     "topic": ["geography", "capital cities"],
+                    "context": {
+                        "test.md": [
+                            {
+                                "chunk_id": 0,
+                                "content": "Test content",
+                                "score": 0.5,
+                            },
+                        ],
+                    },
                     "created_at": "2024-06-01T12:00:00Z",
                     "expires_at": "2024-06-01T13:00:00Z",
                 }
@@ -189,14 +198,21 @@ def get_query_service_get_queries_200_mock():
 
 def get_query_service_get_queries_404_mock():
     class QueryServiceMock:
-        async def get_queries(self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
+        async def get_queries(self: Self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     return QueryServiceMock()
 
 def get_query_service_create_query_201_mock():
     class QueryServiceMock:
-        async def create_query(self, session_id: str, user_id: str, question: str) -> Dict[str, Any]:
+        async def create_query(
+                self: Self,
+                session_id: str,
+                user_id: str,
+                knowledge_base: Optional[str],
+                session_history: Optional[List[Dict[str, str]]],
+                question: str,
+            ) -> Dict[str, Any]:
             return {
                 "id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
                 "session_id": session_id,
@@ -204,6 +220,15 @@ def get_query_service_create_query_201_mock():
                 "answer": "The capital of France is Paris.",
                 "bad_answer": False,
                 "topic": ["geography", "capital cities"],
+                "context": {
+                    "test.md": [
+                        {
+                            "chunk_id": 0,
+                            "content": "Test content",
+                            "score": 0.5,
+                        },
+                    ],
+                },
                 "created_at": "2024-06-01T12:00:00Z",
                 "expires_at": "2024-06-01T13:00:00Z",
             }
@@ -212,7 +237,14 @@ def get_query_service_create_query_201_mock():
 
 def get_query_service_create_query_404_mock():
     class QueryServiceMock:
-        async def create_query(self, session_id: str, user_id: str, question: str) -> Dict[str, Any]:
+        async def create_query(
+                self: Self,
+                session_id: str,
+                user_id: str,
+                question: str,
+                knowledge_base: Optional[str],
+                session_history: Optional[List[Dict[str, str]]],
+            ) -> Dict[str, Any]:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     return QueryServiceMock()
@@ -221,12 +253,13 @@ def get_query_service_create_query_404_mock():
 class MockChatbot:
     """Mock for Chatbot used in QueryService tests."""
 
-    async def chat_generate(self, query_str: str, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def chat_generate(
+            self: Self,
+            query_str: str,
+            messages: Optional[List[Dict[str, Any]]] = None,
+            knowledge_base: Optional[str] = None,
+        ) -> Dict[str, Any]:
         return {
             "response": "Simulated answer",
-            "products": ["product-a"],
-            "references": [],
-            "contexts": [],
-            "chips": [],
-            "spans": [],
+            "context": {},
         }
