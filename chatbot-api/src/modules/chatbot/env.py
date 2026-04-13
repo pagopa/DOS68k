@@ -11,8 +11,8 @@ class ChatbotSettings(BaseSettings):
 
     # LLM settings
     max_tokens: Annotated[PositiveInt, Field(default=1024)]
-    model_id: Annotated[Optional[str], Field(description="ID of the model for the chosen provider")]
-    model_api_key: Annotated[Optional[str], Field(description="API key for the chosen provider")]
+    model_id: Annotated[str, Field(description="ID of the model for the chosen provider")]
+    model_api_key: Annotated[str, Field(description="API key for the chosen provider")]
 
     # Embedding settings
     embed_model_id: Annotated[str, Field(default="ID of the embedding model for the chose provider")]
