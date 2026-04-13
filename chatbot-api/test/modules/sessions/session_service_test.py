@@ -2,7 +2,7 @@ import pytest
 
 from fastapi import HTTPException
 
-from src.modules.sessions.service import SessionService
+from src.modules.sessions.service import SessionService, get_session_service
 from src.modules.env import get_session_settings
 
 from test.modules.sessions.mocks import (
@@ -169,3 +169,46 @@ async def test_delete_session_not_found():
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.detail == "Session not found"
+
+
+# ---------------------------------------------------------------------------
+# clear_session
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_clear_session_success():
+    service = SessionService(
+        session_repository=MockSessionRepository(),
+        query_repository=MockQueryRepository(),
+    )
+    result = await service.clear_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
+
+    assert result["id"] == MOCK_SESSION_ID
+    assert result["userId"] == MOCK_USER_ID
+
+
+@pytest.mark.asyncio
+async def test_clear_session_not_found():
+    service = SessionService(
+        session_repository=MockSessionRepositoryNotFound(),
+        query_repository=MockQueryRepository(),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.clear_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.detail == "Session not found"
+
+
+# ---------------------------------------------------------------------------
+# get_session_service
+# ---------------------------------------------------------------------------
+
+def test_get_session_service_returns_instance():
+    service = get_session_service(
+        session_repository=MockSessionRepository(),
+        query_repository=MockQueryRepository(),
+    )
+
+    assert isinstance(service, SessionService)
