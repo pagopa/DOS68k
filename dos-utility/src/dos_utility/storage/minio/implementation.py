@@ -40,7 +40,14 @@ class MinIO(StorageInterface):
         return response.read()
 
     def put_object(self: Self, bucket: str, name: str, data: BinaryIO, content_type: str) -> None:
-        self.client.put_object(bucket_name=bucket, object_name=name, data=data, content_type=content_type)
+        data.seek(0, 2)
+        length = data.tell()
+        data.seek(0)
+        self.client.put_object(bucket_name=bucket, 
+                               object_name=name, 
+                               data=data, 
+                               content_type=content_type,
+                               length = length)
 
     def delete_object(self: Self, bucket: str, name: str) -> None:
         self.client.remove_object(bucket_name=bucket, object_name=name)
