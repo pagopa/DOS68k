@@ -209,7 +209,6 @@ def get_query_service_create_query_201_mock():
                 self: Self,
                 session_id: str,
                 user_id: str,
-                knowledge_base: Optional[str],
                 session_history: Optional[List[Dict[str, str]]],
                 question: str,
             ) -> Dict[str, Any]:
@@ -242,7 +241,6 @@ def get_query_service_create_query_404_mock():
                 session_id: str,
                 user_id: str,
                 question: str,
-                knowledge_base: Optional[str],
                 session_history: Optional[List[Dict[str, str]]],
             ) -> Dict[str, Any]:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -257,7 +255,6 @@ class MockChatbot:
             self: Self,
             query_str: str,
             messages: Optional[List[Dict[str, Any]]] = None,
-            knowledge_base: Optional[str] = None,
         ) -> Dict[str, Any]:
         return {
             "response": "Simulated answer",

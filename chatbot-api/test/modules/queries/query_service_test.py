@@ -90,7 +90,6 @@ async def test_create_query_success():
         session_id=MOCK_SESSION_ID,
         user_id="user-123",
         question="What is Python?",
-        knowledge_base=None,
         session_history=None,
     )
 
@@ -113,7 +112,6 @@ async def test_create_query_sanitizes_html():
         session_id=MOCK_SESSION_ID,
         user_id="user-123",
         question="<script>alert('xss')</script>Clean question",
-        knowledge_base=None,
         session_history=None,
     )
 
@@ -135,7 +133,6 @@ async def test_create_query_session_not_found():
             session_id=MOCK_SESSION_ID,
             user_id="user-123",
             question="What is Python?",
-            knowledge_base=None,
             session_history=None,
         )
 
@@ -163,7 +160,6 @@ async def test_create_query_masks_question_and_answer_when_pii_enabled(monkeypat
         session_id=MOCK_SESSION_ID,
         user_id="user-123",
         question="What is Python?",
-        knowledge_base=None,
         session_history=None,
     )
 
@@ -189,7 +185,6 @@ async def test_create_query_raises_500_when_masking_service_fails(monkeypatch: p
             session_id=MOCK_SESSION_ID,
             user_id="user-123",
             question="What is Python?",
-            knowledge_base=None,
             session_history=None,
         )
 
