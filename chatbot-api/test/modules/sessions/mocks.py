@@ -235,3 +235,16 @@ def get_session_service_delete_session_404_mock():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     return SessionServiceMock()
+
+def get_session_service_clear_session_mock():
+    class SessionServiceMock:
+        async def clear_session(self: Self, session_id: str, user_id: str):
+            return {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "user_id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "Session 1",
+                "created_at": "2024-01-01T00:00:00Z",
+                "expires_at": None,
+            }
+
+    return SessionServiceMock()

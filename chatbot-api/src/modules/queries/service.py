@@ -1,19 +1,25 @@
 import nh3
 
+from logging import Logger
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
-from datetime import datetime
 from httpx import AsyncClient, Response, Timeout
+from dos_utility.utils.logger import get_logger
 
-from ..sessions.repository import get_session_repository, SessionRepository
-from ..env import get_masking_settings, get_session_settings, SessionSettings, MaskingSettings
-from ..utils import format_expiration_dt
 from .repository import QueryRepository, get_query_repository
+from ..sessions.repository import get_session_repository, SessionRepository
+from ..env import get_masking_settings, get_session_settings, get_logging_settings, SessionSettings, MaskingSettings, LogSettings
+from ..utils import format_expiration_dt
+from ..chatbot import Chatbot, get_chatbot
+
+log_settings: LogSettings = get_logging_settings()
+logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 class QueryService:
-    def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository):
+    def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository, chatbot: Chatbot):
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
+        self.chatbot: Chatbot = chatbot
         self.settings: SessionSettings = get_session_settings()
         self.masking_settings: MaskingSettings = get_masking_settings()
 
@@ -48,13 +54,20 @@ class QueryService:
                 "answer": query["answer"],
                 "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
+                "context": {},  # contexts are not persisted, only returned live on creation. It will be saved in the monitoring service
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
             }
             for query in queries
         ]
 
-    async def create_query(self: Self, session_id: str, user_id: str, question: str) -> Dict[str, Any]:
+    async def create_query(
+            self: Self,
+            session_id: str,
+            user_id: str,
+            question: str,
+            session_history: Optional[List[Dict[str, str]]],
+        ) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
 
@@ -62,23 +75,31 @@ class QueryService:
             # Create a new session for the user if it doesn't exist, or 
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-        question_cleaned = nh3.clean(html=question) # Sanitize from HTML tags and scripts
+        question_cleaned: str = nh3.clean(html=question) # Sanitize from HTML tags and scripts
+        logger.debug("Sanitized question: %r", question_cleaned)
 
         # Get session history
-        session_history: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
+        if session_history is None:
+            session_history = await self.query_repository.get_queries(session_id=session_id)
+        logger.debug("Session history length: %d messages", len(session_history) if session_history else 0)
 
-        #! Simulate LLM call and response generation
-        # In a real implementation, you would call your LLM here and generate an answer based on the question and session history
-        answer: str = "Simulated answer"
-        topic: List[str] = ["simulated", "topic"]
+        # Generate answer from AI Agent
+        logger.debug("Calling chatbot.chat_generate")
+        response_json: Dict[str, Any] = await self.chatbot.chat_generate(
+            query_str=question_cleaned,
+            messages=session_history,
+        )
+        answer: str = response_json["response"]
 
         # Call masking service to mask PII in question/answer before store it
         question_masked: str = question_cleaned
         answer_masked: str = answer
 
         if self.masking_settings.mask_pii is True:
+            logger.debug("PII masking enabled, calling masking service")
             question_masked = await self.__mask_pii(text=question_cleaned)
             answer_masked = await self.__mask_pii(text=answer)
+            logger.debug("PII masking completed")
 
         item: Dict[str, Any] = await self.query_repository.create_query(
             session_id=session_id,
@@ -86,9 +107,11 @@ class QueryService:
                 "question": question_masked,
                 "answer": answer_masked,
                 "expiresAt": session["expiresAt"],
-                "topic": topic,
+                "topic": [],
             },
         )
+
+        logger.debug("Query stored - id=%s, session_id=%s", item["id"], item["sessionId"])
 
         return {
             "id": item["id"],
@@ -97,6 +120,7 @@ class QueryService:
             "answer": item["answer"],
             "bad_answer": item["badAnswer"],
             "topic": item["topic"],
+            "context": response_json["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }
@@ -104,8 +128,10 @@ class QueryService:
 def get_query_service(
         query_repository: Annotated[QueryRepository, Depends(dependency=get_query_repository)],
         session_repository: Annotated[SessionRepository, Depends(dependency=get_session_repository)],
+        chatbot: Annotated[Chatbot, Depends(dependency=get_chatbot)],
     ) -> QueryService:
     return QueryService(
         query_repository=query_repository,
         session_repository=session_repository,
+        chatbot=chatbot,
     )

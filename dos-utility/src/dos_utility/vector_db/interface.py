@@ -1,6 +1,8 @@
-from abc import ABC, abstractmethod
-from typing import Self, List, Annotated, Optional
+import asyncio
+from abc import abstractmethod
+from typing import Self, List, Annotated, Optional, Any
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery, VectorStoreQueryResult, MetadataFilters
 
 
 
@@ -10,18 +12,60 @@ class ObjectData(BaseModel):
     filename: Annotated[str, Field(description="The name of the file the object comes from.")]
     chunk_id: Annotated[int, Field(description="The chunk ID within the file. If the file is not chunked set it to 0.")]
     content: Annotated[str, Field(description="The content of the chunk.")]
-    embedding: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
+    vector: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
 
-class SemanticSearchResult(BaseModel):
-    """Represents a single result from a semantic search query. Each result corresponds to a chunk of text from a file, along with its similarity score to the query embedding.
+class SearchResult(BaseModel):
+    """Represents a single result from a vector DB search (semantic or filter-based).
     """
     id: Annotated[str, Field(description="Unique identifier of the document")]
     filename: Annotated[str, Field(description="Name of the file containing the document")]
     chunk_id: Annotated[int, Field(description="Chunk identifier within the document")]
     content: Annotated[str, Field(description="Content of the document chunk")]
-    score: Annotated[float, Field(description="Similarity score between 0 and 1")]
+    score: Annotated[Optional[float], Field(description="Similarity score between 0 and 1. None for filter-only results.")]
 
-class VectorDBInterface(ABC):
+
+
+class VectorDBInterface(BasePydanticVectorStore):
+    stores_text: bool = True
+
+    @abstractmethod
+    def model_post_init(self: Self, __context: Any) -> None:
+        """Initialize private attributes (database clients, settings, etc.).
+
+        Use this instead of __init__: because this class ultimately inherits from
+        Pydantic's BaseModel (via BasePydanticVectorStore), __init__ is owned by
+        Pydantic and must not be overridden. model_post_init runs after Pydantic
+        has finished its own initialization, with all fields already validated and set.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def client(self: Self) -> Any:
+        """Get the underlying database client."""
+        ...
+
+    def add(self: Self, nodes: Any, **kwargs: Any) -> List[str]:
+        raise NotImplementedError
+
+    def delete(self: Self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        raise NotImplementedError
+
+    def query(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Inside an already-running event loop (e.g. FastAPI) — create a new
+            # thread to avoid "cannot run nested event loop" errors.
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                return pool.submit(asyncio.run, self.aquery(query, **kwargs)).result()
+        else:
+            return asyncio.run(self.aquery(query, **kwargs))
+
     @abstractmethod
     async def __aenter__(self: Self) -> Self:
         """Enter the asynchronous context manager.
@@ -164,7 +208,8 @@ class VectorDBInterface(ABC):
             embedding_query: List[float],
             max_results: PositiveInt,
             score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
-        ) -> List[SemanticSearchResult]:
+            filters: Optional[MetadataFilters] = None,
+        ) -> List[SearchResult]:
         """Perform a semantic search in the vector database.
 
         Args:
@@ -172,15 +217,16 @@ class VectorDBInterface(ABC):
             embedding_query (List[float]): The embedding vector to search for. Make sure its dimension matches the index dimension.
             max_results (PositiveInt): The maximum number of results to return.
             score_threshold (PositiveFloat): The minimum similarity score (between 0 and 1) for a result to be included in the results list.
+            filters (Optional[MetadataFilters]): Optional metadata filters to apply alongside the vector search.
 
         Returns:
-            List[SemanticSearchResult]: A list of SemanticSearchResult objects representing the search results.
+            List[SearchResult]: A list of SearchResult objects representing the search results.
 
         Examples:
             >>> vector_db = MyVectorDBImplementation()
             >>> async with vector_db as vdb:
             >>>     query_embedding: List[float] = [0.1, 0.2, 0.3, ...]  # Ensure the embedding dimension matches the index
-            >>>     results: List[SemanticSearchResult] = await vdb.semantic_search(
+            >>>     results: List[SearchResult] = await vdb.semantic_search(
             >>>         index_name="my_index",
             >>>         embedding_query=query_embedding,
             >>>         max_results=10,
@@ -189,6 +235,39 @@ class VectorDBInterface(ABC):
         """
         ...
 
-    # @abstractmethod
-    # async def filter_search(self: Self) -> ...:
-    #     ...
+    @abstractmethod
+    async def filter_search(
+            self: Self,
+            index_name: str,
+            filters: MetadataFilters,
+            max_results: PositiveInt,
+        ) -> List[SearchResult]:
+        """Perform a metadata filter search in the vector database, without a query embedding.
+
+        Args:
+            index_name (str): The name of the index to search in.
+            filters (MetadataFilters): The metadata filters to apply.
+            max_results (PositiveInt): The maximum number of results to return.
+
+        Returns:
+            List[SearchResult]: A list of SearchResult objects. score is None for all results.
+
+        Examples:
+            >>> from llama_index.core.vector_stores.types import MetadataFilters, MetadataFilter
+            >>> vector_db = MyVectorDBImplementation()
+            >>> async with vector_db as vdb:
+            >>>     results: List[SearchResult] = await vdb.filter_search(
+            >>>         index_name="my_index",
+            >>>         filters=MetadataFilters(filters=[MetadataFilter(key="filename", value="doc.pdf")]),
+            >>>         max_results=10,
+            >>>     )
+        """
+        ...
+
+    @abstractmethod
+    async def aquery(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """LlamaIndex integration point. Routes to semantic_search or filter_search
+        based on whether query.query_embedding is set, then converts the results to
+        the VectorStoreQueryResult format expected by LlamaIndex.
+        """
+        ...

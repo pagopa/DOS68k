@@ -1,5 +1,8 @@
 from typing import List, Self, Annotated, Dict, Any
-from uuid import uuid7
+try:
+    from uuid import uuid7
+except ImportError:  # pragma: no cover
+    from uuid6 import uuid7  # backport for Python < 3.14  # pragma: no cover
 from fastapi import Depends
 from datetime import datetime
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator

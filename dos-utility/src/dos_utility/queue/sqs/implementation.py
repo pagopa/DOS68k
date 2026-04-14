@@ -4,7 +4,7 @@ import base64
 import logging
 
 from uuid import uuid4
-from typing import Self, Tuple, Optional
+from typing import Self, Tuple, Optional, Dict
 from asyncio import AbstractEventLoop
 
 from ...utils.aws import get_aws_credentials_settings, AWSCredentialsSettings
@@ -20,6 +20,15 @@ class SQSQueue(QueueInterface):
     async def __aenter__(self: Self) -> Self:
         # Since boto3 is blocking, we run it in a separate thread to respect asyncio interface
         loop: AbstractEventLoop = asyncio.get_event_loop() # Get current event loop
+
+        kwargs: Dict[str, str] = {}
+
+        if self._aws_credentials.AWS_ACCESS_KEY_ID is not None:
+            kwargs["aws_access_key_id"] = self._aws_credentials.AWS_ACCESS_KEY_ID
+
+        if self._aws_credentials.AWS_SECRET_ACCESS_KEY is not None:
+            kwargs["aws_secret_access_key"] = self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+
         # Initialize SQS client
         self._client = await loop.run_in_executor(
             None,
@@ -27,8 +36,7 @@ class SQSQueue(QueueInterface):
                 "sqs",
                 region_name=self._settings.SQS_REGION,
                 endpoint_url=f"{self._settings.SQS_ENDPOINT_URL}:{self._settings.SQS_PORT}",
-                aws_access_key_id=self._aws_credentials.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value(),
+                **kwargs,
             ),
         )
 

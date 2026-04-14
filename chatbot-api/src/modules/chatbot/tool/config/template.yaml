@@ -1,0 +1,37 @@
+# Example RAG tool configuration.
+# Copy and rename this file (e.g. devportal.yaml) to register a new tool.
+
+# index_id: The vector DB index name to load knowledge from (must match the ID used during indexing).
+index_id: my-index
+
+# name: Unique tool name exposed to the agent. Use PascalCase, no spaces.
+name: MyRAGTool
+
+# description: Tells the agent when and how to use this tool. Be specific.
+description: |
+  RAG tool that retrieves information about <topic>.
+  Use this tool when the user asks about <specific use cases>.
+  Do NOT use this tool for <out-of-scope queries>.
+
+# similarity_top_k (optional): Number of chunks to retrieve per query.
+# Overrides the global SIMILARITY_TOPK env var for this tool only.
+# similarity_top_k: 8
+
+# qa_prompt (optional): Overrides the default LlamaIndex QA prompt.
+# Available variables: {context_str}, {query_str}
+# qa_prompt: |
+#   Context information is below.
+#   ---------------------
+#   {context_str}
+#   ---------------------
+#   Given the context above, answer the following question: {query_str}
+
+# refine_prompt (optional): Overrides the default LlamaIndex refine prompt.
+# Available variables: {existing_answer}, {context_msg}
+# refine_prompt: |
+#   The original answer is below.
+#   ---------------------
+#   {existing_answer}
+#   ---------------------
+#   Given the new context below, refine the answer.
+#   {context_msg}

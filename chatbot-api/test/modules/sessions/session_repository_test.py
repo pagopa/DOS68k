@@ -1,6 +1,6 @@
 import pytest
 
-from src.modules.sessions.repository import SessionRepository
+from src.modules.sessions.repository import SessionRepository, get_session_repository
 
 from test.modules.sessions.mocks import (
     MockNoSQLClientWithSession,
@@ -98,3 +98,13 @@ async def test_delete_session_does_not_raise():
 
     # Should complete without raising any exception
     await repo.delete_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
+
+
+# ---------------------------------------------------------------------------
+# get_session_repository
+# ---------------------------------------------------------------------------
+
+def test_get_session_repository_returns_instance():
+    repo = get_session_repository(nosql_client=MockNoSQLClientEmpty())
+
+    assert isinstance(repo, SessionRepository)

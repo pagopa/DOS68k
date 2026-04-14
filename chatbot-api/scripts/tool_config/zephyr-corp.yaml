@@ -1,0 +1,12 @@
+index_id: zephyr-corp
+
+name: ZephyrCorpTool
+
+description: >
+  RAG tool that retrieves information about Zephyr Corp company policies and
+  procedures, including employee onboarding (Project Ignite), annual and sick
+  leave policies, parental leave, remote work guidelines, on-site weeks, home
+  office stipend, and expense reimbursement rules.
+  Use this tool when the user asks about Zephyr Corp HR policies, benefits,
+  onboarding, or internal processes.
+  Do NOT use this tool for questions unrelated to Zephyr Corp.

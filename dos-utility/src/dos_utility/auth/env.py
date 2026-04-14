@@ -4,7 +4,7 @@ from enum import StrEnum
 
 class AuthProvider(StrEnum):
     AWS = "aws"
-    KEYCLOAK = "keycloak"
+    # KEYCLOAK = "keycloak"
     LOCAL = "local"
 
 class AuthSettings(BaseSettings):
