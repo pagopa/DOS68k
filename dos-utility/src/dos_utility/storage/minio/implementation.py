@@ -50,7 +50,11 @@ class MinIO(StorageInterface):
         data.seek(0)
 
         self.client.put_object(
-            bucket_name=bucket, object_name=name, data=data, content_type=content_type
+            bucket_name=bucket,
+            object_name=name,
+            data=data,
+            content_type=content_type,
+            length=length,
         )
 
     def delete_object(self: Self, bucket: str, name: str) -> None:
