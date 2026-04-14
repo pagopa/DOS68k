@@ -66,7 +66,6 @@ class QueryService:
             session_id: str,
             user_id: str,
             question: str,
-            knowledge_base: Optional[str],
             session_history: Optional[List[Dict[str, str]]],
         ) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
@@ -85,11 +84,10 @@ class QueryService:
         logger.debug("Session history length: %d messages", len(session_history) if session_history else 0)
 
         # Generate answer from AI Agent
-        logger.debug("Calling chatbot.chat_generate - knowledge_base=%s", knowledge_base)
+        logger.debug("Calling chatbot.chat_generate")
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(
             query_str=question_cleaned,
             messages=session_history,
-            knowledge_base=knowledge_base,
         )
         answer: str = response_json["response"]
 

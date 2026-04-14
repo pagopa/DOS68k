@@ -136,10 +136,8 @@ class Chatbot:
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "contexts": [],
+                "context": [],
             }
-
-        print(engine_response.tool_calls)
 
         logger.debug("Structured output parsed successfully - tool_calls=%d", len(engine_response.tool_calls))
         return {
@@ -179,25 +177,18 @@ class Chatbot:
             self: Self,
             query_str: str,
             messages: Optional[List[Dict[str, str]]] = None,
-            knowledge_base: Optional[str] = None,
         ) -> Dict[str, Any]:
         """Generates a response to the user's query.
 
         Args:
             query_str: The user's query string.
             messages: Chat history. Each dict has "question" and "answer" keys.
-            knowledge_base: Optional knowledge base identifier appended to the query
-                to hint the agent toward a specific tool.
 
         Returns:
             Dict with keys: response, tags, references, contexts.
         """
         chat_history: List[ChatMessage] = self.__messages_to_chathistory(messages=messages)
-        logger.debug("chat_generate - query=%r, knowledge_base=%s, chat_history_length=%d", query_str, knowledge_base, len(chat_history))
-
-        if knowledge_base is not None:
-            query_str = query_str + f" | Knowledge Base: {knowledge_base}"
-            logger.debug("Query with KB hint: %r", query_str)
+        logger.debug("chat_generate - query=%r, chat_history_length=%d", query_str, len(chat_history))
 
         try:
             ctx: Context = Context.from_dict(workflow=self.agent, data={})
@@ -214,7 +205,7 @@ class Chatbot:
             response_json = {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "contexts": [],
+                "context": [],
             }
             logger.warning(f"Exception: {e}")
 
