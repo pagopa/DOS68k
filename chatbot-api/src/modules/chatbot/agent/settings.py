@@ -1,13 +1,14 @@
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Annotated
 from pathlib import Path
+from pydantic import Field
 from pydantic_settings import BaseSettings, YamlConfigSettingsSource, PydanticBaseSettingsSource
 
 class AgentYamlSettings(BaseSettings):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    system_prompt: Optional[str] = None
-    system_header: Optional[str] = None
+    name: Annotated[Optional[str], Field(default=None)]
+    description: Annotated[Optional[str], Field(default=None)]
+    system_prompt: Annotated[Optional[str], Field(default=None)]
+    system_header: Annotated[Optional[str], Field(default=None)]
 
 
 @lru_cache
