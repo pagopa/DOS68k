@@ -27,7 +27,7 @@ class ChatbotSettings(BaseSettings):
 
     # Tool config directory — mount a volume here to provide your own YAML tool configs.
     # Defaults to the chatbot module's built-in config/ folder.
-    tools_config_dir: Annotated[Optional[Path], Field(default=None)]
+    tools_config_dir: Annotated[Optional[Path], Field(default=Path(__file__).parent / "tool" / "config")]
 
     # Agent settings
     temperature_agent: Annotated[NonNegativeFloat, Field(default=0.0)]  # 0.0 = deterministic

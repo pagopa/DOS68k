@@ -17,14 +17,12 @@ from ...env import get_logging_settings, LogSettings
 log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
-DEFAULT_CONFIG_DIR: Path = Path(__file__).parent / "config"
-
 def load_tools(
         llm: LLM,
         embed_model: BaseEmbedding,
+        config_dir: Path,
         similarity_top_k: int = 5,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        config_dir: Optional[Path] = None,
     ) -> Dict[str, QueryEngineTool]:
     """Loads all RAG tools from YAML config files in config_dir.
 
@@ -42,20 +40,18 @@ def load_tools(
         FileNotFoundError: If config_dir does not exist.
         ValueError: If no YAML configs are found in config_dir.
     """
-    resolved_dir: Path = config_dir or DEFAULT_CONFIG_DIR
-
-    if not resolved_dir.exists():
-        raise FileNotFoundError(f"Tool config directory not found: {resolved_dir}")
+    if not config_dir.exists():
+        raise FileNotFoundError(f"Tool config directory not found: {config_dir}")
 
     # List all YAML files
-    yaml_files: List[Path] = sorted(f for f in resolved_dir.glob("*.yaml") if f.name != "template.yaml")
+    yaml_files: List[Path] = sorted(f for f in config_dir.glob("*.yaml") if f.name != "template.yaml")
 
     if len(yaml_files) == 0:
-        logger.warning(f"No YAML tool configs found in: {resolved_dir}")
+        logger.warning(f"No YAML tool configs found in: {config_dir}")
 
     tools: Dict[str, QueryEngineTool] = {}
 
-    logger.debug("Found %d tool config(s) in %s", len(yaml_files), resolved_dir)
+    logger.debug("Found %d tool config(s) in %s", len(yaml_files), config_dir)
 
     # For each YAML file create a custom RAG tool
     for yaml_file in yaml_files:
