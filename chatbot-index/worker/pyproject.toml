@@ -9,6 +9,10 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "dos-utility",
+    "google-genai>=1.73.1",
+    "llama-index>=0.14.20",
+    "llama-index-embeddings-google-genai>=0.5.0",
+    "pymupdf>=1.27.2.2",
 ]
 
 [project.scripts]
