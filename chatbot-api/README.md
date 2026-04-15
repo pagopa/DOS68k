@@ -206,9 +206,10 @@ X-User-Id: <uuid>
 ### Sessions
 
 - `GET /sessions/all` — List all sessions for the user
-	- Response: `[{ ...session fields... }]`
+	- Response `200`: `[{ ...session fields... }]`
 - `GET /sessions/{session_id}` — Get a session by ID
-	- Response: `{ ...session fields... }`
+	- Response `200`: `{ ...session fields... }`
+	- Response `404`: Session not found
 - `POST /sessions` — Create a new session
 	- Request body:
 		```json
@@ -217,9 +218,12 @@ X-User-Id: <uuid>
 			"isTemporary": false
 		}
 		```
-	- Response: `{ ...session fields... }`
-- `DELETE /sessions/{session_id}` — Delete a session
-	- Response: `204 No Content`
+	- Response `201`: `{ ...session fields... }`
+- `POST /sessions/{session_id}/clear` — Delete all queries within a session, keeping the session itself
+	- Response `200`: `{ ...session fields... }`
+- `DELETE /sessions/{session_id}` — Delete a session and all its queries
+	- Response `204`: No Content
+	- Response `404`: Session not found
 
 **Session fields:**
 ```json
@@ -235,15 +239,21 @@ X-User-Id: <uuid>
 ### Queries
 
 - `GET /queries/{session_id}` — List all queries for a session
-	- Response: `[{ ...query fields... }]`
-- `POST /queries/{session_id}` — Create a new query (send a question)
+	- Response `200`: `[{ ...query fields... }]`
+	- Response `404`: Session not found
+- `POST /queries/{session_id}` — Create a new query (send a question to the chatbot)
 	- Request body:
 		```json
 		{
-			"question": "What is the capital of Italy?"
+			"question": "What is the capital of Italy?",
+			"sessionHistory": [
+				{ "question": "Previous question", "answer": "Previous answer" }
+			]
 		}
 		```
-	- Response: `{ ...query fields... }`
+		`sessionHistory` is optional. When provided, the listed question/answer pairs are injected into the agent's context as prior conversation turns.
+	- Response `201`: `{ ...query fields... }`
+	- Response `404`: Session not found
 
 **Query fields:**
 ```json
@@ -254,10 +264,17 @@ X-User-Id: <uuid>
 	"answer": "string",
 	"badAnswer": false,
 	"topic": ["string"],
+	"context": {
+		"<filename>": [
+			{ "chunkId": 0, "content": "string", "score": 0.95 }
+		]
+	},
 	"createdAt": "YYYY-MM-DDTHH:MM:SS",
 	"expiresAt": "YYYY-MM-DDTHH:MM:SS" | null
 }
 ```
+
+`context` is a map of source filename → list of document chunks retrieved from that file. Each chunk has a `chunkId`, its text `content`, and a similarity `score` (may be `null` depending on the vector DB provider). The map is empty when no RAG tool was invoked.
 
 ---
 
