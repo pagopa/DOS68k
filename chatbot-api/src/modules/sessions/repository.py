@@ -46,7 +46,7 @@ class SessionRepository():
             **session_data,
         }
 
-        await self.nosql_client.put_item(table_name="sessions", item=item)
+        await self.nosql_client.put_item(table_name=self.env.SESSIONS_TABLENAME, item=item)
 
         return item
 
