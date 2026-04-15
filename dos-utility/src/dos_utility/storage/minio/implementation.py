@@ -35,11 +35,12 @@ class MinIO(StorageInterface):
             response: HTTPResponse = self.client.get_object(
                 bucket_name=bucket, object_name=name
             )
+            data = response.read()
         finally:
             response.close()
             response.release_conn()
 
-        return response.read()
+        return data
 
     def put_object(
         self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
