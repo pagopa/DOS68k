@@ -8,7 +8,7 @@ from dos_utility.utils.logger import get_logger
 
 from .repository import QueryRepository, get_query_repository
 from ..sessions.repository import get_session_repository, SessionRepository
-from ..env import get_masking_settings, get_session_settings, get_logging_settings, SessionSettings, MaskingSettings, LogSettings
+from ..env import get_masking_settings, get_logging_settings, MaskingSettings, LogSettings
 from ..utils import format_expiration_dt
 from ..chatbot import Chatbot, get_chatbot
 
@@ -20,7 +20,6 @@ class QueryService:
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
         self.chatbot: Chatbot = chatbot
-        self.settings: SessionSettings = get_session_settings()
         self.masking_settings: MaskingSettings = get_masking_settings()
 
     async def __mask_pii(self: Self, text: str) -> str:

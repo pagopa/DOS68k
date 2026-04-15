@@ -1,10 +1,7 @@
 from functools import lru_cache
 from typing import Optional, Annotated
-from pydantic import PositiveInt, Field
+from pydantic import Field
 from pydantic_settings import BaseSettings
-
-class SessionSettings(BaseSettings):
-    session_expiration_days: PositiveInt
 
 class MaskingSettings(BaseSettings):
     mask_pii: Annotated[bool, Field(default=False)]
@@ -12,10 +9,6 @@ class MaskingSettings(BaseSettings):
 
 class LogSettings(BaseSettings):
     log_level: Annotated[int, Field(default=20)]  # logging.INFO = 20
-
-@lru_cache
-def get_session_settings() -> SessionSettings:
-    return SessionSettings()
 
 @lru_cache
 def get_masking_settings() -> MaskingSettings:

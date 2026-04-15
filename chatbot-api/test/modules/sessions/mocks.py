@@ -1,6 +1,17 @@
 from typing import Any, Dict, List, Optional, Self
 from fastapi import HTTPException, status
 from dos_utility.database.nosql import NoSQLInterface, KeyCondition, QueryResult, ScanResult
+from src.modules.sessions.env import SessionSettings
+
+
+# ---------------------------------------------------------------------------
+# Settings mocks
+# ---------------------------------------------------------------------------
+
+MOCK_SESSION_SETTINGS = SessionSettings(
+    SESSIONS_TABLENAME="sessions",
+    SESSION_EXPIRATION_DAYS=30,
+)
 
 
 # ---------------------------------------------------------------------------

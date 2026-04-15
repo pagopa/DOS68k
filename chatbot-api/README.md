@@ -47,6 +47,9 @@ Once you've done that, update your .env with these:
 ```bash
 export FRONTEND_URL=<frontend-url> # For CORS origins, with format http(s)://hostname
 
+export SESSIONS_TABLENAME=sessions # DynamoDB table name for sessions. Defaults to "sessions"
+export QUERY_TABLENAME=queries # DynamoDB table name for queries. Defaults to "queries"
+
 export SESSION_EXPIRATION_DAYS=30 # Number of days after wich the session will be automatically deleted from DynamoDB (only valid for DynamoDB)
 
 export MASK_PII=true # Boolean. If true, the chatbot-api service will call the masking service to mask PII within user question and agent answer before storing them to the DB.

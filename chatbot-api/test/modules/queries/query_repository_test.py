@@ -1,7 +1,7 @@
 import pytest
 
 from src.modules.queries.repository import QueryRepository, get_query_repository
-from src.modules.env import get_session_settings
+from src.modules.sessions.env import get_session_settings
 
 from test.modules.queries.mocks import (
     MockNoSQLClientWithQueries,

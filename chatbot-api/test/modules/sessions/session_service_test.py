@@ -3,7 +3,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.modules.sessions.service import SessionService, get_session_service
-from src.modules.env import get_session_settings
+from src.modules.sessions.env import get_session_settings
 
 from test.modules.sessions.mocks import (
     MockSessionRepository,

@@ -7,16 +7,16 @@ from fastapi import Depends
 from datetime import datetime
 from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, QueryResult, KeyCondition, ConditionOperator
 
-from ..env import get_session_settings, SessionSettings
+from .env import get_query_settings, QuerySettings
 
 class QueryRepository():
     def __init__(self: Self, nosql_client: NoSQLInterface):
         self.nosql_client: NoSQLInterface = nosql_client
-        self.env: SessionSettings = get_session_settings()
+        self.env: QuerySettings = get_query_settings()
 
     async def get_queries(self: Self, session_id: str) -> List[Dict[str, Any]]:
         query_result: QueryResult = await self.nosql_client.query(
-            table_name="queries",
+            table_name=self.env.QUERY_TABLENAME,
             key_conditions=[KeyCondition(field="sessionId", operator=ConditionOperator.EQ, value=session_id)],
         )
 
@@ -37,7 +37,7 @@ class QueryRepository():
 
     async def delete_query(self: Self, query_id: str, session_id: str) -> None:
         await self.nosql_client.delete_item(
-            table_name="queries",
+            table_name=self.env.QUERY_TABLENAME,
             key={"id": query_id, "sessionId": session_id},
         )
 

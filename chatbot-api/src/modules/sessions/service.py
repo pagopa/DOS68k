@@ -2,10 +2,10 @@ from typing import Self, List, Annotated, Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 
-from ..queries.repository import get_query_repository, QueryRepository
-from ..env import get_session_settings, SessionSettings
-from ..utils import format_expiration_dt
+from .env import get_session_settings, SessionSettings
 from .repository import SessionRepository, get_session_repository
+from ..queries.repository import get_query_repository, QueryRepository
+from ..utils import format_expiration_dt
 
 
 class SessionService:
@@ -44,7 +44,7 @@ class SessionService:
 
     async def create_session(self: Self, user_id: str, session_data: Dict[str, Any], is_temporary: bool) -> Dict[str, Any]:
         now: datetime = datetime.now()
-        expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.session_expiration_days)).timestamp())
+        expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.SESSION_EXPIRATION_DAYS)).timestamp())
 
         item: Dict[str, Any] = await self.session_repository.create_session(
             user_id=user_id,
