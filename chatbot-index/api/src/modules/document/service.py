@@ -4,7 +4,7 @@ from logging import Logger
 from io import BytesIO
 from typing import Self, List, Annotated
 from fastapi import Depends, HTTPException, UploadFile, status
-from llama_index.core.vector_stores import MetadataFilter, FilterOperator
+from llama_index.core.vector_stores import MetadataFilter, FilterOperator, MetadataFilters
 
 from dos_utility.vector_db import VectorDBInterface, get_vector_db, SearchResult
 from dos_utility.storage import StorageInterface, get_storage
@@ -109,7 +109,13 @@ class DocumentService:
 
         # Delete all vector db chunks for the specified document (1000 at a time)
         while True:
-            vdb_objects: List[SearchResult] = await self.vdb.filter_search(index_name=index_id, filters=[MetadataFilter(key="filename", operator=FilterOperator.EQ, value=object_key)], max_results=1000)
+            vdb_objects: List[SearchResult] = await self.vdb.filter_search(
+                index_name=index_id,
+                filters=MetadataFilters(filters=[
+                    MetadataFilter(key="filename", operator=FilterOperator.EQ, value=object_key),
+                ]),
+                max_results=1000,
+            )
             vdb_objects_len: int = len(vdb_objects)
 
             if vdb_objects_len == 0:
