@@ -1,6 +1,5 @@
 from logging import Logger
-from typing import overload, Literal, Optional, List
-from pydantic import BaseModel
+from typing import Literal, Optional, List
 from dos_utility.utils.logger import get_logger
 from ..env import get_logging_settings, LogSettings
 from google.genai import types
