@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from src.modules.sessions.controller import get_session_service, router as sessions_router
 
 from test.modules.sessions.mocks import (
+    get_session_service_clear_session_mock,
     get_session_service_create_session_mock,
     get_session_service_delete_session_204_mock,
     get_session_service_delete_session_404_mock,
@@ -81,3 +82,14 @@ async def test_delete_session_404(app_test: FastAPI, client_test: AsyncClient):
     )
 
     assert response.status_code == 404
+
+@pytest.mark.asyncio
+async def test_clear_session_200(app_test: FastAPI, client_test: AsyncClient):
+    app_test.dependency_overrides[get_session_service] = get_session_service_clear_session_mock
+
+    response: Response = await client_test.post(
+        url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000/clear",
+        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+    )
+
+    assert response.status_code == 200

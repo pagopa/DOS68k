@@ -1,39 +1,40 @@
 import requests
-import logging
 
+from logging import Logger
 from jose import jwk, jwt
 from jose import exceptions as jwt_exceptions
 from jose.utils import base64url_decode
 from fastapi import HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Self
 
-from ..interface import AuthInterface
 from .env import AWSAuthSettings, get_aws_auth_settings
+from ..exceptions import EmptyTokenException, InvalidTokenKeyException, InvalidTokenException, TokenExpiredException
+from ..interface import AuthInterface
+from ...utils.logger import get_logger
 
 
 
 
 class CognitoAuthProvider(AuthInterface):
-    def __init__(self):
-        self._settings: AWSAuthSettings = get_aws_auth_settings()
-        self.region = self._settings.AWS_REGION
-        self.aws_endpoint_url = self._settings.AWS_ENDPOINT_URL
-        self.access_key_id = self._settings.AWS_ACCESS_KEY_ID
-        self.secret_access_key = self._settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
-        self.user_pool_id = self._settings.AWS_COGNITO_USERPOOL_ID
-        self.environment = self._settings.ENVIRONMENT
+    def __init__(self: Self):
+        self.logger: Logger = get_logger(name=__name__)
+        self.__settings: AWSAuthSettings = get_aws_auth_settings()
+        self.region = self.__settings.AWS_REGION
+        self.aws_endpoint_url = self.__settings.AWS_ENDPOINT_URL
+        self.access_key_id = self.__settings.AWS_ACCESS_KEY_ID
+        self.secret_access_key = self.__settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
+        self.user_pool_id = self.__settings.AWS_COGNITO_USERPOOL_ID
+        self.environment = self.__settings.ENVIRONMENT
 
-    def get_jwks(self) -> Dict[str, Any]:
-        """
-        Retrieve the JWKS from AWS Cognito.
-        
+    def get_jwks(self: Self) -> Dict[str, Any]:
+        """Retrieve the JWKS from AWS Cognito.
+
         Returns:
-            Dict[str, Any]: The JWKS containing the public keys
-            
-        Raises:
-            HTTPException: If the JWKS cannot be retrieved
-        """
+            Dict[str, Any]: The JWKS containing the public keys.
 
+        Raises:
+            HTTPException: If the JWKS endpoint returns a non-200 response.
+        """
         if self.environment == "test":
             keys_url = (
                 f"{self.aws_endpoint_url}/"
@@ -59,49 +60,59 @@ class CognitoAuthProvider(AuthInterface):
         if response.status_code == 200:
             return response.json()
         else:
-            logging.error(
+            self.logger.error(
                 f"[CognitoAuthProvider.get_jwks] keys_url={keys_url}, "
                 f"Response status code: {response.status_code}"
             )
+
             raise HTTPException(status_code=401, detail="Auth error")
 
-    def verify_jwt(self, token: str) -> Dict[str, Any]:
-        """
-        Verify a JWT token using AWS Cognito's public keys.
-        
+    def verify_jwt(self: Self, token: str) -> Dict[str, Any]:
+        """Verify a JWT token using AWS Cognito's public keys.
+
         Args:
-            token (str): The JWT token to verify
-            
+            token: The JWT token to verify.
+
         Returns:
-            Dict[str, Any]: The verified token claims
-            
+            Dict[str, Any]: The verified token claims.
+
         Raises:
-            HTTPException: If the token is invalid, expired, or verification fails
+            EmptyTokenException: If the token is an empty string.
+            InvalidTokenKeyException: If the token's key ID is not found in the JWKS
+                or the signature verification fails.
+            TokenExpiredException: If the token has expired.
+            InvalidTokenException: If the token is malformed or otherwise invalid.
         """
+        if token == "":
+            raise EmptyTokenException
+
         jwks = self.get_jwks()
         public_keys = {key["kid"]: key for key in jwks["keys"]}
 
         try:
             headers = jwt.get_unverified_header(token)
             kid = headers["kid"]
+
             if kid not in public_keys:
-                raise HTTPException(status_code=401, detail="Invalid token key")
+                raise InvalidTokenKeyException
 
             public_key = jwk.construct(public_keys[kid])
-
             message, encoded_signature = str(token).rsplit(".", 1)
             decoded_signature = base64url_decode(encoded_signature.encode("utf-8"))
+
             if not public_key.verify(message.encode("utf8"), decoded_signature):
-                raise HTTPException(status_code=401, detail="Error in public_key.verify")
+                raise InvalidTokenKeyException
 
             # since we passed the verification,
             # we can now safely use the unverified claims
             claims = jwt.get_unverified_claims(token)
-            return claims
         except jwt_exceptions.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Token has expired")
+            raise TokenExpiredException
         except jwt_exceptions.JWTError as e:
-            raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+            raise InvalidTokenException
+
+        return claims
+
 
 def get_aws_auth_provider() -> CognitoAuthProvider:
     """Get an instance of the AWS Cognito authentication provider."""

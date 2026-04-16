@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
-from .routers import health, jwt_check
+from .modules.health.controller import router as health_router
+from .modules.auth.controller import router as auth_router
 
 app: FastAPI = FastAPI(
     title="Auth Service",
@@ -8,5 +9,5 @@ app: FastAPI = FastAPI(
     docs_url="/",
 )
 
-app.include_router(router=health.router)
-app.include_router(router=jwt_check.router)
+app.include_router(router=health_router)
+app.include_router(router=auth_router)

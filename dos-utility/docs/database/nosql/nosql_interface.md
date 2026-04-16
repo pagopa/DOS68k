@@ -210,7 +210,7 @@ Query items by key conditions.
 
 **Examples**:
 
-  >>> from dos_utility.nosql.models import KeyCondition, ConditionOperator
+  >>> from dos_utility.database.nosql.models import KeyCondition, ConditionOperator
   >>> result = await client.query(
   ...     "sessions",
   ...     [KeyCondition("user_id", ConditionOperator.EQ, "123")],
