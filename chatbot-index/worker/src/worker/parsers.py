@@ -13,7 +13,7 @@ class ChunkData(BaseModel):
 
 
 class Parser:
-    def __call__(self, document: Document) -> list[ChunkData]:
+    def transform(self, document: Document) -> list[ChunkData]:
         filename = document.filename
         chunk_content = ["\n".join(document.content)]
         chunks = []

@@ -10,9 +10,18 @@ from env import get_task_settings
 from dos_utility.vector_db import get_vector_db_instance 
 
 task_settings = get_task_settings()
-loader = get_document_loader()
+loader = get_document_loader(bucket_name = task_settings.bucket_name)
 parser = get_parser()
-embedder = get_embedder()
+embedder = get_embedder(
+    provider = task_settings.provider,
+    embed_model_id = task_settings.embed_model_id,
+    embed_batch_size = task_settings.embed_batch_size,
+    embed_dim = task_settings.embed_dim,
+    embed_task = task_settings.embed_task,
+    embed_retries = task_settings.embed_retries,
+    embed_retry_min_seconds = task_settings.embed_retry_min_seconds,
+    model_api_key = task_settings.model_api_key,
+)
 vector_db = get_vector_db_instance()
 
 async def process_task(body: bytes) -> None:
@@ -26,8 +35,8 @@ async def process_task(body: bytes) -> None:
     message = Message(**converted_data)
 
     document : Document = loader.read(message=message)
-    chunks: ChunkData = parser(document= document)
-    data_to_store: ObjectData = embedder(chunks=chunks)
+    chunks: ChunkData = parser.transform(document= document)
+    data_to_store: ObjectData = embedder.transform(chunks=chunks)
     
     indexes = await vector_db.get_indexes()
     if message.indexId not in indexes:
