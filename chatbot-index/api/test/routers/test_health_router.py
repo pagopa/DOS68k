@@ -8,8 +8,11 @@ from src.routers import health
 
 from test.mocks import QueueMock, StorageMock, VectorDBMock
 
+
 @pytest.mark.asyncio
-async def test_health_check(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_health_check(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
     response: Response = await client.get(url=health_router.prefix)
 
@@ -19,8 +22,11 @@ async def test_health_check(client_test: Tuple[AsyncClient, QueueMock, StorageMo
         "service": "Chatbot Index API",
     }
 
+
 @pytest.mark.asyncio
-async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_health_check_queue_connected(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     response: Response = await client.get(url=f"{health_router.prefix}/queue")
@@ -32,8 +38,11 @@ async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, Queu
         "queue": "connected",
     }
 
+
 @pytest.mark.asyncio
-async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_health_check_queue_disconnected(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, queue_client, _, _ = client_test
 
     # Simulate disconnected queue by setting ping_response to False
@@ -48,11 +57,12 @@ async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, Q
         "queue": "NOT connected",
     }
 
+
 @pytest.mark.asyncio
 async def test_health_check_storage_connected(
-        client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
-        monkeypatch: pytest.MonkeyPatch,
-    ):
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.setattr(health, "StorageInterface", StorageMock)
     client, _, _, _ = client_test
 
@@ -65,11 +75,12 @@ async def test_health_check_storage_connected(
         "storage": "connected",
     }
 
+
 @pytest.mark.asyncio
 async def test_health_check_storage_disconnected(
-        client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
-        monkeypatch: pytest.MonkeyPatch,
-    ):
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.setattr(health, "StorageInterface", StorageMock)
 
     client, _, storage_client, _ = client_test

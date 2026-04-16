@@ -17,6 +17,7 @@ MOCK_EXISTING_INDEXES = ["index-1", "index-2"]
 # Storage mocks (for service tests)
 # ---------------------------------------------------------------------------
 
+
 class MockStorage:
     """In-memory storage mock."""
 
@@ -30,12 +31,16 @@ class MockStorage:
     def is_healthy(self: Self) -> bool:
         return True
 
-    def put_object(self: Self, bucket: str, name: str, data: BinaryIO, content_type: str) -> None:
+    def put_object(
+        self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
+    ) -> None:
         if bucket not in self._objects:
             self._objects[bucket] = []
         if name not in self._objects[bucket]:
             self._objects[bucket].append(name)
-        self.put_calls.append({"bucket": bucket, "name": name, "content_type": content_type})
+        self.put_calls.append(
+            {"bucket": bucket, "name": name, "content_type": content_type}
+        )
 
     def list_objects(self: Self, bucket: str) -> List[ObjectInfo]:
         return [ObjectInfo(key=k) for k in self._objects.get(bucket, [])]
@@ -50,11 +55,14 @@ class MockStorage:
 # VectorDB mocks (for service tests)
 # ---------------------------------------------------------------------------
 
+
 class MockVectorDBWithIndexes:
     """VectorDB mock with pre-existing indexes."""
 
     def __init__(self: Self, indexes: Optional[List[str]] = None):
-        self._indexes: List[str] = list(indexes) if indexes is not None else list(MOCK_EXISTING_INDEXES)
+        self._indexes: List[str] = (
+            list(indexes) if indexes is not None else list(MOCK_EXISTING_INDEXES)
+        )
         self.deleted_ids: List[str] = []
 
     async def get_indexes(self: Self) -> List[str]:
@@ -78,6 +86,7 @@ class MockVectorDBEmpty:
 # Queue mocks (for service tests)
 # ---------------------------------------------------------------------------
 
+
 class MockQueueClient:
     """Async queue mock."""
 
@@ -92,6 +101,7 @@ class MockQueueClient:
 # ---------------------------------------------------------------------------
 # Service mocks (for controller tests)
 # ---------------------------------------------------------------------------
+
 
 def get_document_service_upload_202_mock():
     class DocumentServiceMock:

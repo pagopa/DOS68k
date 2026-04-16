@@ -16,7 +16,12 @@ ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
 
 
 class DocumentService:
-    def __init__(self: Self, vdb: VectorDBInterface, storage: StorageInterface, queue: QueueInterface):
+    def __init__(
+        self: Self,
+        vdb: VectorDBInterface,
+        storage: StorageInterface,
+        queue: QueueInterface,
+    ):
         self.vdb: VectorDBInterface = vdb
         self.storage: StorageInterface = storage
         self.queue: QueueInterface = queue
@@ -30,12 +35,17 @@ class DocumentService:
                 detail=f"Unsupported file type '{ext}'. Allowed types: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
             )
 
-    async def upload_document(self: Self, index_id: str, file: UploadFile, user: str) -> UploadDocumentResponse:
+    async def upload_document(
+        self: Self, index_id: str, file: UploadFile, user: str
+    ) -> UploadDocumentResponse:
         self._validate_file_extension(file.filename)
 
         existing_indexes: List[str] = await self.vdb.get_indexes()
         if index_id not in existing_indexes:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Index '{index_id}' not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Index '{index_id}' not found",
+            )
 
         content: bytes = await file.read()
         object_key: str = f"{index_id}/{file.filename}"
@@ -50,7 +60,7 @@ class DocumentService:
             "indexId": index_id,
             "userId": user,
             "objectKey": object_key,
-            "documentType": file.content_type
+            "documentType": file.content_type,
         }
         await self.queue.enqueue(msg=json.dumps(msg).encode("utf-8"))
 
@@ -63,7 +73,10 @@ class DocumentService:
     async def list_documents(self: Self, index_id: str) -> List[DocumentInfo]:
         existing_indexes: List[str] = await self.vdb.get_indexes()
         if index_id not in existing_indexes:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Index '{index_id}' not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Index '{index_id}' not found",
+            )
 
         objects = self.storage.list_objects(bucket=BUCKET_NAME)
         prefix: str = f"{index_id}/"
@@ -77,12 +90,18 @@ class DocumentService:
     async def delete_document(self: Self, index_id: str, document_name: str) -> None:
         existing_indexes: List[str] = await self.vdb.get_indexes()
         if index_id not in existing_indexes:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Index '{index_id}' not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Index '{index_id}' not found",
+            )
 
         object_key: str = f"{index_id}/{document_name}"
         objects = self.storage.list_objects(bucket=BUCKET_NAME)
         if not any(obj.key == object_key for obj in objects):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Document '{document_name}' not found in index '{index_id}'")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document '{document_name}' not found in index '{index_id}'",
+            )
 
         self.storage.delete_object(bucket=BUCKET_NAME, name=object_key)
         await self.vdb.delete_objects(index_name=index_id, ids=[object_key])

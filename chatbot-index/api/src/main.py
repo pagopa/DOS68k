@@ -21,5 +21,5 @@ app.add_middleware(
 )
 
 app.include_router(router=health.router)
-app.include_router(router = index_router)
+app.include_router(router=index_router)
 app.include_router(router=document_router)

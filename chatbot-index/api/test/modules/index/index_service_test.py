@@ -26,12 +26,15 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
 # create_index
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_create_index_success():
     vdb = MockVectorDBEmpty()
     service = IndexService(vdb=vdb)
 
-    result: CreateIndexResponse = await service.create_index(index_id=MOCK_INDEX_ID, user_id=MOCK_USER_ID)
+    result: CreateIndexResponse = await service.create_index(
+        index_id=MOCK_INDEX_ID, user_id=MOCK_USER_ID
+    )
 
     assert result.index_id == MOCK_INDEX_ID
     assert str(result.user_id) == MOCK_USER_ID
@@ -66,6 +69,7 @@ async def test_create_index_vdb_failure():
 # ---------------------------------------------------------------------------
 # delete_index
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_delete_index_success():
@@ -108,6 +112,7 @@ async def test_delete_index_vdb_failure():
 # ---------------------------------------------------------------------------
 # get_indexes
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_indexes_returns_list():

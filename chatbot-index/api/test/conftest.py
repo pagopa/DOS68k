@@ -16,6 +16,7 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest_asyncio.fixture
 async def app_test():
     from src.main import app
@@ -26,14 +27,17 @@ async def app_test():
     # Override dependencies or setup test-specific configurations here if needed
 
     queue_mock: QueueMock = QueueMock()
+
     async def override_get_queue_client():
         yield queue_mock
 
     storage_mock: StorageMock = StorageMock()
+
     def override_get_storage():
         yield storage_mock
 
     vdb_mock: VectorDBMock = VectorDBMock()
+
     def override_get_vector_db():
         return vdb_mock
 
@@ -46,10 +50,13 @@ async def app_test():
     finally:
         app.dependency_overrides.clear()
 
+
 @pytest_asyncio.fixture
 async def client_test(app_test: Tuple[FastAPI, QueueMock, StorageMock, VectorDBMock]):
     app, queue_client, storage_client, vdb_client = app_test
 
     # Async client for testing FastAPI app
-    async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app)) as client:
+    async with AsyncClient(
+        base_url="http://testserver", transport=ASGITransport(app=app)
+    ) as client:
         yield client, queue_client, storage_client, vdb_client

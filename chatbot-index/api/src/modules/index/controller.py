@@ -9,8 +9,9 @@ from .service import IndexService, get_index_service
 
 router: APIRouter = APIRouter(prefix="/index", tags=["indices"])
 
+
 @router.post(
-    path = "/{index_id}",
+    path="/{index_id}",
     response_model=CreateIndexResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -20,41 +21,39 @@ router: APIRouter = APIRouter(prefix="/index", tags=["indices"])
     summary="Create a new index for the authenticated user",
 )
 async def post_index(
-        index_id: str,
-        service: Annotated[IndexService, Depends(dependency=get_index_service)],
-        user: Annotated[str, Depends(dependency=get_user_id)],
-    ) -> CreateIndexResponse:
+    index_id: str,
+    service: Annotated[IndexService, Depends(dependency=get_index_service)],
+    user: Annotated[str, Depends(dependency=get_user_id)],
+) -> CreateIndexResponse:
     return await service.create_index(index_id=index_id, user_id=user)
 
 
 @router.delete(
-    path = "/{index_id}",
+    path="/{index_id}",
     status_code=status.HTTP_200_OK,
     responses={
-        status.HTTP_200_OK: {"description": "Index deleted successfully"}, 
+        status.HTTP_200_OK: {"description": "Index deleted successfully"},
         status.HTTP_404_NOT_FOUND: {"description": "Index not found"},
     },
     summary="Delete an existing index",
 )
 async def delete_index(
-        index_id: str,
-        service: Annotated[IndexService, Depends(dependency=get_index_service)],
-        user: Annotated[str, Depends(dependency=get_user_id)],
-    ) -> dict:
+    index_id: str,
+    service: Annotated[IndexService, Depends(dependency=get_index_service)],
+    user: Annotated[str, Depends(dependency=get_user_id)],
+) -> dict:
     await service.delete_index(index_id=index_id)
     return {"message": f"Index '{index_id}' deleted successfully"}
 
 
 @router.get(
-    path = "/all",
+    path="/all",
     response_model=List[str],
-    responses={
-    },
+    responses={},
     summary="Get all existing indexes",
 )
 async def get_all_indexes(
-        service: Annotated[IndexService, Depends(dependency=get_index_service)],
-        user: Annotated[str, Depends(dependency=get_user_id)],
-    ) -> List[str]:
+    service: Annotated[IndexService, Depends(dependency=get_index_service)],
+    user: Annotated[str, Depends(dependency=get_user_id)],
+) -> List[str]:
     return await service.get_indexes()
-

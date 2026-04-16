@@ -21,7 +21,12 @@ from test.modules.document.mocks import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def make_upload_file(filename: str, content: bytes = b"test content", content_type: str = "application/pdf"):
+
+def make_upload_file(
+    filename: str,
+    content: bytes = b"test content",
+    content_type: str = "application/pdf",
+):
     mock_file = MagicMock()
     mock_file.filename = filename
     mock_file.content_type = content_type
@@ -40,6 +45,7 @@ def make_service(vdb=None, storage=None, queue=None) -> DocumentService:
 # ---------------------------------------------------------------------------
 # _validate_file_extension
 # ---------------------------------------------------------------------------
+
 
 def test_validate_file_extension_pdf():
     DocumentService._validate_file_extension("document.pdf")
@@ -73,6 +79,7 @@ def test_validate_file_extension_no_extension_raises_415():
 # ---------------------------------------------------------------------------
 # upload_document
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_upload_document_success():
@@ -108,7 +115,9 @@ async def test_upload_document_txt_and_md_accepted():
 
     for filename in ("readme.txt", "notes.md"):
         file = make_upload_file(filename)
-        result = await service.upload_document(index_id=index_id, file=file, user=MOCK_USER_ID)
+        result = await service.upload_document(
+            index_id=index_id, file=file, user=MOCK_USER_ID
+        )
         assert result.document_name == filename
 
 
@@ -130,7 +139,9 @@ async def test_upload_document_index_not_found_raises_404():
     file = make_upload_file("doc.pdf")
 
     with pytest.raises(HTTPException) as exc_info:
-        await service.upload_document(index_id="nonexistent", file=file, user=MOCK_USER_ID)
+        await service.upload_document(
+            index_id="nonexistent", file=file, user=MOCK_USER_ID
+        )
     assert exc_info.value.status_code == 404
     assert "not found" in exc_info.value.detail
 
@@ -153,6 +164,7 @@ async def test_upload_document_none_content_type_falls_back():
 # ---------------------------------------------------------------------------
 # list_documents
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_list_documents_returns_only_matching_prefix():
@@ -196,6 +208,7 @@ async def test_list_documents_index_not_found_raises_404():
 # ---------------------------------------------------------------------------
 # delete_document
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_delete_document_success():

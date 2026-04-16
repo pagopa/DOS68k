@@ -11,6 +11,7 @@ class QueueMock:
     async def is_healthy(self: Self) -> bool:
         return self.healthy
 
+
 class StorageMock:
     def __init__(self: Self):
         self.healthy: bool = True
@@ -41,14 +42,31 @@ class VectorDBMock(VectorDBInterface):
     async def get_indexes(self: Self) -> List[str]:
         return list(self._indexes)
 
-    async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]] = None) -> List[str]:
+    async def put_objects(
+        self: Self,
+        index_name: str,
+        data: List[ObjectData],
+        custom_keys: Optional[List[str]] = None,
+    ) -> List[str]:
         return [str(i) for i in range(len(data))]
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         pass
 
-    async def search(self: Self, index_name: str, query_embedding: List[float], top_k: int = 5, score_threshold: float = 0.0) -> List[SemanticSearchResult]:
+    async def search(
+        self: Self,
+        index_name: str,
+        query_embedding: List[float],
+        top_k: int = 5,
+        score_threshold: float = 0.0,
+    ) -> List[SemanticSearchResult]:
         return []
 
-    async def semantic_search(self: Self, index_name: str, query_embedding: List[float], top_k: int = 5, score_threshold: float = 0.0) -> List[SemanticSearchResult]:
+    async def semantic_search(
+        self: Self,
+        index_name: str,
+        query_embedding: List[float],
+        top_k: int = 5,
+        score_threshold: float = 0.0,
+    ) -> List[SemanticSearchResult]:
         return []

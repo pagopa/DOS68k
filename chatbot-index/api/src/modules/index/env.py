@@ -8,7 +8,13 @@ from pydantic_settings import BaseSettings
 class EmbeddingsSettings(BaseSettings):
     # LLM / Embedding provider ("google", "mock")
     provider: Annotated[Literal["google", "mock"], Field(default="mock")]
-    model_api_key: Annotated[Optional[str], Field(default=None, description="API key for the chosen provider. Do not set if provider is 'mock'")]
+    model_api_key: Annotated[
+        Optional[str],
+        Field(
+            default=None,
+            description="API key for the chosen provider. Do not set if provider is 'mock'",
+        ),
+    ]
 
     # Embedding settings
     embed_model_id: Annotated[str, Field(default="mock")]
@@ -26,5 +32,6 @@ class EmbeddingsSettings(BaseSettings):
 @lru_cache
 def get_embedding_settings() -> EmbeddingsSettings:
     return EmbeddingsSettings()
+
 
 settings: EmbeddingsSettings = EmbeddingsSettings()

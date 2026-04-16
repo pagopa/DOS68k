@@ -1,7 +1,11 @@
 from typing import Self, List
 from fastapi import HTTPException, status
 
-from dos_utility.vector_db import VectorDBInterface, IndexCreationException, IndexDeletionException
+from dos_utility.vector_db import (
+    VectorDBInterface,
+    IndexCreationException,
+    IndexDeletionException,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -16,6 +20,7 @@ MOCK_EXISTING_INDEXES = ["index-1", "index-2"]
 # ---------------------------------------------------------------------------
 # VectorDB mocks (for service tests)
 # ---------------------------------------------------------------------------
+
 
 class MockVectorDBWithIndexes:
     """Mock VectorDB that contains some pre-existing indexes."""
@@ -79,6 +84,7 @@ class MockVectorDBDeleteFails:
 # Service mocks (for controller tests)
 # ---------------------------------------------------------------------------
 
+
 def get_index_service_create_201_mock():
     class IndexServiceMock:
         async def create_index(self, index_id: str, user_id: str):
@@ -94,7 +100,10 @@ def get_index_service_create_201_mock():
 def get_index_service_create_409_mock():
     class IndexServiceMock:
         async def create_index(self, index_id: str, user_id: str):
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Index '{index_id}' already exists")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Index '{index_id}' already exists",
+            )
 
     return IndexServiceMock()
 
@@ -110,7 +119,10 @@ def get_index_service_delete_204_mock():
 def get_index_service_delete_404_mock():
     class IndexServiceMock:
         async def delete_index(self, index_id: str):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Index '{index_id}' not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Index '{index_id}' not found",
+            )
 
     return IndexServiceMock()
 

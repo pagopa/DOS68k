@@ -24,13 +24,19 @@ HEADERS = {"x-user-id": MOCK_USER_ID}
 
 
 @pytest.mark.asyncio
-async def test_create_index_201(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_create_index_201(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_create_201_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_create_201_mock
+    )
 
-    response: Response = await client.post(url=f"{index_router.prefix}/my-index", headers=HEADERS)
+    response: Response = await client.post(
+        url=f"{index_router.prefix}/my-index", headers=HEADERS
+    )
 
     assert response.status_code == 201
     data = response.json()
@@ -40,65 +46,95 @@ async def test_create_index_201(client_test: Tuple[AsyncClient, QueueMock, Stora
 
 
 @pytest.mark.asyncio
-async def test_create_index_409(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_create_index_409(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_create_409_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_create_409_mock
+    )
 
-    response: Response = await client.post(url=f"{index_router.prefix}/existing-index", headers=HEADERS)
+    response: Response = await client.post(
+        url=f"{index_router.prefix}/existing-index", headers=HEADERS
+    )
 
     assert response.status_code == 409
     assert "already exists" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_delete_index_200(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_delete_index_200(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_delete_204_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_delete_204_mock
+    )
 
-    response: Response = await client.delete(url=f"{index_router.prefix}/my-index", headers=HEADERS)
+    response: Response = await client.delete(
+        url=f"{index_router.prefix}/my-index", headers=HEADERS
+    )
 
     assert response.status_code == 200
     assert "deleted successfully" in response.json()["message"]
 
 
 @pytest.mark.asyncio
-async def test_delete_index_404(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_delete_index_404(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_delete_404_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_delete_404_mock
+    )
 
-    response: Response = await client.delete(url=f"{index_router.prefix}/nonexistent", headers=HEADERS)
+    response: Response = await client.delete(
+        url=f"{index_router.prefix}/nonexistent", headers=HEADERS
+    )
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_get_indexes(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_get_indexes(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_get_indexes_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_get_indexes_mock
+    )
 
-    response: Response = await client.get(url=f"{index_router.prefix}/all", headers=HEADERS)
+    response: Response = await client.get(
+        url=f"{index_router.prefix}/all", headers=HEADERS
+    )
 
     assert response.status_code == 200
     assert response.json() == ["index-1", "index-2"]
 
 
 @pytest.mark.asyncio
-async def test_get_indexes_empty(client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock]):
+async def test_get_indexes_empty(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
     client, _, _, _ = client_test
 
     client_test_app: FastAPI = client._transport.app
-    client_test_app.dependency_overrides[get_index_service] = get_index_service_get_indexes_empty_mock
+    client_test_app.dependency_overrides[get_index_service] = (
+        get_index_service_get_indexes_empty_mock
+    )
 
-    response: Response = await client.get(url=f"{index_router.prefix}/all", headers=HEADERS)
+    response: Response = await client.get(
+        url=f"{index_router.prefix}/all", headers=HEADERS
+    )
 
     assert response.status_code == 200
     assert response.json() == []
