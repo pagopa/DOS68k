@@ -28,9 +28,10 @@ class IndexService:
         self.logger: Logger = get_logger(name=__file__, level=self.settings.log_level)
 
     async def verify_index_exists(self: Self, index_id: str) -> None:
+        """If index does not exists, it raises an HTTPException"""
         existing_indexes: List[str] = await self.vdb.get_indexes()
 
-        if index_id in existing_indexes:
+        if index_id not in existing_indexes:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Index '{index_id}' already exists",
@@ -39,7 +40,11 @@ class IndexService:
     async def create_index(
         self: Self, index_id: str, user_id: str
     ) -> CreateIndexResponse:
-        await self.verify_index_exists(index_id=index_id)
+        try:
+            await self.verify_index_exists(index_id=index_id)
+        except HTTPException:
+            # If index does not exists it's ok, it means we can create it
+            pass
 
         try:
             await self.vdb.create_index(index_id, self.embedding_settings.embed_dim)
@@ -60,7 +65,7 @@ class IndexService:
         await self.verify_index_exists(index_id=index_id)
 
         try:
-            await self.vdb.delete_index(index_id)
+            await self.vdb.delete_index(index_id) # Automatically delete all chunks of the index
         except IndexDeletionException as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
