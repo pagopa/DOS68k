@@ -9,6 +9,7 @@ from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
 
 from .dto import UploadDocumentResponse, DocumentInfo
+from ..index.service import IndexService, get_index_service
 from ...env import get_index_bucket_settings, IndexBucketSettings
 
 
@@ -21,11 +22,13 @@ class DocumentService:
         vdb: VectorDBInterface,
         storage: StorageInterface,
         queue: QueueInterface,
+        index_service: IndexService,
     ):
         self.vdb: VectorDBInterface = vdb
         self.storage: StorageInterface = storage
         self.queue: QueueInterface = queue
         self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
+        self.index_service: IndexService = index_service
 
     @staticmethod
     def _validate_file_extension(filename: str) -> None:
@@ -40,13 +43,7 @@ class DocumentService:
         self: Self, index_id: str, file: UploadFile, user: str
     ) -> UploadDocumentResponse:
         self._validate_file_extension(file.filename)
-
-        existing_indexes: List[str] = await self.vdb.get_indexes()
-        if index_id not in existing_indexes:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Index '{index_id}' not found",
-            )
+        await self.index_service.verify_index_exists(index_id=index_id)
 
         content: bytes = await file.read()
         object_key: str = f"{index_id}/{file.filename}"
@@ -72,12 +69,7 @@ class DocumentService:
         )
 
     async def list_documents(self: Self, index_id: str) -> List[DocumentInfo]:
-        existing_indexes: List[str] = await self.vdb.get_indexes()
-        if index_id not in existing_indexes:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Index '{index_id}' not found",
-            )
+        await self.index_service.verify_index_exists(index_id=index_id)
 
         objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
         prefix: str = f"{index_id}/"
@@ -89,12 +81,7 @@ class DocumentService:
         ]
 
     async def delete_document(self: Self, index_id: str, document_name: str) -> None:
-        existing_indexes: List[str] = await self.vdb.get_indexes()
-        if index_id not in existing_indexes:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Index '{index_id}' not found",
-            )
+        await self.index_service.verify_index_exists(index_id=index_id)
 
         object_key: str = f"{index_id}/{document_name}"
         objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
@@ -112,5 +99,6 @@ def get_document_service(
     vdb: Annotated[VectorDBInterface, Depends(dependency=get_vector_db)],
     storage: Annotated[StorageInterface, Depends(dependency=get_storage)],
     queue: Annotated[QueueInterface, Depends(dependency=get_queue_client)],
+    index_service: Annotated[IndexService, Depends(dependency=get_index_service)],
 ) -> DocumentService:
-    return DocumentService(vdb=vdb, storage=storage, queue=queue)
+    return DocumentService(vdb=vdb, storage=storage, queue=queue, index_service=index_service)

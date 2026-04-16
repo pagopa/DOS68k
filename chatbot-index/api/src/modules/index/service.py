@@ -23,15 +23,19 @@ class IndexService:
         self.embedding_settings: EmbeddingsSettings = get_embedding_settings()
         self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
 
-    async def create_index(
-        self: Self, index_id: str, user_id: str
-    ) -> CreateIndexResponse:
+    async def verify_index_exists(self: Self, index_id: str) -> None:
         existing_indexes: List[str] = await self.vdb.get_indexes()
+
         if index_id in existing_indexes:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Index '{index_id}' already exists",
             )
+
+    async def create_index(
+        self: Self, index_id: str, user_id: str
+    ) -> CreateIndexResponse:
+        await self.verify_index_exists(index_id=index_id)
 
         try:
             await self.vdb.create_index(index_id, self.embedding_settings.embed_dim)
@@ -47,12 +51,7 @@ class IndexService:
         )
 
     async def delete_index(self: Self, index_id: str) -> None:
-        existing_indexes: List[str] = await self.vdb.get_indexes()
-        if index_id not in existing_indexes:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Index '{index_id}' not found",
-            )
+        await self.verify_index_exists(index_id=index_id)
 
         try:
             await self.vdb.delete_index(index_id)
