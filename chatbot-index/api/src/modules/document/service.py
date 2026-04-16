@@ -9,9 +9,9 @@ from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
 
 from .dto import UploadDocumentResponse, DocumentInfo
+from ...env import get_index_bucket_settings, IndexBucketSettings
 
 
-BUCKET_NAME = "chatbot-index"
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
 
 
@@ -25,6 +25,7 @@ class DocumentService:
         self.vdb: VectorDBInterface = vdb
         self.storage: StorageInterface = storage
         self.queue: QueueInterface = queue
+        self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
 
     @staticmethod
     def _validate_file_extension(filename: str) -> None:
@@ -51,7 +52,7 @@ class DocumentService:
         object_key: str = f"{index_id}/{file.filename}"
 
         self.storage.put_object(
-            bucket=BUCKET_NAME,
+            bucket=self.index_bucket_settings.index_documents_bucket_name,
             name=object_key,
             data=BytesIO(content),
             content_type=file.content_type or "application/octet-stream",
@@ -78,7 +79,7 @@ class DocumentService:
                 detail=f"Index '{index_id}' not found",
             )
 
-        objects = self.storage.list_objects(bucket=BUCKET_NAME)
+        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
         prefix: str = f"{index_id}/"
 
         return [
@@ -96,14 +97,14 @@ class DocumentService:
             )
 
         object_key: str = f"{index_id}/{document_name}"
-        objects = self.storage.list_objects(bucket=BUCKET_NAME)
+        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
         if not any(obj.key == object_key for obj in objects):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document '{document_name}' not found in index '{index_id}'",
             )
 
-        self.storage.delete_object(bucket=BUCKET_NAME, name=object_key)
+        self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=object_key)
         await self.vdb.delete_objects(index_name=index_id, ids=[object_key])
 
 
