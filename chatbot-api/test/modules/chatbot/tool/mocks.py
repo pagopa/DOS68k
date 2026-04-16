@@ -16,7 +16,7 @@ class VectorDBMock(VectorDBInterface):
 
     def __init__(self: Self, **kwargs):
         pass
-    
+
     def model_post_init(self: Self, **kwargs):
         pass
 
@@ -28,6 +28,9 @@ class VectorDBMock(VectorDBInterface):
         pass
 
     def __aexit__(self: Self, **kwargs):
+        pass
+
+    def is_healthy(self: Self):
         pass
 
     def create_index(self: Self, **kwargs):
