@@ -4,7 +4,11 @@ from logging import Logger
 from io import BytesIO
 from typing import Self, List, Annotated
 from fastapi import Depends, HTTPException, UploadFile, status
-from llama_index.core.vector_stores import MetadataFilter, FilterOperator, MetadataFilters
+from llama_index.core.vector_stores import (
+    MetadataFilter,
+    FilterOperator,
+    MetadataFilters,
+)
 
 from dos_utility.vector_db import VectorDBInterface, get_vector_db, SearchResult
 from dos_utility.storage import StorageInterface, get_storage
@@ -13,7 +17,12 @@ from dos_utility.utils.logger import get_logger
 
 from .dto import UploadDocumentResponse, DocumentInfo
 from ..index.service import IndexService, get_index_service
-from ...env import get_index_bucket_settings, get_settings, IndexBucketSettings, Settings
+from ...env import (
+    get_index_bucket_settings,
+    get_settings,
+    IndexBucketSettings,
+    Settings,
+)
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
@@ -44,8 +53,12 @@ class DocumentService:
                 detail=f"Unsupported file type '{ext}'. Allowed types: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
             )
 
-    def verify_storage_object_exists(self: Self, index_id: str, object_name: str, object_key: str) -> None:
-        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
+    def verify_storage_object_exists(
+        self: Self, index_id: str, object_name: str, object_key: str
+    ) -> None:
+        objects = self.storage.list_objects(
+            bucket=self.index_bucket_settings.index_documents_bucket_name
+        )
 
         if not any(obj.key == object_key for obj in objects):
             raise HTTPException(
@@ -68,7 +81,9 @@ class DocumentService:
             data=BytesIO(content),
             content_type=file.content_type or "application/octet-stream",
         )
-        self.logger.debug(f"File '{object_key}' successfully uploaded to storage bucket")
+        self.logger.debug(
+            f"File '{object_key}' successfully uploaded to storage bucket"
+        )
 
         msg: dict = {
             "indexId": index_id,
@@ -90,7 +105,9 @@ class DocumentService:
     async def list_documents(self: Self, index_id: str) -> List[DocumentInfo]:
         await self.index_service.verify_index_exists(index_id=index_id)
 
-        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
+        objects = self.storage.list_objects(
+            bucket=self.index_bucket_settings.index_documents_bucket_name
+        )
         prefix: str = f"{index_id}/"
 
         return [
@@ -104,16 +121,25 @@ class DocumentService:
 
         object_key: str = f"{index_id}/{document_name}"
 
-        self.verify_storage_object_exists(index_id=index_id, object_name=document_name, object_key=object_key)
-        self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=object_key) # Delete object from storage
+        self.verify_storage_object_exists(
+            index_id=index_id, object_name=document_name, object_key=object_key
+        )
+        self.storage.delete_object(
+            bucket=self.index_bucket_settings.index_documents_bucket_name,
+            name=object_key,
+        )  # Delete object from storage
 
         # Delete all vector db chunks for the specified document (1000 at a time)
         while True:
             vdb_objects: List[SearchResult] = await self.vdb.filter_search(
                 index_name=index_id,
-                filters=MetadataFilters(filters=[
-                    MetadataFilter(key="filename", operator=FilterOperator.EQ, value=object_key),
-                ]),
+                filters=MetadataFilters(
+                    filters=[
+                        MetadataFilter(
+                            key="filename", operator=FilterOperator.EQ, value=object_key
+                        ),
+                    ]
+                ),
                 max_results=1000,
             )
             vdb_objects_len: int = len(vdb_objects)
@@ -122,7 +148,9 @@ class DocumentService:
                 self.logger.debug("No more chunks to delete, loop ended")
                 break
 
-            await self.vdb.delete_objects(index_name=index_id, ids=[obj.id for obj in vdb_objects]) # Delete chunks from vector db
+            await self.vdb.delete_objects(
+                index_name=index_id, ids=[obj.id for obj in vdb_objects]
+            )  # Delete chunks from vector db
             self.logger.debug(f"Deleted {vdb_objects_len} chunks")
 
         self.logger.info(f"Document '{document_name}' successfully deleted")
@@ -134,4 +162,6 @@ def get_document_service(
     queue: Annotated[QueueInterface, Depends(dependency=get_queue_client)],
     index_service: Annotated[IndexService, Depends(dependency=get_index_service)],
 ) -> DocumentService:
-    return DocumentService(vdb=vdb, storage=storage, queue=queue, index_service=index_service)
+    return DocumentService(
+        vdb=vdb, storage=storage, queue=queue, index_service=index_service
+    )

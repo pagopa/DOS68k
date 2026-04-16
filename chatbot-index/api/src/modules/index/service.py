@@ -14,8 +14,12 @@ from dos_utility.utils.logger import get_logger
 
 from .dto import CreateIndexResponse
 from .env import get_embedding_settings, EmbeddingsSettings
-from ...env import get_settings, get_index_bucket_settings, IndexBucketSettings, Settings
-
+from ...env import (
+    get_settings,
+    get_index_bucket_settings,
+    IndexBucketSettings,
+    Settings,
+)
 
 
 class IndexService:
@@ -65,17 +69,24 @@ class IndexService:
         await self.verify_index_exists(index_id=index_id)
 
         try:
-            await self.vdb.delete_index(index_id) # Automatically delete all chunks of the index
+            await self.vdb.delete_index(
+                index_id
+            )  # Automatically delete all chunks of the index
         except IndexDeletionException as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
             )
 
         prefix: str = f"{index_id}/"
-        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
+        objects = self.storage.list_objects(
+            bucket=self.index_bucket_settings.index_documents_bucket_name
+        )
         for obj in objects:
             if obj.key.startswith(prefix):
-                self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=obj.key)
+                self.storage.delete_object(
+                    bucket=self.index_bucket_settings.index_documents_bucket_name,
+                    name=obj.key,
+                )
                 self.logger.debug(f"Delete storage object '{obj.key}'")
 
         self.logger.info(f"Index '{index_id}' successfully deleted")
