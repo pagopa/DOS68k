@@ -11,16 +11,17 @@ from dos_utility.vector_db import (
 from dos_utility.storage import StorageInterface, get_storage
 
 from .dto import CreateIndexResponse
-from .env import settings
+from .env import get_embedding_settings, EmbeddingsSettings
+from ...env import get_index_bucket_settings, IndexBucketSettings
 
-
-BUCKET_NAME = "chatbot-index"
 
 
 class IndexService:
     def __init__(self: Self, vdb: VectorDBInterface, storage: StorageInterface):
         self.vdb: VectorDBInterface = vdb
         self.storage: StorageInterface = storage
+        self.embedding_settings: EmbeddingsSettings = get_embedding_settings()
+        self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
 
     async def create_index(
         self: Self, index_id: str, user_id: str
@@ -33,7 +34,7 @@ class IndexService:
             )
 
         try:
-            await self.vdb.create_index(index_id, settings.embed_dim)
+            await self.vdb.create_index(index_id, self.embedding_settings.embed_dim)
         except IndexCreationException as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -61,10 +62,10 @@ class IndexService:
             )
 
         prefix: str = f"{index_id}/"
-        objects = self.storage.list_objects(bucket=BUCKET_NAME)
+        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
         for obj in objects:
             if obj.key.startswith(prefix):
-                self.storage.delete_object(bucket=BUCKET_NAME, name=obj.key)
+                self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=obj.key)
 
     async def get_indexes(self: Self) -> List[str]:
         return await self.vdb.get_indexes()
