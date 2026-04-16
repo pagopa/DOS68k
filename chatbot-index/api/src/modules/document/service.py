@@ -1,5 +1,6 @@
 import json
 
+from logging import Logger
 from io import BytesIO
 from typing import Self, List, Annotated
 from fastapi import Depends, HTTPException, UploadFile, status
@@ -8,10 +9,11 @@ from llama_index.core.vector_stores import MetadataFilter, FilterOperator
 from dos_utility.vector_db import VectorDBInterface, get_vector_db, SearchResult
 from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
+from dos_utility.utils.logger import get_logger
 
 from .dto import UploadDocumentResponse, DocumentInfo
 from ..index.service import IndexService, get_index_service
-from ...env import get_index_bucket_settings, IndexBucketSettings
+from ...env import get_index_bucket_settings, get_settings, IndexBucketSettings, Settings
 
 
 ALLOWED_EXTENSIONS = {".pdf", ".md", ".txt"}
@@ -28,8 +30,10 @@ class DocumentService:
         self.vdb: VectorDBInterface = vdb
         self.storage: StorageInterface = storage
         self.queue: QueueInterface = queue
+        self.settings: Settings = get_settings()
         self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
         self.index_service: IndexService = index_service
+        self.logger: Logger = get_logger(name=__file__, level=self.settings.log_level)
 
     @staticmethod
     def _validate_file_extension(filename: str) -> None:
@@ -64,6 +68,8 @@ class DocumentService:
             data=BytesIO(content),
             content_type=file.content_type or "application/octet-stream",
         )
+        self.logger.debug(f"File '{object_key}' successfully uploaded to storage bucket")
+
         msg: dict = {
             "indexId": index_id,
             "userId": user,
@@ -71,6 +77,9 @@ class DocumentService:
             "documentType": file.content_type,
         }
         await self.queue.enqueue(msg=json.dumps(msg).encode("utf-8"))
+        self.logger.debug("New message sento to message queue")
+
+        self.logger.info(f"Document '{object_key}' successfully uploaded")
 
         return UploadDocumentResponse(
             index_id=index_id,
@@ -101,11 +110,16 @@ class DocumentService:
         # Delete all vector db chunks for the specified document (1000 at a time)
         while True:
             vdb_objects: List[SearchResult] = await self.vdb.filter_search(index_name=index_id, filters=[MetadataFilter(key="filename", operator=FilterOperator.EQ, value=object_key)], max_results=1000)
+            vdb_objects_len: int = len(vdb_objects)
 
-            if len(vdb_objects) == 0:
+            if vdb_objects_len == 0:
+                self.logger.debug("No more chunks to delete, loop ended")
                 break
 
             await self.vdb.delete_objects(index_name=index_id, ids=[obj.id for obj in vdb_objects]) # Delete chunks from vector db
+            self.logger.debug(f"Deleted {vdb_objects_len} chunks")
+
+        self.logger.info(f"Document '{document_name}' successfully deleted")
 
 
 def get_document_service(
