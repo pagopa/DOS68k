@@ -8,13 +8,13 @@ from dos_utility.storage import get_storage
 def get_loaders():
     return {
         "pdf": PDFLoader(),
-        "txt": TXTLoader(),
-        "md": TXTLoader()
+        "txt": TextLoader(),
+        "md": TextLoader()
     }
 
 
 class Message(BaseModel):
-    """ Task message loaded from the queue.
+    """ Task message retrieved from the queue.
     """
     indexId: Annotated[str, Field(description="Vector db index to add the document")]
     userId: Annotated[str, Field(description="User id")]
@@ -35,12 +35,13 @@ class PDFLoader:
         content = [ document.load_page(number).get_text() for number in range(document.page_count)]
         return content
 
-class TXTLoader:
+class TextLoader:
     def read(self, data: BinaryIO):
         return [data.decode()]
 
 class DocumentLoader:
-    def __init__ (self):
+    def __init__ (self, bucket_name: str):
+        self.bucket_name = bucket_name
         self._storage = get_storage()
         self._loaders = get_loaders()
 
@@ -49,7 +50,7 @@ class DocumentLoader:
         filename = message.objectKey
         loader = self._loaders[doc_type]
         data = self._storage.get_object(
-            bucket = os.getenv("BUCKET_NAME"),
+            bucket = self.bucket_name,
             name = filename
             )
         content = loader.read(data)
@@ -61,6 +62,6 @@ class DocumentLoader:
         return document
     
 
-def get_document_loader() -> DocumentLoader :
-    return DocumentLoader()
+def get_document_loader(bucket_name: str) -> DocumentLoader :
+    return DocumentLoader(bucket_name= bucket_name)
 

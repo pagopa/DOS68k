@@ -8,16 +8,10 @@ class TaskSettings(BaseSettings):
 
     # Bucket
     storage_provider: str
-    minio_endpoint: str
-    minio_port: int
-    minio_access_key: str
-    minio_secret_key: str
-    minio_region: str
+    bucket_name: str
 
     # Vector DB
     vector_db_provider: str
-    redis_host: str
-    redis_port: int
 
     # Embedding settings
     embed_model_id: Annotated[str, Field(default="ID of the embedding model for the chose provider")]
