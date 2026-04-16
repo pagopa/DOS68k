@@ -16,9 +16,12 @@ from test.modules.sessions.mocks import (
 # get_session
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_session_found(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
 
     repo = SessionRepository(nosql_client=MockNoSQLClientWithSession())
     result = await repo.get_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
@@ -30,7 +33,9 @@ async def test_get_session_found(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.mark.asyncio
 async def test_get_session_not_found(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
 
     repo = SessionRepository(nosql_client=MockNoSQLClientEmpty())
     result = await repo.get_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
@@ -42,9 +47,12 @@ async def test_get_session_not_found(monkeypatch: pytest.MonkeyPatch):
 # get_sessions
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_sessions_returns_list(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
 
     repo = SessionRepository(nosql_client=MockNoSQLClientWithSession())
     result = await repo.get_sessions(user_id=MOCK_USER_ID)
@@ -56,7 +64,9 @@ async def test_get_sessions_returns_list(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.mark.asyncio
 async def test_get_sessions_returns_empty(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
 
     repo = SessionRepository(nosql_client=MockNoSQLClientEmpty())
     result = await repo.get_sessions(user_id=MOCK_USER_ID)
@@ -68,9 +78,12 @@ async def test_get_sessions_returns_empty(monkeypatch: pytest.MonkeyPatch):
 # create_session
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_create_session_returns_item(monkeypatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
     repo = SessionRepository(nosql_client=MockNoSQLClientEmpty())
     result = await repo.create_session(
         user_id=MOCK_USER_ID,
@@ -86,7 +99,9 @@ async def test_create_session_returns_item(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_create_session_generates_unique_id(monkeypatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
     repo = SessionRepository(nosql_client=MockNoSQLClientEmpty())
     result_1 = await repo.create_session(
         user_id=MOCK_USER_ID,
@@ -104,9 +119,12 @@ async def test_create_session_generates_unique_id(monkeypatch):
 # delete_session
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_delete_session_does_not_raise(monkeypatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
     repo = SessionRepository(nosql_client=MockNoSQLClientEmpty())
 
     # Should complete without raising any exception
@@ -117,8 +135,11 @@ async def test_delete_session_does_not_raise(monkeypatch):
 # get_session_repository
 # ---------------------------------------------------------------------------
 
+
 def test_get_session_repository_returns_instance(monkeypatch):
-    monkeypatch.setattr(session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS)
+    monkeypatch.setattr(
+        session_repository_module, "get_session_settings", lambda: MOCK_SESSION_SETTINGS
+    )
     repo = get_session_repository(nosql_client=MockNoSQLClientEmpty())
 
     assert isinstance(repo, SessionRepository)

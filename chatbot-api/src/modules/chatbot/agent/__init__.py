@@ -19,14 +19,14 @@ __all__ = [
 
 
 def get_agent(
-        llm: LLM,
-        system_header: Optional[str] = None,
-        system_prompt: Optional[str] = None,
-        output_cls: Optional[Type] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        tools: List[BaseTool | Callable] | None = None,
-    ) -> ReActAgent:
+    llm: LLM,
+    system_header: Optional[str] = None,
+    system_prompt: Optional[str] = None,
+    output_cls: Optional[Type] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    tools: List[BaseTool | Callable] | None = None,
+) -> ReActAgent:
     """Create and configure a ReActAgent instance.
 
     Args:
@@ -61,6 +61,9 @@ def get_agent(
 
     logger.debug(
         "ReActAgent created - name=%s, tools_count=%d, has_system_prompt=%s, has_system_header=%s",
-        name, len(tools) if tools else 0, system_prompt is not None, system_header is not None,
+        name,
+        len(tools) if tools else 0,
+        system_prompt is not None,
+        system_header is not None,
     )
     return agent

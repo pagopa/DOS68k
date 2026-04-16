@@ -207,7 +207,6 @@ TOPICS: dict[str, list[dict]] = {
             ),
         },
     ],
-
     "zephyr-corp": [
         {
             "filename": "onboarding.md",
@@ -305,7 +304,6 @@ TOPICS: dict[str, list[dict]] = {
             ),
         },
     ],
-
     "borgonero-fc": [
         {
             "filename": "history.md",
@@ -405,6 +403,7 @@ TOPICS: dict[str, list[dict]] = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def random_unit_vector(dim: int) -> list[float]:
     """Returns a random unit vector of the given dimension."""
     vec = [random.gauss(0, 1) for _ in range(dim)]
@@ -412,7 +411,9 @@ def random_unit_vector(dim: int) -> list[float]:
     return [x / magnitude for x in vec]
 
 
-def get_embeddings(texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int) -> list[list[float]]:
+def get_embeddings(
+    texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
+) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
     if embed_provider == "google":
         from google import genai
@@ -436,6 +437,7 @@ def get_embeddings(texts: list[str], embed_provider: str, api_key: str | None, e
 # ---------------------------------------------------------------------------
 # Core populate function
 # ---------------------------------------------------------------------------
+
 
 async def populate(
     topic: str,
@@ -495,7 +497,9 @@ async def populate(
         # ------------------------------------------------------------------ #
         print("[ 4/4 ] Verifying with semantic search (top 3)...")
         query_text = docs[0]["content"][:80]
-        query_embedding = get_embeddings([query_text], embed_provider, api_key, embed_dim)[0]
+        query_embedding = get_embeddings(
+            [query_text], embed_provider, api_key, embed_dim
+        )[0]
         results = await vdb.semantic_search(
             index_name=index_name,
             embedding_query=query_embedding,
@@ -503,9 +507,11 @@ async def populate(
             score_threshold=0.0,
         )
         if results:
-            print(f"        Query: \"{query_text[:60]}...\"")
+            print(f'        Query: "{query_text[:60]}..."')
             for r in results:
-                print(f"        [{r.score:.3f}] {r.filename}:{r.chunk_id} — {r.content[:70]}...")
+                print(
+                    f"        [{r.score:.3f}] {r.filename}:{r.chunk_id} — {r.content[:70]}..."
+                )
         else:
             print("        No results returned — check your connection settings.")
 
@@ -515,6 +521,7 @@ async def populate(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> None:
     topic_choices = list(TOPICS.keys()) + ["all"]
@@ -572,7 +579,9 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.embed_provider == "google" and not args.google_api_key:
-        parser.error("--google-api-key (or GOOGLE_API_KEY env var) is required when --embed-provider=google")
+        parser.error(
+            "--google-api-key (or GOOGLE_API_KEY env var) is required when --embed-provider=google"
+        )
 
     # Apply host/port overrides before settings are loaded
     if args.host:
@@ -608,7 +617,9 @@ def main() -> None:
         print()
         print("Next steps:")
         print("  Add a YAML config file in chatbot-api/src/modules/chatbot/config/")
-        print("  for each index you populated. See config/template.yaml for the schema.")
+        print(
+            "  for each index you populated. See config/template.yaml for the schema."
+        )
 
     asyncio.run(run_all())
 

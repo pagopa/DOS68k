@@ -13,6 +13,7 @@ logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 router: APIRouter = APIRouter(prefix="/queries", tags=["Queries"])
 
+
 @router.get(
     path="/{session_id}",
     response_model=List[QueryResponseDTO],
@@ -24,12 +25,13 @@ router: APIRouter = APIRouter(prefix="/queries", tags=["Queries"])
     summary="Get queries for a session",
 )
 async def get_queries(
-        query_service: Annotated[QueryService, Depends(dependency=get_query_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        session_id: str,
-    ) -> List[Dict[str, Any]]:
+    query_service: Annotated[QueryService, Depends(dependency=get_query_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    session_id: str,
+) -> List[Dict[str, Any]]:
     logger.debug("GET /queries/%s - user_id=%s", session_id, user_id)
     return await query_service.get_queries(session_id=session_id, user_id=user_id)
+
 
 @router.post(
     path="/{session_id}",
@@ -42,14 +44,16 @@ async def get_queries(
     summary="Create a new query for a session",
 )
 async def create_query(
-        query_service: Annotated[QueryService, Depends(dependency=get_query_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        query_data: CreateQueryDTO,
-        session_id: str,
-    ) -> Dict[str, Any]:
+    query_service: Annotated[QueryService, Depends(dependency=get_query_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    query_data: CreateQueryDTO,
+    session_id: str,
+) -> Dict[str, Any]:
     logger.debug(
         "POST /queries/%s - user_id=%s, question=%r",
-        session_id, user_id, query_data.question,
+        session_id,
+        user_id,
+        query_data.question,
     )
     return await query_service.create_query(
         session_id=session_id,

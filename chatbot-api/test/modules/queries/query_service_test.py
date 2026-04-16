@@ -32,6 +32,7 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
 # get_queries
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_queries_returns_list():
     service = QueryService(
@@ -79,6 +80,7 @@ async def test_get_queries_empty_when_no_queries():
 # ---------------------------------------------------------------------------
 # create_query
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_query_success():
@@ -145,12 +147,18 @@ async def test_create_query_session_not_found():
 # create_query — PII masking
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
-async def test_create_query_masks_question_and_answer_when_pii_enabled(monkeypatch: pytest.MonkeyPatch):
+async def test_create_query_masks_question_and_answer_when_pii_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+):
     get_masking_settings.cache_clear()
 
     monkeypatch.setenv("MASK_PII", "true")
-    monkeypatch.setattr("src.modules.queries.service.AsyncClient", get_mock_async_client(MockMaskingResponse200))
+    monkeypatch.setattr(
+        "src.modules.queries.service.AsyncClient",
+        get_mock_async_client(MockMaskingResponse200),
+    )
 
     service = QueryService(
         query_repository=MockQueryRepository(),
@@ -169,11 +177,16 @@ async def test_create_query_masks_question_and_answer_when_pii_enabled(monkeypat
 
 
 @pytest.mark.asyncio
-async def test_create_query_raises_500_when_masking_service_fails(monkeypatch: pytest.MonkeyPatch):
+async def test_create_query_raises_500_when_masking_service_fails(
+    monkeypatch: pytest.MonkeyPatch,
+):
     get_masking_settings.cache_clear()
 
     monkeypatch.setenv("MASK_PII", "true")
-    monkeypatch.setattr("src.modules.queries.service.AsyncClient", get_mock_async_client(MockMaskingErrorResponse500))
+    monkeypatch.setattr(
+        "src.modules.queries.service.AsyncClient",
+        get_mock_async_client(MockMaskingErrorResponse500),
+    )
 
     service = QueryService(
         query_repository=MockQueryRepository(),
@@ -196,6 +209,7 @@ async def test_create_query_raises_500_when_masking_service_fails(monkeypatch: p
 # ---------------------------------------------------------------------------
 # get_query_service
 # ---------------------------------------------------------------------------
+
 
 def test_get_query_service_returns_instance():
     service = get_query_service(

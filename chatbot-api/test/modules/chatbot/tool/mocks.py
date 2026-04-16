@@ -57,8 +57,12 @@ class VectorDBMock(VectorDBInterface):
     def aquery(self: Self, **kwargs):
         pass
 
+
 def get_vector_db_instance_mock(**kwargs) -> VectorDBInterface:
     return VectorDBMock()
 
+
 def get_vector_store_index_mock() -> VectorStoreIndex:
-    return VectorStoreIndex.from_vector_store(VectorDBMock(), GoogleGenAIEmbeddingMock())
+    return VectorStoreIndex.from_vector_store(
+        VectorDBMock(), GoogleGenAIEmbeddingMock()
+    )

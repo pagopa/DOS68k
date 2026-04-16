@@ -17,13 +17,14 @@ from ...env import get_logging_settings, LogSettings
 log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
+
 def load_tools(
-        llm: LLM,
-        embed_model: BaseEmbedding,
-        config_dir: Path,
-        similarity_top_k: int = 5,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-    ) -> Dict[str, QueryEngineTool]:
+    llm: LLM,
+    embed_model: BaseEmbedding,
+    config_dir: Path,
+    similarity_top_k: int = 5,
+    node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+) -> Dict[str, QueryEngineTool]:
     """Loads all RAG tools from YAML config files in config_dir.
 
     Args:
@@ -44,7 +45,9 @@ def load_tools(
         raise FileNotFoundError(f"Tool config directory not found: {config_dir}")
 
     # List all YAML files
-    yaml_files: List[Path] = sorted(f for f in config_dir.glob("*.yaml") if f.name != "template.yaml")
+    yaml_files: List[Path] = sorted(
+        f for f in config_dir.glob("*.yaml") if f.name != "template.yaml"
+    )
 
     if len(yaml_files) == 0:
         logger.warning(f"No YAML tool configs found in: {config_dir}")
@@ -55,10 +58,16 @@ def load_tools(
 
     # For each YAML file create a custom RAG tool
     for yaml_file in yaml_files:
-        config: YamlSettings = get_yaml_settings(file=yaml_file) # Get each YAML file through Pydantic Settings
+        config: YamlSettings = get_yaml_settings(
+            file=yaml_file
+        )  # Get each YAML file through Pydantic Settings
         logger.debug(
             "Loading tool %r - index_id=%s, similarity_top_k=%s, has_qa_prompt=%s, has_refine_prompt=%s",
-            config.name, config.index_id, config.similarity_top_k, config.qa_prompt is not None, config.refine_prompt is not None,
+            config.name,
+            config.index_id,
+            config.similarity_top_k,
+            config.qa_prompt is not None,
+            config.refine_prompt is not None,
         )
         qa_template: PromptTemplate = (
             PromptTemplate(
@@ -84,8 +93,12 @@ def load_tools(
             else None
         )
 
-        vector_db: VectorDBInterface = get_vector_db_instance(index_name=config.index_id)
-        index: VectorStoreIndex = load_index(vector_db=vector_db, embed_model=embed_model)
+        vector_db: VectorDBInterface = get_vector_db_instance(
+            index_name=config.index_id
+        )
+        index: VectorStoreIndex = load_index(
+            vector_db=vector_db, embed_model=embed_model
+        )
         tool: QueryEngineTool = get_query_engine_tool(
             index=index,
             name=config.name,

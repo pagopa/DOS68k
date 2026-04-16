@@ -9,6 +9,7 @@ from ..auth import get_user_id
 
 router: APIRouter = APIRouter(prefix="/sessions", tags=["Sessions"])
 
+
 @router.get(
     path="/all",
     response_model=List[SessionResponseDTO],
@@ -19,10 +20,11 @@ router: APIRouter = APIRouter(prefix="/sessions", tags=["Sessions"])
     summary="Get all sessions for the authenticated user",
 )
 async def get_sessions(
-        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-    ) -> List[Dict[str, Any]]:
+    session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+) -> List[Dict[str, Any]]:
     return await session_service.get_sessions(user_id=user_id)
+
 
 @router.get(
     path="/{session_id}",
@@ -35,11 +37,14 @@ async def get_sessions(
     summary="Get a session by its ID",
 )
 async def get_session(
-        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        session_id: UUID,
-    ) -> Dict[str, Any]:
-    return await session_service.get_session(session_id=str(session_id), user_id=user_id)
+    session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    session_id: UUID,
+) -> Dict[str, Any]:
+    return await session_service.get_session(
+        session_id=str(session_id), user_id=user_id
+    )
+
 
 @router.post(
     path="",
@@ -51,15 +56,16 @@ async def get_session(
     summary="Create a new session for the authenticated user",
 )
 async def create_session(
-        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        create_session_dto: CreateSessionDTO,
-    ) -> Dict[str, Any]:
+    session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    create_session_dto: CreateSessionDTO,
+) -> Dict[str, Any]:
     return await session_service.create_session(
         user_id=user_id,
         session_data={"title": create_session_dto.title},
         is_temporary=create_session_dto.is_temporary,
     )
+
 
 @router.post(
     path="/{session_id}/clear",
@@ -71,11 +77,14 @@ async def create_session(
     summary="Clear the selected session for the authenticated user",
 )
 async def clear_session(
-        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        session_id: UUID,
-    ) -> Dict[str, Any]:
-    return await session_service.clear_session(session_id=str(session_id), user_id=user_id)
+    session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    session_id: UUID,
+) -> Dict[str, Any]:
+    return await session_service.clear_session(
+        session_id=str(session_id), user_id=user_id
+    )
+
 
 @router.delete(
     path="/{session_id}",
@@ -87,8 +96,8 @@ async def clear_session(
     summary="Delete a session by its ID",
 )
 async def delete_session(
-        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
-        user_id: Annotated[str, Depends(dependency=get_user_id)],
-        session_id: UUID,
-    ) -> None:
+    session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+    user_id: Annotated[str, Depends(dependency=get_user_id)],
+    session_id: UUID,
+) -> None:
     await session_service.delete_session(session_id=str(session_id), user_id=user_id)

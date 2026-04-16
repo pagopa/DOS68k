@@ -15,6 +15,7 @@ async def test_health_check(client_test: AsyncClient):
         "service": "Chatbot API",
     }
 
+
 @pytest.mark.asyncio
 async def test_health_check_db(client_test: AsyncClient):
     response = await client_test.get(url=f"{health_router.prefix}/db")

@@ -2,6 +2,7 @@ from typing import Self
 from llama_index.core.agent.workflow import ReActAgent
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 
+
 class ReActAgentMock(ReActAgent):
     def __new__(cls, **kwargs):
         # ReActAgent is a Pydantic v2 BaseModel. Calling super().__init__() would

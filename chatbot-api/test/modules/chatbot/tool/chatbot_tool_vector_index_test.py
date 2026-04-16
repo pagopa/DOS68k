@@ -7,6 +7,8 @@ from test.modules.chatbot.tool.mocks import VectorDBMock
 
 
 def test_load_index():
-    index: VectorStoreIndex = load_index(vector_db=VectorDBMock(), embed_model=GoogleGenAIEmbeddingMock())
+    index: VectorStoreIndex = load_index(
+        vector_db=VectorDBMock(), embed_model=GoogleGenAIEmbeddingMock()
+    )
 
     assert isinstance(index, VectorStoreIndex)
