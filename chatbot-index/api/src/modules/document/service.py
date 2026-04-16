@@ -3,8 +3,9 @@ import json
 from io import BytesIO
 from typing import Self, List, Annotated
 from fastapi import Depends, HTTPException, UploadFile, status
+from llama_index.core.vector_stores import MetadataFilter, FilterOperator
 
-from dos_utility.vector_db import VectorDBInterface, get_vector_db
+from dos_utility.vector_db import VectorDBInterface, get_vector_db, SearchResult
 from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.queue import QueueInterface, get_queue_client
 
@@ -37,6 +38,15 @@ class DocumentService:
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 detail=f"Unsupported file type '{ext}'. Allowed types: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+            )
+
+    def verify_storage_object_exists(self: Self, index_id: str, object_name: str, object_key: str) -> None:
+        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
+
+        if not any(obj.key == object_key for obj in objects):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document '{object_name}' not found in index '{index_id}'",
             )
 
     async def upload_document(
@@ -84,15 +94,18 @@ class DocumentService:
         await self.index_service.verify_index_exists(index_id=index_id)
 
         object_key: str = f"{index_id}/{document_name}"
-        objects = self.storage.list_objects(bucket=self.index_bucket_settings.index_documents_bucket_name)
-        if not any(obj.key == object_key for obj in objects):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Document '{document_name}' not found in index '{index_id}'",
-            )
 
-        self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=object_key)
-        await self.vdb.delete_objects(index_name=index_id, ids=[object_key])
+        self.verify_storage_object_exists(index_id=index_id, object_name=document_name, object_key=object_key)
+        self.storage.delete_object(bucket=self.index_bucket_settings.index_documents_bucket_name, name=object_key) # Delete object from storage
+
+        # Delete all vector db chunks for the specified document (1000 at a time)
+        while True:
+            vdb_objects: List[SearchResult] = await self.vdb.filter_search(index_name=index_id, filters=[MetadataFilter(key="filename", operator=FilterOperator.EQ, value=object_key)], max_results=1000)
+
+            if len(vdb_objects) == 0:
+                break
+
+            await self.vdb.delete_objects(index_name=index_id, ids=[obj.id for obj in vdb_objects]) # Delete chunks from vector db
 
 
 def get_document_service(
