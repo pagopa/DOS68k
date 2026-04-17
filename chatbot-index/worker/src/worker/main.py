@@ -26,7 +26,7 @@ async def main():
 
                     if ack_token is not None:
                         await queue_client.acknowledge(ack_token=ack_token)
-            except:
+            except Exception:
                 traceback.print_exc()
 
 

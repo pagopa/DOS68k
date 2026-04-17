@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings
-from typing import Annotated, Optional, Literal
-from pydantic import Field, PositiveInt, PositiveFloat, NonNegativeFloat
+from typing import Annotated, Literal
+from pydantic import Field, PositiveInt, PositiveFloat
 
 
 class TaskSettings(BaseSettings):

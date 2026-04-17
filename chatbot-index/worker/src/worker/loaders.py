@@ -1,6 +1,5 @@
 from typing import Annotated, BinaryIO
 from pydantic import Field, BaseModel
-import os
 import pymupdf
 
 from dos_utility.storage import get_storage
