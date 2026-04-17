@@ -1,6 +1,5 @@
-from typing import Annotated, BinaryIO
+from typing import Annotated
 from pydantic import Field, BaseModel
-import os
 
 from loaders import Document
 

@@ -1,5 +1,4 @@
-from logging import Logger
-from typing import overload, Literal, Optional
+from typing import Literal, Optional
 from google.genai import types
 from llama_index.core.base.embeddings.base import BaseEmbedding
 

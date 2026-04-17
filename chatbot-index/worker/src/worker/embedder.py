@@ -1,5 +1,4 @@
 from parsers import ChunkData
-from env import get_task_settings, TaskSettings
 from models import get_embed_model, BaseEmbedding
 
 from dos_utility.vector_db import ObjectData
