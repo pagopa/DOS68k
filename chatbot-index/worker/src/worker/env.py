@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 from typing import Annotated, Optional, Literal
 from pydantic import Field, PositiveInt, PositiveFloat, NonNegativeFloat
@@ -22,5 +23,6 @@ class TaskSettings(BaseSettings):
     embed_retry_min_seconds: Annotated[PositiveFloat, Field(default=1.0)]
     model_api_key: Annotated[str, Field(description="API key for the chosen provider")]
 
+@lru_cache()
 def get_task_settings() -> TaskSettings:
     return TaskSettings()
