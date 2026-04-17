@@ -10,15 +10,15 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 def get_embed_model(
-        provider: Literal["google"],
-        model_id: Optional[str],
-        embed_batch_size: Optional[int],
-        embed_dim: Optional[int],
-        task_type: Optional[str],
-        retries: Optional[int],
-        retry_min_seconds: Optional[float],
-        api_key: Optional[str],
-    ) -> BaseEmbedding:
+    provider: Literal["google"],
+    model_id: Optional[str],
+    embed_batch_size: Optional[int],
+    embed_dim: Optional[int],
+    task_type: Optional[str],
+    retries: Optional[int],
+    retry_min_seconds: Optional[float],
+    api_key: Optional[str],
+) -> BaseEmbedding:
     """Returns an embedding model instance based on the configured provider.
 
     Args:
