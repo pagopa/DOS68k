@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .env import get_settings
-from .routers import health
+from .modules.health import health
+from .modules.evaluate import controller as evaluate
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -23,3 +24,4 @@ app.add_middleware(
 )
 
 app.include_router(router=health.router)
+app.include_router(router=evaluate.router)
