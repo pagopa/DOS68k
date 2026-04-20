@@ -2,19 +2,55 @@
 
 Here a list of functionalities this package provide:
 
-- [SQL DB connection](#1-sql-db-connection)
 - [Auth interface](#2-auth-interface)
 - [Queue interface](#3-queue-interface)
 - [Storage interface](#4-storage-interface)
 - [VectorDB interface](#5-vector-db-interface)
 - [NoSQL DB interface](#6-nosql-db-interface)
-- [Chatbot API client](#7-chatbot-api-client)
+- [Utilities](#7-utilities)
 
 ## 1. SQL DB connection
 
+> !!!! THIS SQL MODULE IS NOT USED IN THE PROJECT !!!!
+
+This module provides an async SQLAlchemy session factory for PostgreSQL, using the `asyncpg` driver.
+
+### 1.1 Env setup
+
+Create a `.env` file with the following variables (all have defaults for local development):
+
+```bash
+export DB_USERNAME=<username>      # Default: postgres
+export DB_PASSWORD=<password>      # Default: password
+export DB_HOST=<host>              # Default: localhost
+export DB_PORT=<port>              # Default: 5432
+export DB_NAME=<database-name>     # Default: db
+```
+
+### 1.2 How to use it
+
+```python
+from dos_utility.database.sql import get_async_session
+```
+
+Use it as a FastAPI dependency:
+
+```python
+from typing import Annotated
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from dos_utility.database.sql import get_async_session
+
+@app.get("/items")
+async def get_items(session: Annotated[AsyncSession, Depends(get_async_session)]):
+    result = await session.execute(...)
+```
+
+For more details, check [sql.md](./database/sql/sql.md).
+
 ## 2. Auth interface
 
-This is an adaptive layer, implemented as an interface, to manage authentication and JWT verification. Actually supported providers:
+This is an adaptive layer, implemented as an interface, to manage authentication and JWT verification. Currently supported providers:
 
 - AWS Cognito
 - Local (for development/testing)
@@ -52,17 +88,18 @@ The local provider doesn't require any additional environment variables besides 
 ### 2.2 How to use it
 
 You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
-Here a code snipped for the import.
+Here a code snippet for the import.
 
 ```python
-from dos_utility.auth import AuthInterface, get_auth_provider
+from dos_utility.auth import AuthInterface, get_auth
+from dos_utility.auth import EmptyTokenException, TokenExpiredException, InvalidTokenException, InvalidTokenKeyException
 ```
 
 Example usage:
 
 ```python
 # Get the auth provider instance
-auth_provider: AuthInterface = get_auth_provider()
+auth_provider: AuthInterface = get_auth()
 
 # Retrieve JWKS (JSON Web Key Set)
 jwks = auth_provider.get_jwks()
@@ -74,9 +111,15 @@ try:
     user_id = claims.get("sub")
     email = claims.get("email")
     # Process the authenticated user
-except HTTPException as e:
-    # Handle authentication failure
-    print(f"Authentication failed: {e.detail}")
+except EmptyTokenException:
+    # Handle empty token
+    ...
+except TokenExpiredException:
+    # Handle expired token
+    ...
+except (InvalidTokenException, InvalidTokenKeyException) as e:
+    # Handle invalid token
+    ...
 ```
 
 The interface provides two main methods:
@@ -84,14 +127,16 @@ The interface provides two main methods:
 - `get_jwks()`: Retrieves the JSON Web Key Set from the authentication provider
 - `verify_jwt(token: str)`: Verifies a JWT token and returns its claims
 
+For the full interface spec, check [auth_interface.md](./auth/auth_interface.md).
+
 ### 2.3 Implement new provider
 
 If you want to provide a new implementation for a different provider you are welcome, just make sure to respect some standards:
 
 - create a class which implements the `AuthInterface` (see `src/dos_utility/auth/interface.py`). Write your own code in a dedicated folder under `src/dos_utility/auth` module.
-- update the `get_auth_provider` with your new implementation, under `src/dos_utility/auth/__init__.py`.
+- update the `get_auth` with your new implementation, under `src/dos_utility/auth/__init__.py`.
 - add the new provider to the `AuthProvider` enum in `src/dos_utility/auth/env.py`.
-- write unit tests for your new implementation and for the updated `get_auth_provider`.
+- write unit tests for your new implementation and for the updated `get_auth`.
 - update this doc so that the documentation is up to date.
 
 ### 2.4 Update the interface
@@ -100,7 +145,7 @@ It could be possible that the actual interface doesn't cover some needed behavio
 
 ## 3. Queue interface
 
-This is an adaptive layer, implemented as an interface, to manage a connection with a queue. Actually supported queues:
+This is an adaptive layer, implemented as an interface, to manage a connection with a queue. Currently supported queues:
 
 - SQS
 - Redis
@@ -121,9 +166,9 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
-export SQS_ENDPOINT=<endpoint> # With format http(s)://host (es: http://localstack)
-export SQS_PORT=<port>
-export SQS_REGION=<region>
+export SQS_ENDPOINT_URL=<endpoint> # With format http(s)://host (es: http://localstack)
+export SQS_PORT=<port>             # Default: 4566
+export SQS_REGION=<region>         # Default: us-east-1
 export AWS_ACCESS_KEY_ID=<access-key-id>
 export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 export SQS_QUEUE_NAME=<queue-name>
@@ -137,14 +182,14 @@ Add the following env variables to the `.env` file you created [here](#31-env-se
 ```bash
 export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
 export REDIS_PORT=<port>
-export REDIS_STREAM=<stream-name>
-export REDIS_GROUP=<group-name>
+export REDIS_STREAM=<stream-name>  # Default: my-stream
+export REDIS_GROUP=<group-name>    # Default: my-group
 ```
 
 ### 3.2 How to use it
 
 You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
-Here a code snipped for the import.
+Here a code snippet for the import.
 
 ```python
 # You choose whether to use get_queue_client or get_queue_client_ctx, based on your needs
@@ -159,6 +204,7 @@ If you want to provide a new implementation for a different provider you are wel
 
 - create a class which implements the `QueueInterface` ([here](./queue/queue_interface.md) the specs), under `src/dos_utility/queue/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/queue` module.
 - update the `get_queue_client_ctx` with your new implementation, under `src/dos_utility/queue/__init__.py`.
+- add the new provider to the `QueueProvider` enum in `src/dos_utility/queue/env.py`.
 - write unit tests for your new implementation and for the updated `get_queue_client_ctx`.
 - update this doc so that the documentation is up to date.
 
@@ -168,7 +214,7 @@ It could be possible that the actual interface doesn't cover some needed behavio
 
 ## 4. Storage interface
 
-This is an adaptive layer, implemented as an interface, to manage a connection with a storage service. Actually supported storage:
+This is an adaptive layer, implemented as an interface, to manage a connection with a storage service. Currently supported storage:
 
 - AWS S3
 - MinIO
@@ -200,7 +246,7 @@ export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 Add the following env variables to the `.env` file you created [here](#41-env-setup).
 
 ```bash
-export MINIO_ENDPOINT=<endpoint> # with format <host>, whitout protocol (es. storage - as per docker compose service name)
+export MINIO_ENDPOINT=<endpoint> # with format <host>, without protocol (es. storage - as per docker compose service name)
 export MINIO_PORT=<port>
 export MINIO_ACCESS_KEY=<access-key>
 export MINIO_SECRET_KEY=<secret-key>
@@ -211,10 +257,10 @@ export MINIO_SECURE=<bool> # true/false. true if you want to use HTTPS protocol,
 ### 4.2 How to use it
 
 You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
-Here a code snipped for the import.
+Here a code snippet for the import.
 
 ```python
-from dos_utility.storage import StorageInterface, get_storage
+from dos_utility.storage import StorageInterface, ObjectInfo, get_storage
 ```
 
 In order to have better understanding of each element, checkout [storage.md](./storage/storage.md) to see examples and [storage_interface.md](./storage/storage_interface.md) to find out what methods are available for the interface.
@@ -225,6 +271,7 @@ If you want to provide a new implementation for a different provider you are wel
 
 - create a class which implements the `StorageInterface` ([here](./storage/storage_interface.md) the specs), under `src/dos_utility/storage/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/storage` module.
 - update the `get_storage` with your new implementation, under `src/dos_utility/storage/__init__.py`.
+- add the new provider to the `StorageProvider` enum in `src/dos_utility/storage/env.py`.
 - write unit tests for your new implementation and for the updated `get_storage`.
 - update this doc so that the documentation is up to date.
 
@@ -234,10 +281,12 @@ It could be possible that the actual interface doesn't cover some needed behavio
 
 ## 5. Vector DB interface
 
-This is an adaptive layer, implemented as an interface, to manage a connection and its methods with a vector database. Actually supported dbs:
+This is an adaptive layer, implemented as an interface, to manage a connection and its methods with a vector database. Currently supported dbs:
 
 - Qdrant
 - Redis
+
+The interface also provides LlamaIndex integration through the `aquery` method (via `BasePydanticVectorStore`).
 
 ### 5.1 Env setup
 
@@ -256,7 +305,7 @@ Add the following env variables to the `.env` file you created [here](#51-env-se
 
 ```bash
 export QDRANT_HOST=<host> # With format <host> (es: localhost)
-export QDRANT_PORT=<port>
+export QDRANT_PORT=<port> # Default: 6333
 ```
 
 #### 5.1.2 Redis env
@@ -265,20 +314,27 @@ Add the following env variables to the `.env` file you created [here](#51-env-se
 
 ```bash
 export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
-export REDIS_PORT=<port>
+export REDIS_PORT=<port> # Default: 6379
 ```
 
 ### 5.2 How to use it
 
 You always want to use the interface in your code, not the actual implementation of a specific provider, so that you can benefit from this abstraction layer, without the need to change the code as the provider changes.<br>
-Here a code snipped for the import.
+Here a code snippet for the import.
 
 ```python
-# You choose whether to use get_vector_db or get_vector_db_ctx, based on your needs
-from dos_utility.vector_db import VectorDBInterface, ObjectData, SemanticSearchResult, get_vector_db_ctx, get_vector_db, IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
+# You choose whether to use get_vector_db, get_vector_db_ctx, or get_vector_db_instance based on your needs
+from dos_utility.vector_db import VectorDBInterface, ObjectData, SearchResult, get_vector_db_ctx, get_vector_db, get_vector_db_instance
+from dos_utility.vector_db import IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
 ```
 
-In order to have better understanding of each element, checkout [queue.md](./queue/queue.md) to see examples and [queue_interface.md](./queue/queue_interface.md) to find out what methods are available for the interface.
+There are three factory functions:
+
+- `get_vector_db_ctx(index_name=None)` - async context manager for standalone scripts or workers
+- `get_vector_db(index_name=None)` - FastAPI dependency (same behavior, works with `Depends()`)
+- `get_vector_db_instance(index_name=None)` - returns an instance directly, without a context manager. Intended for LlamaIndex integration (`VectorStoreIndex.from_vector_store`)
+
+In order to have better understanding of each element, checkout [vector_db.md](./vector_db/vector_db.md) to see examples and [vector_db_interface.md](./vector_db/vector_db_interface.md) to find out what methods are available for the interface.
 
 ### 5.3 Implement new provider
 
@@ -286,6 +342,7 @@ If you want to provide a new implementation for a different provider you are wel
 
 - create a class which implements the `VectorDBInterface` ([here](./vector_db/vector_db_interface.md) the specs), under `src/dos_utility/vector_db/interface.py`. Write your own code in a dedicated folder under `src/dos_utility/vector_db` module.
 - update the `get_vector_db_ctx` with your new implementation, under `src/dos_utility/vector_db/__init__.py`.
+- add the new provider to the `VectorDBProvider` enum in `src/dos_utility/vector_db/env.py`.
 - write unit tests for your new implementation and for the updated `get_vector_db_ctx`.
 - update this doc so that the documentation is up to date.
 
@@ -295,7 +352,7 @@ It could be possible that the actual interface doesn't cover some needed behavio
 
 ## 6. NoSQL DB interface
 
-This is an adaptive layer, implemented as an interface, to manage a connection and CRUD operations with a NoSQL database. Actually supported databases:
+This is an adaptive layer, implemented as an interface, to manage a connection and CRUD operations with a NoSQL database. Currently supported databases:
 
 - AWS DynamoDB
 
@@ -348,3 +405,48 @@ If you want to provide a new implementation for a different provider you are wel
 ### 6.4 Update the interface
 
 It could be possible that the actual interface doesn't cover some needed behaviors or some vendors functionalities. If you want to update it you can do it, but be sure to align all pre-existing provider implementations and update unit-tests. Other than that, check each micro-service which use that interface and make sure it doesn't break with the new structure.
+
+## 7. Utilities
+
+Shared utility modules used across the package.
+
+### 7.1 Logger
+
+A pre-configured logger factory that outputs to `stdout` with a standard format.
+
+```python
+from dos_utility.utils.logger import get_logger
+
+logger = get_logger(name=__name__)
+logger.info("Something happened")
+```
+
+### 7.2 AWS credentials
+
+Shared AWS credentials settings, used by modules that need AWS access (SQS, DynamoDB, S3).
+
+```python
+from dos_utility.utils.aws import get_aws_credentials_settings, AWSCredentialsSettings
+```
+
+Required env variables:
+
+```bash
+export AWS_ACCESS_KEY_ID=<access-key-id>
+export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+```
+
+### 7.3 Redis connection pool
+
+Shared async Redis connection pool, used by modules that need Redis access (Queue, VectorDB).
+
+```python
+from dos_utility.utils.redis import get_redis_connection_pool
+```
+
+Required env variables:
+
+```bash
+export REDIS_HOST=<host>  # Default: localhost
+export REDIS_PORT=<port>  # Default: 6379
+```

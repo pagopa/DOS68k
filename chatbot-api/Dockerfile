@@ -1,18 +1,24 @@
-ARG PYTHON_VERSION=3.13-slim
+ARG PYTHON_VERSION=3.14-slim
 FROM python:${PYTHON_VERSION} AS builder
 
 WORKDIR /app
 
 # Install uv.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Force uv to use the system Python so .venv/bin/python symlinks remain valid
+# in the final stage (uv's managed Python cache is not copied over)
+ENV UV_PYTHON_PREFERENCE=only-system
+
 # Copy the application into the container
 COPY ./chatbot-api .
 COPY ./dos-utility ../dos-utility
 
+# Force uv to use the system Python so the venv symlinks remain valid in the final stage
+ENV UV_PYTHON_PREFERENCE=only-system
+
 # Install the application dependencies
-RUN uv sync --no-cache
-
-
+RUN rm -f uv.lock && uv sync --no-cache
 FROM python:${PYTHON_VERSION}
 
 WORKDIR /app
@@ -26,11 +32,11 @@ RUN useradd -m fastapi \
 USER fastapi
 
 # Copy the application into the container
-COPY --from=builder /app/.venv .venv
-COPY ./chatbot-api/src ./src
-COPY ./chatbot-api/README.md .
+COPY --from=builder --chown=fastapi:fastapi /app/.venv .venv
+COPY --chown=fastapi:fastapi ./chatbot-api/src ./src
+COPY --chown=fastapi:fastapi ./chatbot-api/README.md .
 
 EXPOSE 8000
 
 # Run the application.
-CMD .venv/bin/fastapi run src/main.py --port 8000 --host 0.0.0.0
+CMD ["/app/.venv/bin/python", "-m", "fastapi", "run", "src/main.py", "--port", "8000", "--host", "0.0.0.0"]

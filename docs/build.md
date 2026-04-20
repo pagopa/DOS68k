@@ -3,9 +3,14 @@
 The following guide is intended to be used to setup up the whole project, or a single service of it.<br>
 For an overview of all available services, see the [project README](../README.md#services).
 
+> **Note:** Several services depend on the shared [dos-utility](../dos-utility/README.md) package, which provides common abstractions for auth, queue, storage, and database layers. This package is referenced by services and installed automatically as a local dependency — you do not need to install it manually.
+
 ## 1. Env files
 
-First of all, make sure you have all the .env required files. To create those choose the service you want to start (or all of them). Whitin its folder there is a (or more than one) `**.env.template` that you must use to create your own `**.env`. You can find instructions about variables within the `.env.template`, if needed.<br>
+First of all, make sure you have all the `.env` required files. For each service you want to start, check whether its folder contains a `.env.template` file:
+
+- **If a `.env.template` exists**: copy it to `.env` in the same folder and fill in the required values. Instructions for each variable are provided as comments inside the template.
+- **If no `.env.template` exists**: the service requires no environment configuration and no `.env` file needs to be created.
 
 ## 2. Specific service configurations
 

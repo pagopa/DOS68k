@@ -1,8 +1,9 @@
-import logging
+from logging import Logger
 from typing import Dict, Any
-from ..interface import AuthInterface
 
-logger = logging.getLogger(__name__)
+from ..interface import AuthInterface
+from ...utils.logger import get_logger
+
 
 
 class LocalAuthProvider(AuthInterface):
@@ -12,13 +13,13 @@ class LocalAuthProvider(AuthInterface):
     """
 
     def __init__(self):
-        """Initialize the local auth provider."""
-        logger.warning("Using LocalAuthProvider - JWT verification is DISABLED")
+        self.logger: Logger = get_logger(name=__name__)
+        self.logger.warning("Using LocalAuthProvider - JWT verification is DISABLED")
 
     def get_jwks(self) -> Dict[str, Any]:
         """
         Return mock JWKS for local development.
-        
+
         Returns:
             Dict[str, Any]: Mock JWKS
         """
@@ -38,15 +39,15 @@ class LocalAuthProvider(AuthInterface):
         """
         Mock JWT verification - always succeeds.
         Returns mock claims without actual token verification.
-        
+
         Args:
             token (str): The JWT token (ignored in local mode)
-            
+
         Returns:
             Dict[str, Any]: Mock token claims
         """
-        logger.info("Local auth provider - bypassing JWT verification")
-        
+        self.logger.info("Local auth provider - bypassing JWT verification")
+
         # Return mock claims that simulate a valid token
         return {
             "sub": "local-user-123",

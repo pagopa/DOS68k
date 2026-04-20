@@ -61,6 +61,22 @@ async def create_session(
         is_temporary=create_session_dto.is_temporary,
     )
 
+@router.post(
+    path="/{session_id}/clear",
+    response_model=SessionResponseDTO,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Session cleared successfully"},
+    },
+    summary="Clear the selected session for the authenticated user",
+)
+async def clear_session(
+        session_service: Annotated[SessionService, Depends(dependency=get_session_service)],
+        user_id: Annotated[str, Depends(dependency=get_user_id)],
+        session_id: UUID,
+    ) -> Dict[str, Any]:
+    return await session_service.clear_session(session_id=str(session_id), user_id=user_id)
+
 @router.delete(
     path="/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,

@@ -2,10 +2,10 @@ from typing import Self, List, Annotated, Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 
-from ..queries.repository import get_query_repository, QueryRepository
-from ..env import get_session_settings, SessionSettings
-from ..utils import format_expiration_dt
+from .env import get_session_settings, SessionSettings
 from .repository import SessionRepository, get_session_repository
+from ..queries.repository import get_query_repository, QueryRepository
+from ..utils import format_expiration_dt
 
 
 class SessionService:
@@ -44,7 +44,7 @@ class SessionService:
 
     async def create_session(self: Self, user_id: str, session_data: Dict[str, Any], is_temporary: bool) -> Dict[str, Any]:
         now: datetime = datetime.now()
-        expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.session_expiration_days)).timestamp())
+        expiration_dt: Optional[int] = None if is_temporary is False else int((now + timedelta(days=self.settings.SESSION_EXPIRATION_DAYS)).timestamp())
 
         item: Dict[str, Any] = await self.session_repository.create_session(
             user_id=user_id,
@@ -62,13 +62,7 @@ class SessionService:
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }
 
-    async def delete_session(self: Self, session_id: str, user_id: str) -> None:
-        # Check whether the session exists and belongs to the user
-        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
-
-        if session is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-
+    async def __delete_session_queries(self: Self, session_id: str) -> None:
         # Get all queries related to the session to delete
         queries: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
 
@@ -76,6 +70,26 @@ class SessionService:
         for query in queries:
             await self.query_repository.delete_query(query_id=query["id"], session_id=session_id)
 
+
+    async def clear_session(self: Self, session_id: str, user_id: str) -> Dict[str, Any]:
+        # Check whether the session exists and belongs to the user
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+
+        if session is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+        await self.__delete_session_queries(session_id=session_id)
+
+        return session
+
+    async def delete_session(self: Self, session_id: str, user_id: str) -> None:
+        # Check whether the session exists and belongs to the user
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+
+        if session is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+        await self.__delete_session_queries(session_id=session_id)
         await self.session_repository.delete_session(session_id=session_id, user_id=user_id)
 
 def get_session_service(

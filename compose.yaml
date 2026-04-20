@@ -38,10 +38,15 @@ services:
       - ./chatbot-api/.env
     ports:
       - 8000:8000
+    # Uncomment the volumes below to mount custom RAG tool configs or a custom agent config.
+    # See chatbot-api/README.md#customization for details.
+    # volumes:
+    #   - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
+    #   - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
     depends_on:
-      # - db
       - localstack
       - masking
+      - redis-vdb
 
   chatbot-evaluate-api:
     build:
@@ -53,7 +58,6 @@ services:
       - 8002:8000
     depends_on:
       - redis-queue
-      # - db
       - redis-vdb
       - localstack
 

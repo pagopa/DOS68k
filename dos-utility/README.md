@@ -12,13 +12,26 @@ uv add <relative-path>/dos-utility
 In order to work locally with this package you need the following tools:
 
 - uv
+- [task](https://taskfile.dev/)
 
 ## Unit test
 
-To run test, run the following command:
+Run unit tests with coverage report, no threshold enforced:
 
 ```bash
-uv run pytest --cov=dos_utility --cov-report=term-missing
+task test:quick
+```
+
+Run unit tests enforcing a minimum coverage threshold (default: 80%):
+
+```bash
+task test
+```
+
+To override the minimum coverage threshold:
+
+```bash
+task test COV_THREASHOLD=90
 ```
 
 If you implement a feature add unit tests and make sure the coverage is as close as possible to 100%.
