@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.14-slim
+ARG PYTHON_VERSION=3.13-slim
 FROM python:${PYTHON_VERSION} AS builder
 
 WORKDIR /app
@@ -18,7 +18,7 @@ COPY ./dos-utility ../dos-utility
 ENV UV_PYTHON_PREFERENCE=only-system
 
 # Install the application dependencies
-RUN rm -f uv.lock && uv sync --no-cache
+RUN uv sync --frozen --no-cache
 FROM python:${PYTHON_VERSION}
 
 WORKDIR /app

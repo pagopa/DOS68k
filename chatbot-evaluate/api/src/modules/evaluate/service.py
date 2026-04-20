@@ -2,10 +2,7 @@ from logging import Logger
 from typing import Self, Annotated
 from fastapi import Depends
 
-from dos_utility.vector_db import (
-    VectorDBInterface,
-    get_vector_db,
-)
+from dos_utility.utils import logger
 from dos_utility.storage import StorageInterface, get_storage
 
 from ...env import (
@@ -18,6 +15,7 @@ class EvaluationService:
     def __init__(self: Self, storage: StorageInterface):
         self.storage: StorageInterface = storage
         self.settings: Settings = get_settings()
+        self.logger: Logger = logger.get_logger(__name__)
 
 
     async def create_simple_feedback(self, query_id: str) -> dict:

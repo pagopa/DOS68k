@@ -9,5 +9,3 @@ class SimpleFeedbackResponse(BaseModel):
     )
 
     query_id: Annotated[str, Field(alias="queryId")]
-    session_id: Annotated[UUID, Field(alias="sessionId")]
-    created_at: Annotated[str, Field(alias="createdAt")]
