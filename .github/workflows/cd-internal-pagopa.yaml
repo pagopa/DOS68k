@@ -46,13 +46,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      auth: ${{ steps.changes.outputs.auth }}
-      chatbot-api: ${{ steps.changes.outputs.chatbot-api }}
-      chatbot-evaluate-api: ${{ steps.changes.outputs.chatbot-evaluate-api }}
-      chatbot-evaluate-worker: ${{ steps.changes.outputs.chatbot-evaluate-worker }}
-      chatbot-index-api: ${{ steps.changes.outputs.chatbot-index-api }}
-      chatbot-index-worker: ${{ steps.changes.outputs.chatbot-index-worker }}
-      masking: ${{ steps.changes.outputs.masking }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
 
@@ -82,40 +76,31 @@ jobs:
               - 'masking/**'
               - 'dos-utility/**'
 
+      - id: set-matrix
+        run: |
+          MATRIX=$(cat <<'EOF'
+          {
+            "include": [
+              $( [ "${{ steps.changes.outputs.auth }}" = "true" ] && echo '{"service": "auth", "dockerfile": "auth/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.chatbot-api }}" = "true" ] && echo '{"service": "chatbot-api", "dockerfile": "chatbot-api/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.chatbot-evaluate-api }}" = "true" ] && echo '{"service": "chatbot-evaluate-api", "dockerfile": "chatbot-evaluate/api/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.chatbot-evaluate-worker }}" = "true" ] && echo '{"service": "chatbot-evaluate-worker", "dockerfile": "chatbot-evaluate/worker/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.chatbot-index-api }}" = "true" ] && echo '{"service": "chatbot-index-api", "dockerfile": "chatbot-index/api/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.chatbot-index-worker }}" = "true" ] && echo '{"service": "chatbot-index-worker", "dockerfile": "chatbot-index/worker/Dockerfile"},'),
+              $( [ "${{ steps.changes.outputs.masking }}" = "true" ] && echo '{"service": "masking", "dockerfile": "masking/Dockerfile"}')
+            ]
+          }
+          EOF
+          )
+          echo "matrix=$(echo $MATRIX | jq -c 'del(.include[] | select(. == null)) | .include')" >> $GITHUB_OUTPUT
+
   build-and-push:
     needs: detect-changes
-    if: ${{ matrix.changed == 'true' }}
+    if: ${{ needs.detect-changes.outputs.matrix != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - service: auth
-            dockerfile: auth/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.auth }}
-
-          - service: chatbot-api
-            dockerfile: chatbot-api/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.chatbot-api }}
-
-          - service: chatbot-evaluate-api
-            dockerfile: chatbot-evaluate/api/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.chatbot-evaluate-api }}
-
-          - service: chatbot-evaluate-worker
-            dockerfile: chatbot-evaluate/worker/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.chatbot-evaluate-worker }}
-
-          - service: chatbot-index-api
-            dockerfile: chatbot-index/api/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.chatbot-index-api }}
-
-          - service: chatbot-index-worker
-            dockerfile: chatbot-index/worker/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.chatbot-index-worker }}
-
-          - service: masking
-            dockerfile: masking/Dockerfile
-            changed: ${{ needs.detect-changes.outputs.masking }}
+        include: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@v4
