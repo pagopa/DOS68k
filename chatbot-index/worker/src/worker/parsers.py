@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated
 from pydantic import Field, BaseModel
 
@@ -31,5 +32,6 @@ class Parser:
         return chunks
 
 
+@lru_cache
 def get_parser() -> Parser:
     return Parser()

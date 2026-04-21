@@ -3,24 +3,11 @@ from typing import Any
 
 from loaders import get_document_loader, Message, Document
 from parsers import get_parser, ChunkData
-from embedder import get_embedder, ObjectData
+from embedder import get_embedder
 from env import get_task_settings
 
-from dos_utility.vector_db import get_vector_db_ctx
+from dos_utility.vector_db import get_vector_db_ctx, ObjectData
 
-task_settings = get_task_settings()
-loader = get_document_loader(bucket_name=task_settings.bucket_name)
-parser = get_parser()
-embedder = get_embedder(
-    provider=task_settings.provider,
-    embed_model_id=task_settings.embed_model_id,
-    embed_batch_size=task_settings.embed_batch_size,
-    embed_dim=task_settings.embed_dim,
-    embed_task=task_settings.embed_task,
-    embed_retries=task_settings.embed_retries,
-    embed_retry_min_seconds=task_settings.embed_retry_min_seconds,
-    model_api_key=task_settings.model_api_key,
-)
 
 
 async def process_task(body: bytes) -> None:
@@ -29,6 +16,19 @@ async def process_task(body: bytes) -> None:
     Args:
         body (bytes): The body of the task to be processed.
     """
+    task_settings = get_task_settings()
+    loader = get_document_loader(bucket_name=task_settings.bucket_name)
+    parser = get_parser()
+    embedder = get_embedder(
+        provider=task_settings.provider,
+        embed_model_id=task_settings.embed_model_id,
+        embed_batch_size=task_settings.embed_batch_size,
+        embed_dim=task_settings.embed_dim,
+        embed_task=task_settings.embed_task,
+        embed_retries=task_settings.embed_retries,
+        embed_retry_min_seconds=task_settings.embed_retry_min_seconds,
+        model_api_key=task_settings.model_api_key,
+    )
     converted_data: Any = json.loads(body.decode("utf-8"))
 
     message = Message(**converted_data)
