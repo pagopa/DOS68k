@@ -1,3 +1,4 @@
+from functools import lru_cache
 from parsers import ChunkData
 from models import get_embed_model, BaseEmbedding
 
@@ -44,6 +45,7 @@ class Embedder:
         return embedded_chunks
 
 
+@lru_cache
 def get_embedder(
     provider: str,
     embed_model_id: str,

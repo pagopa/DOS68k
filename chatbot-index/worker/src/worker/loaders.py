@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated, BinaryIO
 from pydantic import Field, BaseModel
 import pymupdf
@@ -65,5 +66,6 @@ class DocumentLoader:
         return document
 
 
+@lru_cache
 def get_document_loader(bucket_name: str) -> DocumentLoader:
     return DocumentLoader(bucket_name=bucket_name)
