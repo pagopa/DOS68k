@@ -25,7 +25,14 @@ class TaskSettings(BaseSettings):
     embed_retry_min_seconds: Annotated[PositiveFloat, Field(default=1.0)]
     model_api_key: Annotated[str, Field(description="API key for the chosen provider")]
 
+class GlobalSettings(BaseSettings):
+    log_level: Annotated[PositiveInt, Field(default=20)]
 
-@lru_cache()
+
+@lru_cache
 def get_task_settings() -> TaskSettings:
     return TaskSettings()
+
+@lru_cache
+def get_global_settings() -> GlobalSettings:
+    return GlobalSettings()

@@ -1,27 +1,28 @@
 import asyncio
-import logging
 import traceback
 
-from dos_utility.queue import get_queue_client_ctx
-
+from logging import Logger
 from task import process_task
+from dos_utility.queue import get_queue_client_ctx
+from dos_utility.utils.logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+from .env import get_global_settings, GlobalSettings
 
 
 async def main():
+    settings: GlobalSettings = get_global_settings()
+    logger: Logger = get_logger(name=__file__, level=settings.log_level)
+
     async with get_queue_client_ctx() as queue_client:
-        logging.info("Worker started and connected to the queue.")
-        logging.info("Waiting for tasks...")
+        logger.info("Worker started and connected to the queue.")
+        logger.info("Waiting for tasks...")
 
         while True:
             try:
                 msg, ack_token = await queue_client.dequeue()
 
                 if msg is not None:
-                    logging.info("Task found. Start processing..")
+                    logger.info("Task found. Start processing..")
                     await process_task(body=msg)
 
                     if ack_token is not None:
