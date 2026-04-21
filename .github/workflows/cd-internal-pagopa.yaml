@@ -78,21 +78,38 @@ jobs:
 
       - id: set-matrix
         run: |
-          MATRIX=$(cat <<'EOF'
-          {
-            "include": [
-              $( [ "${{ steps.changes.outputs.auth }}" = "true" ] && echo '{"service": "auth", "dockerfile": "auth/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.chatbot-api }}" = "true" ] && echo '{"service": "chatbot-api", "dockerfile": "chatbot-api/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.chatbot-evaluate-api }}" = "true" ] && echo '{"service": "chatbot-evaluate-api", "dockerfile": "chatbot-evaluate/api/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.chatbot-evaluate-worker }}" = "true" ] && echo '{"service": "chatbot-evaluate-worker", "dockerfile": "chatbot-evaluate/worker/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.chatbot-index-api }}" = "true" ] && echo '{"service": "chatbot-index-api", "dockerfile": "chatbot-index/api/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.chatbot-index-worker }}" = "true" ] && echo '{"service": "chatbot-index-worker", "dockerfile": "chatbot-index/worker/Dockerfile"},'),
-              $( [ "${{ steps.changes.outputs.masking }}" = "true" ] && echo '{"service": "masking", "dockerfile": "masking/Dockerfile"}')
-            ]
+          python3 << 'PYTHON_EOF'
+          import json
+          import os
+
+          changes = {
+              'auth': '${{ steps.changes.outputs.auth }}' == 'true',
+              'chatbot-api': '${{ steps.changes.outputs.chatbot-api }}' == 'true',
+              'chatbot-evaluate-api': '${{ steps.changes.outputs.chatbot-evaluate-api }}' == 'true',
+              'chatbot-evaluate-worker': '${{ steps.changes.outputs.chatbot-evaluate-worker }}' == 'true',
+              'chatbot-index-api': '${{ steps.changes.outputs.chatbot-index-api }}' == 'true',
+              'chatbot-index-worker': '${{ steps.changes.outputs.chatbot-index-worker }}' == 'true',
+              'masking': '${{ steps.changes.outputs.masking }}' == 'true',
           }
-          EOF
-          )
-          echo "matrix=$(echo $MATRIX | jq -c 'del(.include[] | select(. == null)) | .include')" >> $GITHUB_OUTPUT
+
+          dockerfiles = {
+              'auth': 'auth/Dockerfile',
+              'chatbot-api': 'chatbot-api/Dockerfile',
+              'chatbot-evaluate-api': 'chatbot-evaluate/api/Dockerfile',
+              'chatbot-evaluate-worker': 'chatbot-evaluate/worker/Dockerfile',
+              'chatbot-index-api': 'chatbot-index/api/Dockerfile',
+              'chatbot-index-worker': 'chatbot-index/worker/Dockerfile',
+              'masking': 'masking/Dockerfile',
+          }
+
+          matrix = [
+              {'service': service, 'dockerfile': dockerfiles[service]}
+              for service in changes if changes[service]
+          ]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'matrix={json.dumps(matrix)}\n')
+          PYTHON_EOF
 
   build-and-push:
     needs: detect-changes
