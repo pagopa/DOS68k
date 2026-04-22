@@ -9,6 +9,7 @@ from src.modules.chatbot.models import get_llm, get_embed_model
 
 from test.modules.chatbot.mocks import GoogleGenAIMock, GoogleGenAIEmbeddingMock
 
+
 def test_get_llm_google_provider(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(llama_index.llms.google_genai, "GoogleGenAI", GoogleGenAIMock)
 
@@ -22,8 +23,13 @@ def test_get_llm_google_provider(monkeypatch: pytest.MonkeyPatch):
 
     assert isinstance(model, LLM)
 
+
 def test_get_embed_model_google_provider(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(llama_index.embeddings.google_genai, "GoogleGenAIEmbedding", GoogleGenAIEmbeddingMock)
+    monkeypatch.setattr(
+        llama_index.embeddings.google_genai,
+        "GoogleGenAIEmbedding",
+        GoogleGenAIEmbeddingMock,
+    )
 
     embedding_model: BaseEmbedding = get_embed_model(
         provider="google",

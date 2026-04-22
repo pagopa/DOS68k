@@ -41,6 +41,18 @@ class QdrantVectorDB(VectorDBInterface):
     async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
         await self._client.close()
 
+
+    async def is_healthy(self: Self) -> bool:
+        try:
+            health_status = await self._client.health()
+            if health_status.status == "ok":
+                return True
+            return False
+        except Exception as e:
+            logging.error(f"Qdrant health check failed: {e}")
+            return False
+        
+
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         try:
             if not await self._client.collection_exists(collection_name=index_name):

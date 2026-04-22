@@ -3,7 +3,7 @@ import pytest
 from fastapi import HTTPException
 
 from src.modules.sessions.service import SessionService, get_session_service
-from src.modules.env import get_session_settings
+from src.modules.sessions.env import get_session_settings
 
 from test.modules.sessions.mocks import (
     MockSessionRepository,
@@ -24,6 +24,7 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
 # ---------------------------------------------------------------------------
 # get_session
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_session_success():
@@ -58,6 +59,7 @@ async def test_get_session_not_found():
 # get_sessions
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_sessions_returns_list():
     service = SessionService(
@@ -86,6 +88,7 @@ async def test_get_sessions_returns_empty():
 # ---------------------------------------------------------------------------
 # create_session
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_session_permanent():
@@ -126,6 +129,7 @@ async def test_create_session_temporary():
 # ---------------------------------------------------------------------------
 # delete_session
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_delete_session_success():
@@ -175,13 +179,16 @@ async def test_delete_session_not_found():
 # clear_session
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_clear_session_success():
     service = SessionService(
         session_repository=MockSessionRepository(),
         query_repository=MockQueryRepository(),
     )
-    result = await service.clear_session(session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID)
+    result = await service.clear_session(
+        session_id=MOCK_SESSION_ID, user_id=MOCK_USER_ID
+    )
 
     assert result["id"] == MOCK_SESSION_ID
     assert result["userId"] == MOCK_USER_ID
@@ -204,6 +211,7 @@ async def test_clear_session_not_found():
 # ---------------------------------------------------------------------------
 # get_session_service
 # ---------------------------------------------------------------------------
+
 
 def test_get_session_service_returns_instance():
     service = get_session_service(

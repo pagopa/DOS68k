@@ -15,3 +15,6 @@ chatbot-api/evaluation*
 
 chatbot-index/evaluation*
 Makefile
+chatbot-api/evaluation*
+*.ipynb
+chatbot-index/worker/scripts*

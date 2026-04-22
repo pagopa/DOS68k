@@ -19,7 +19,7 @@ class GoogleGenAIMock(GoogleGenAI):
         instance = object.__new__(cls)
         object.__setattr__(instance, "__pydantic_fields_set__", set())
         object.__setattr__(instance, "__pydantic_extra__", None)
-        object.__setattr__(instance, "__pydantic_private__", { "_max_tokens": 1000 })
+        object.__setattr__(instance, "__pydantic_private__", {"_max_tokens": 1000})
         object.__setattr__(instance, "context_window", 4096)
         object.__setattr__(instance, "model", "gemini-2.0-flash")
         object.__setattr__(instance, "is_function_calling_model", True)
@@ -27,6 +27,7 @@ class GoogleGenAIMock(GoogleGenAI):
 
     def __init__(self: Self, **kwargs):
         pass
+
 
 class GoogleGenAIEmbeddingMock(GoogleGenAIEmbedding):
     # Same pattern as ReActAgentMock: GoogleGenAIEmbedding is a Pydantic BaseModel,
@@ -51,11 +52,14 @@ def get_chatbot_settings_mock() -> ChatbotSettings:
 
     return ChatbotSettingsMock()
 
+
 def get_llm_mock(**kwargs) -> LLM:
     return GoogleGenAIMock()
 
+
 def get_embed_model_mock(**kwargs) -> BaseEmbedding:
     return GoogleGenAIEmbeddingMock()
+
 
 def load_tools_mock(**kwargs) -> Dict[str, QueryEngineTool]:
     class QueryEngineToolMock(QueryEngineTool):
@@ -68,8 +72,10 @@ def load_tools_mock(**kwargs) -> Dict[str, QueryEngineTool]:
         "tool3": QueryEngineToolMock(),
     }
 
+
 def get_agent_yaml_settings_mock(file: Path) -> AgentYamlSettings:
     return AgentYamlSettings(name="TestAgent", description="Test agent description")
+
 
 def get_agent_mock(**kwargs) -> ReActAgent:
     class NodeMock:
@@ -100,6 +106,7 @@ def get_agent_mock(**kwargs) -> ReActAgent:
 
     return ReActAgentMock()
 
+
 def get_agent_run_exception_mock(**kwargs) -> ReActAgent:
     class ReActAgentMock(ReActAgent):
         def __init__(self: Self):
@@ -109,6 +116,7 @@ def get_agent_run_exception_mock(**kwargs) -> ReActAgent:
             raise Exception
 
     return ReActAgentMock()
+
 
 def get_agent_invalid_structured_response_mock(**kwargs) -> ReActAgent:
     class ReActAgentMock(ReActAgent):
@@ -127,10 +135,11 @@ def get_agent_invalid_structured_response_mock(**kwargs) -> ReActAgent:
 
     return ReActAgentMock()
 
+
 class ContextMock(Context):
     def __init__(self: Self):
         pass
 
     @classmethod
-    def from_dict(cls, workflow, data, serializer = None):
+    def from_dict(cls, workflow, data, serializer=None):
         pass

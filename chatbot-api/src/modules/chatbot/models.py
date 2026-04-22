@@ -1,6 +1,5 @@
 from logging import Logger
-from typing import overload, Literal, Optional, List
-from pydantic import BaseModel
+from typing import Literal, Optional, List
 from dos_utility.utils.logger import get_logger
 from ..env import get_logging_settings, LogSettings
 from google.genai import types
@@ -13,12 +12,12 @@ logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 def get_llm(
-        provider: Literal["google"],
-        model_id: Optional[str],
-        temperature: Optional[float],
-        max_tokens: Optional[int],
-        api_key: Optional[str],
-    ) -> LLM:
+    provider: Literal["google"],
+    model_id: Optional[str],
+    temperature: Optional[float],
+    max_tokens: Optional[int],
+    api_key: Optional[str],
+) -> LLM:
     """Returns an LLM instance based on the configured provider.
 
     Args:
@@ -32,7 +31,12 @@ def get_llm(
     """
     if provider == "google":
         from llama_index.llms.google_genai import GoogleGenAI
-        from google.genai.types import GenerateContentConfig, HarmCategory, HarmBlockThreshold, SafetySetting
+        from google.genai.types import (
+            GenerateContentConfig,
+            HarmCategory,
+            HarmBlockThreshold,
+            SafetySetting,
+        )
 
         safety_settings: List[SafetySetting] = [
             SafetySetting(
@@ -65,15 +69,15 @@ def get_llm(
 
 
 def get_embed_model(
-        provider: Literal["google"],
-        model_id: Optional[str],
-        embed_batch_size: Optional[int],
-        embed_dim: Optional[int],
-        task_type: Optional[str],
-        retries: Optional[int],
-        retry_min_seconds: Optional[float],
-        api_key: Optional[str],
-    ) -> BaseEmbedding:
+    provider: Literal["google"],
+    model_id: Optional[str],
+    embed_batch_size: Optional[int],
+    embed_dim: Optional[int],
+    task_type: Optional[str],
+    retries: Optional[int],
+    retry_min_seconds: Optional[float],
+    api_key: Optional[str],
+) -> BaseEmbedding:
     """Returns an embedding model instance based on the configured provider.
 
     Args:
@@ -102,6 +106,10 @@ def get_embed_model(
                 task_type=task_type,
             ),
         )
-        logger.debug("Embedding model loaded - provider=google, model_id=%s, embed_dim=%s", model_id, embed_dim)
+        logger.debug(
+            "Embedding model loaded - provider=google, model_id=%s, embed_dim=%s",
+            model_id,
+            embed_dim,
+        )
 
     return embed_model

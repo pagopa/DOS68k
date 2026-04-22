@@ -3,7 +3,9 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 from dos_utility.vector_db.interface import VectorDBInterface
 
 
-def load_index(vector_db: VectorDBInterface, embed_model: BaseEmbedding) -> VectorStoreIndex:
+def load_index(
+    vector_db: VectorDBInterface, embed_model: BaseEmbedding
+) -> VectorStoreIndex:
     """Creates a LlamaIndex VectorStoreIndex from any VectorDBInterface implementation.
 
     The vector_db instance must have index_name set. The client connection is
@@ -16,4 +18,6 @@ def load_index(vector_db: VectorDBInterface, embed_model: BaseEmbedding) -> Vect
     Returns:
         VectorStoreIndex: A LlamaIndex index ready to be used as a query engine.
     """
-    return VectorStoreIndex.from_vector_store(vector_store=vector_db, embed_model=embed_model)
+    return VectorStoreIndex.from_vector_store(
+        vector_store=vector_db, embed_model=embed_model
+    )

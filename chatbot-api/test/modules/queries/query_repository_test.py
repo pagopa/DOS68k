@@ -1,7 +1,7 @@
 import pytest
 
 from src.modules.queries.repository import QueryRepository, get_query_repository
-from src.modules.env import get_session_settings
+from src.modules.sessions.env import get_session_settings
 
 from test.modules.queries.mocks import (
     MockNoSQLClientWithQueries,
@@ -20,6 +20,7 @@ def setup_env(monkeypatch: pytest.MonkeyPatch):
 # ---------------------------------------------------------------------------
 # get_queries
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_queries_returns_items():
@@ -43,6 +44,7 @@ async def test_get_queries_returns_empty():
 # ---------------------------------------------------------------------------
 # create_query
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_query_returns_item():
@@ -85,6 +87,7 @@ async def test_create_query_generates_unique_id():
 # delete_query
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_delete_query_does_not_raise():
     repo = QueryRepository(nosql_client=MockNoSQLClientEmpty())
@@ -96,6 +99,7 @@ async def test_delete_query_does_not_raise():
 # ---------------------------------------------------------------------------
 # get_query_repository
 # ---------------------------------------------------------------------------
+
 
 def test_get_query_repository_returns_instance():
     repo = get_query_repository(nosql_client=MockNoSQLClientEmpty())

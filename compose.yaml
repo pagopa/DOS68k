@@ -82,7 +82,8 @@ services:
     depends_on:
       - redis-queue
       - minio
-      - localstack
+      - redis-vdb
+      # - localstack
 
   chatbot-index-worker:
     build:

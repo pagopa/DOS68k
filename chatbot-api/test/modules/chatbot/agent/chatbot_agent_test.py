@@ -18,10 +18,16 @@ def test_get_agent(monkeypatch: pytest.MonkeyPatch):
 
     assert isinstance(agent, ReActAgent)
 
+
 def test_get_agent_with_optional_parameters(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(agent_module, "ReActAgent", ReActAgentMock)
 
     llm: LLM = GoogleGenAIMock()
-    agent: ReActAgent = get_agent(llm=llm, name="TestAgent", description="Test description", system_header="Test system header")
+    agent: ReActAgent = get_agent(
+        llm=llm,
+        name="TestAgent",
+        description="Test description",
+        system_header="Test system header",
+    )
 
     assert isinstance(agent, ReActAgent)

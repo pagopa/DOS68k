@@ -50,6 +50,14 @@ class RedisVectorDB(VectorDBInterface):
         index.schema.index.prefix = f"{index_name}/vector"
         return index
 
+    async def is_healthy(self: Self) -> bool:
+        try:
+            response = await self._redis_client.ping()
+            return response
+        except Exception as e:
+            logging.error(f"Redis health check failed: {e}")
+            return False
+
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         try:
             index_info: IndexInfo = IndexInfo(
@@ -133,7 +141,6 @@ class RedisVectorDB(VectorDBInterface):
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         try:
             index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
-
             _ = await index.drop_keys(keys=ids)
 
             logging.info(f"Objects deleted from index '{index_name}' successfully.")
@@ -181,7 +188,7 @@ class RedisVectorDB(VectorDBInterface):
         ) -> List[SearchResult]:
         index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
 
-        filter_expression = self.__build_filter_expression(metadata_filters=filters)
+        filter_expression: FilterExpression = self.__build_filter_expression(metadata_filters=filters)
         query: FilterQuery = FilterQuery(
             filter_expression=filter_expression,
             return_fields=["id", "filename", "chunk_id", "content"],
