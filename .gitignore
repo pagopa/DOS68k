@@ -10,8 +10,8 @@ localstack/data/
 .venv
 qdrant_storage/
 
-chatbot-api/evaluation*
 *.ipynb
-
 chatbot-index/evaluation*
 Makefile
+chatbot-api/evaluation*
+chatbot-index/worker/scripts*
