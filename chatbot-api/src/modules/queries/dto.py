@@ -26,7 +26,6 @@ class QueryResponseDTO(BaseModel):
     session_id: Annotated[UUID, Field(alias="sessionId")]
     question: str
     answer: str
-    bad_answer: Annotated[bool, Field(alias="badAnswer")]
     topic: List[str]
     context: Dict[str, List[FileContext]]
     created_at: Annotated[str, Field(alias="createdAt")]

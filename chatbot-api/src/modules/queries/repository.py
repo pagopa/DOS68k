@@ -26,8 +26,9 @@ class QueryRepository():
         item: Dict[str, Any] = {
             "id": str(uuid7()),
             "sessionId": session_id,
-            "badAnswer": False,
             "createdAt": datetime.now().isoformat(),
+            "feedback": 0,
+            "isEvaluated": False,
             **query_data,
         }
 

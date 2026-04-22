@@ -35,7 +35,6 @@ MOCK_QUERY_ITEM = {
     "sessionId": MOCK_SESSION_ID,
     "question": "What is Python?",
     "answer": "A programming language",
-    "badAnswer": False,
     "topic": ["programming"],
     "createdAt": "2024-01-01T00:00:00",
     "expiresAt": None,

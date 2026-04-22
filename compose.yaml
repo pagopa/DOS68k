@@ -211,6 +211,18 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./localstack/init/ready.d:/etc/localstack/init/ready.d"
 
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    ports:
+      - "8006:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    depends_on:
+      - localstack
+
 volumes:
   langfuse_clickhouse_data:
     driver: local

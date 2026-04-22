@@ -51,7 +51,6 @@ class QueryService:
                 "session_id": query["sessionId"],
                 "question": query["question"],
                 "answer": query["answer"],
-                "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
                 "context": {},  # contexts are not persisted, only returned live on creation. It will be saved in the monitoring service
                 "created_at": query["createdAt"],
@@ -117,7 +116,6 @@ class QueryService:
             "session_id": item["sessionId"],
             "question": item["question"],
             "answer": item["answer"],
-            "bad_answer": item["badAnswer"],
             "topic": item["topic"],
             "context": response_json["context"],
             "created_at": item["createdAt"],

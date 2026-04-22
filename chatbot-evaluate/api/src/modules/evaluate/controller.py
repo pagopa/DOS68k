@@ -2,22 +2,57 @@ from fastapi import APIRouter, Depends, status
 from typing import List, Annotated
 from .service import EvaluationService, get_evaluation_service
 from ..auth import get_user_id
-from .dto import SimpleFeedbackResponse
+from .dto import SimpleFeedbackResponse, EvaluationResponse, EvaluationAllResponse
 
 router: APIRouter = APIRouter(prefix="/evaluate", tags=["evaluate"])
 
 @router.post(
-    path="/simple-feedback/{query_id}",
+    path="/simple-feedback",
     response_model=SimpleFeedbackResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Simple feedback created successfully"},
+        status.HTTP_404_NOT_FOUND: {"description": "Query not found"},
         status.HTTP_409_CONFLICT: {"description": "Simple feedback already exists"},
     },
     summary="Create a new simple feedback for the authenticated user",
 )
-async def post_simple_feedback(
+async def simple_feedback(
     query_id: str,
+    feedback: int,
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
 ) -> SimpleFeedbackResponse:
-    return await service.create_simple_feedback(query_id=query_id)
+    return await service.create_simple_feedback(query_id=query_id, feedback=feedback)
+
+
+@router.post(
+    path="/evaluate-all",
+    response_model=EvaluationAllResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_201_CREATED: {"description": "All evaluations created successfully"},
+    },
+    summary="Evaluate all queries",
+)
+async def post_evaluate_all(
+    service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
+
+) -> EvaluationAllResponse:
+    return await service.evaluate_all(session_id=session_id)
+
+
+@router.post(
+    path="/{query_id}",
+    response_model=EvaluationResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_201_CREATED: {"description": "Evaluation created successfully"},
+        status.HTTP_404_NOT_FOUND: {"description": "Query not found"},
+    },
+    summary="Evaluate a specific query",
+)
+async def post_evaluate(
+    query_id: str,
+    service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
+) -> EvaluationResponse:
+    return await service.evaluate(query_id=query_id)

@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     frontend_url: Annotated[str, Field(default="http://localhost")]
+    QUERY_TABLENAME: Annotated[str, Field(default="queries")]
+    EVALUATE_UPPER_LIMIT: Annotated[int, Field(...)]
 
 @lru_cache()
 def get_settings() -> Settings:

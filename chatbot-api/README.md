@@ -262,7 +262,6 @@ X-User-Id: <uuid>
 	"sessionId": "<uuid>",
 	"question": "string",
 	"answer": "string",
-	"badAnswer": false,
 	"topic": ["string"],
 	"context": {
 		"<filename>": [

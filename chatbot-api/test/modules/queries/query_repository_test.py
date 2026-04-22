@@ -61,7 +61,6 @@ async def test_create_query_returns_item():
     assert result["sessionId"] == MOCK_SESSION_ID
     assert result["question"] == "What is Python?"
     assert result["answer"] == "A programming language"
-    assert result["badAnswer"] is False
     assert result["topic"] == ["programming"]
     assert "createdAt" in result
 
