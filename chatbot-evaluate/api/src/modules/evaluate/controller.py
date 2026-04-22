@@ -36,7 +36,7 @@ async def simple_feedback(
 )
 async def post_evaluate_all(
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
-
+    session_id: str,
 ) -> EvaluationAllResponse:
     return await service.evaluate_all(session_id=session_id)
 
