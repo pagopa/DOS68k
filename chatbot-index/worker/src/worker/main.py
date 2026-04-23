@@ -6,7 +6,7 @@ from task import process_task
 from dos_utility.queue import get_queue_client_ctx
 from dos_utility.utils.logger import get_logger
 
-from .env import get_global_settings, GlobalSettings
+from env import get_global_settings, GlobalSettings
 
 
 async def main():

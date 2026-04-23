@@ -15,6 +15,13 @@ class TaskSettings(BaseSettings):
     vector_db_provider: str
 
     # Embedding settings
+    embed_chunk_size: Annotated[
+        int, Field(default="Chunk size in number of tokens")
+    ]
+    embed_chunk_overlap: Annotated[
+        int, Field(default="Number of overlapping tokens between consecutive chunks")
+    ]
+
     embed_model_id: Annotated[
         str, Field(default="ID of the embedding model for the chose provider")
     ]
