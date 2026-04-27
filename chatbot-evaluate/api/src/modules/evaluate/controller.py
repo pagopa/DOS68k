@@ -29,7 +29,7 @@ async def simple_feedback(
 
 
 @router.post(
-    path="/evaluate-all/{session_id}",
+    path="/all/{session_id}",
     response_model=EvaluationAllResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
