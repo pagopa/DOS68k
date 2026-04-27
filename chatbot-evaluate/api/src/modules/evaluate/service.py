@@ -22,7 +22,7 @@ class EvaluationService:
         self.nosql: NoSQLInterface = nosql
         self.queue: QueueInterface = queue
         self.settings: Settings = get_settings()
-        self.logger: Logger = logger.get_logger(__name__)
+        self.logger: Logger = logger.get_logger(name=__name__, level=self.settings.LOG_LEVEL)
 
     async def create_simple_feedback(self: Self, user_id: str, query_id: str, feedback: int) -> Dict[str, Any]:
         self.logger.info(f"Creating simple feedback for query_id: {query_id}, feedback: {feedback}")
