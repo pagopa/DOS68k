@@ -1,6 +1,9 @@
 import pytest
 
-from dos_utility.database.nosql.dynamodb.env import get_dynamodb_settings, DynamoDBSettings
+from dos_utility.database.nosql.dynamodb.env import (
+    get_dynamodb_settings,
+    DynamoDBSettings,
+)
 
 
 def test_get_dynamodb_settings(monkeypatch: pytest.MonkeyPatch):

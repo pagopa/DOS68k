@@ -32,20 +32,26 @@ class MinIO(StorageInterface):
 
     def get_object(self: Self, bucket: str, name: str) -> BinaryIO:
         try:
-            response: HTTPResponse = self.client.get_object(bucket_name=bucket, object_name=name)
+            response: HTTPResponse = self.client.get_object(
+                bucket_name=bucket, object_name=name
+            )
         finally:
             response.close()
             response.release_conn()
 
         return response.read()
 
-    def put_object(self: Self, bucket: str, name: str, data: BinaryIO, content_type: str) -> None:
+    def put_object(
+        self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
+    ) -> None:
         # Get data length
         data.seek(0, 2)
         length: int = data.tell()
         data.seek(0)
 
-        self.client.put_object(bucket_name=bucket, object_name=name, data=data, content_type=content_type, length=length)
+        self.client.put_object(
+            bucket_name=bucket, object_name=name, data=data, content_type=content_type
+        )
 
     def delete_object(self: Self, bucket: str, name: str) -> None:
         self.client.remove_object(bucket_name=bucket, object_name=name)

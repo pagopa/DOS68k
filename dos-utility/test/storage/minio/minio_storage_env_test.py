@@ -1,6 +1,9 @@
 import pytest
 
-from dos_utility.storage.minio.env import MinIOStorageSettings, get_minio_storage_settings
+from dos_utility.storage.minio.env import (
+    MinIOStorageSettings,
+    get_minio_storage_settings,
+)
 
 
 def test_get_minio_storage_settings(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -7,6 +7,7 @@ class StorageProvider(StrEnum):
     AWS_S3 = "aws_s3"
     MINIO = "minio"
 
+
 class StorageSettings(BaseSettings):
     STORAGE_PROVIDER: StorageProvider
 

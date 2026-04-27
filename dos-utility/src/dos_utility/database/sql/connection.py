@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .env import get_db_settings, DBSettings
 
+
 @lru_cache()
 def get_async_engine() -> AsyncEngine:
     db_settings: DBSettings = get_db_settings()
@@ -21,9 +22,12 @@ def get_async_engine() -> AsyncEngine:
 
     return create_async_engine(url=db_url)
 
+
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     engine: AsyncEngine = get_async_engine()
-    async_session: sessionmaker = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    async_session: sessionmaker = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async with async_session() as session:
         yield session

@@ -17,6 +17,7 @@ class HTTPResponseMock:
     def release_conn(self: Self) -> None:
         pass
 
+
 class MinioMock:
     def __init__(self: Self, *args, **kwargs) -> None:
         pass
@@ -27,18 +28,25 @@ class MinioMock:
     def get_object(self: Self, bucket_name: str, object_name: str) -> HTTPResponseMock:
         return HTTPResponseMock(b"mocked data")
 
-    def put_object(self: Self, bucket_name: str, object_name: str, data: BytesIO, content_type: str) -> None:
+    def put_object(
+        self: Self, bucket_name: str, object_name: str, data: BytesIO, content_type: str
+    ) -> None:
         pass
 
     def remove_object(self: Self, bucket_name: str, object_name: str) -> None:
         pass
 
     def list_objects(self: Self, bucket_name: str) -> Iterator[Object]:
-        return [Object(bucket_name="bucket-name", object_name="mocked-object-1"), Object(bucket_name="bucket-name", object_name="mocked-object-2")]
+        return [
+            Object(bucket_name="bucket-name", object_name="mocked-object-1"),
+            Object(bucket_name="bucket-name", object_name="mocked-object-2"),
+        ]
+
 
 class MinioListBucketsExceptionMock(MinioMock):
     def list_buckets(self: Self, *args, **kwargs) -> Dict:
         raise Exception("Mocked list_buckets exception")
+
 
 class MinioStorageSettingsMock:
     MINIO_ENDPOINT: str = "mock-endpoint"
@@ -47,6 +55,7 @@ class MinioStorageSettingsMock:
     MINIO_SECRET_KEY: SecretStr = SecretStr("mock-secret-key")
     MINIO_REGION: str = "mock-region"
     MINIO_SECURE: bool = False
+
 
 def get_minio_storage_settings_mock() -> MinioStorageSettingsMock:
     return MinioStorageSettingsMock()

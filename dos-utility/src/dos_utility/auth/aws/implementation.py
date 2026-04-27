@@ -8,11 +8,14 @@ from fastapi import HTTPException
 from typing import Dict, Any, Self
 
 from .env import AWSAuthSettings, get_aws_auth_settings
-from ..exceptions import EmptyTokenException, InvalidTokenKeyException, InvalidTokenException, TokenExpiredException
+from ..exceptions import (
+    EmptyTokenException,
+    InvalidTokenKeyException,
+    InvalidTokenException,
+    TokenExpiredException,
+)
 from ..interface import AuthInterface
 from ...utils.logger import get_logger
-
-
 
 
 class CognitoAuthProvider(AuthInterface):
@@ -22,7 +25,9 @@ class CognitoAuthProvider(AuthInterface):
         self.region = self.__settings.AWS_REGION
         self.aws_endpoint_url = self.__settings.AWS_ENDPOINT_URL
         self.access_key_id = self.__settings.AWS_ACCESS_KEY_ID
-        self.secret_access_key = self.__settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
+        self.secret_access_key = (
+            self.__settings.AWS_SECRET_ACCESS_KEY.get_secret_value()
+        )
         self.user_pool_id = self.__settings.AWS_COGNITO_USERPOOL_ID
         self.environment = self.__settings.ENVIRONMENT
 
@@ -37,9 +42,7 @@ class CognitoAuthProvider(AuthInterface):
         """
         if self.environment == "test":
             keys_url = (
-                f"{self.aws_endpoint_url}/"
-                f"{self.user_pool_id}/"
-                ".well-known/jwks.json"
+                f"{self.aws_endpoint_url}/{self.user_pool_id}/.well-known/jwks.json"
             )
             headers = {
                 "Authorization": (

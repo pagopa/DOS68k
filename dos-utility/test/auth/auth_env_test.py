@@ -35,6 +35,7 @@ def test_auth_settings_missing_provider_raises(monkeypatch: pytest.MonkeyPatch):
 
 def test_get_auth_settings(monkeypatch: pytest.MonkeyPatch):
     from dos_utility.auth.env import get_auth_settings
+
     get_auth_settings.cache_clear()
 
     monkeypatch.setenv("AUTH_PROVIDER", "aws")

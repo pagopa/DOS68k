@@ -3,9 +3,11 @@ from pydantic_settings import BaseSettings
 from pydantic import Field
 from enum import StrEnum
 
+
 class QueueProvider(StrEnum):
     REDIS = "redis"
     SQS = "sqs"
+
 
 class QueueSettings(BaseSettings):
     QUEUE_PROVIDER: QueueProvider
