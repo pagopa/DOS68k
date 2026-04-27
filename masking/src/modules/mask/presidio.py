@@ -7,7 +7,12 @@ from langdetect import detect_langs
 from langdetect.language import Language
 from pydantic import BaseModel, ConfigDict, ValidationError
 from presidio_anonymizer.operators import Operator, OperatorType
-from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer, RecognizerResult
+from presidio_analyzer import (
+    AnalyzerEngine,
+    Pattern,
+    PatternRecognizer,
+    RecognizerResult,
+)
 from presidio_analyzer.nlp_engine import NlpEngineProvider, NlpEngine
 from presidio_anonymizer import AnonymizerEngine, EngineResult
 from presidio_anonymizer.entities import OperatorConfig
@@ -41,6 +46,7 @@ class PresidioConfig(BaseModel):
 
 class PresidioYamlConfig(BaseModel):
     """YAML wrapper matching `masking/config/presidio.yaml`."""
+
     model_config: ConfigDict = ConfigDict(extra="forbid")
 
     config_presidio: PresidioConfig
@@ -119,22 +125,27 @@ IT_ENTITIES: List[str] = [
 ]
 
 
-
 class PresidioPII:
     def __init__(
-            self: Self,
-            config: PresidioConfig | Dict[str, Any],
-            analyzer_threshold: float = 0.4,
-            entities: Optional[List[str]] = None,
-            mapping: Optional[Dict[str, str]] = None,
-            entity_mapping: Optional[Dict[str, Dict]] = None,
-        ):
-        self.config: Dict[str, Any] = config.model_dump() if isinstance(config, PresidioConfig) else config
-        self.languages: List[str] = [item["lang_code"] for item in self.config["models"]]
+        self: Self,
+        config: PresidioConfig | Dict[str, Any],
+        analyzer_threshold: float = 0.4,
+        entities: Optional[List[str]] = None,
+        mapping: Optional[Dict[str, str]] = None,
+        entity_mapping: Optional[Dict[str, Dict]] = None,
+    ):
+        self.config: Dict[str, Any] = (
+            config.model_dump() if isinstance(config, PresidioConfig) else config
+        )
+        self.languages: List[str] = [
+            item["lang_code"] for item in self.config["models"]
+        ]
         self.entities: List[str] = entities if entities is not None else GLOBAL_ENTITIES
         self.entity_mapping = entity_mapping if entity_mapping is not None else {}
         self.mapping = mapping if mapping is not None else {}
-        self.provider: NlpEngineProvider = NlpEngineProvider(nlp_configuration=self.config)
+        self.provider: NlpEngineProvider = NlpEngineProvider(
+            nlp_configuration=self.config
+        )
         self.nlp_engine: NlpEngine = self.provider.create_engine()
         self.analyzer: AnalyzerEngine = AnalyzerEngine(
             nlp_engine=self.nlp_engine,
@@ -218,7 +229,9 @@ def __read_presidio_config() -> Dict[str, Any]:
     except FileNotFoundError as e:
         raise RuntimeError(f"Presidio config file not found: {config_path}") from e
     except yaml.YAMLError as e:
-        raise RuntimeError(f"Invalid YAML in Presidio config file: {config_path}") from e
+        raise RuntimeError(
+            f"Invalid YAML in Presidio config file: {config_path}"
+        ) from e
 
     if raw is None:
         raw = {}
@@ -233,6 +246,7 @@ def __read_presidio_config() -> Dict[str, Any]:
 
     # Return the inner structure Presidio expects (nlp_engine_name/models/...)
     return parsed.config_presidio.model_dump()
+
 
 @lru_cache()
 def get_presidio() -> PresidioPII:

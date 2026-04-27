@@ -12,6 +12,9 @@ class MaskService:
     def mask(self: Self, text: str) -> str:
         return self.presidio_client.mask_pii(text=text)
 
+
 @lru_cache()
-def get_mask_service(presidio: Annotated[PresidioPII, Depends(dependency=get_presidio)]) -> MaskService:
+def get_mask_service(
+    presidio: Annotated[PresidioPII, Depends(dependency=get_presidio)],
+) -> MaskService:
     return MaskService(presidio_client=presidio)
