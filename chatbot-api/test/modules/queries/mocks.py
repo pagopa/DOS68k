@@ -1,6 +1,11 @@
 from typing import Any, Dict, List, Optional, Self
 from fastapi import HTTPException, status
-from dos_utility.database.nosql import NoSQLInterface, KeyCondition, QueryResult, ScanResult
+from dos_utility.database.nosql import (
+    NoSQLInterface,
+    KeyCondition,
+    QueryResult,
+    ScanResult,
+)
 
 # ---------------------------------------------------------------------------
 # Shared imports used by test modules
@@ -62,16 +67,25 @@ class MockNoSQLClientWithQueries(NoSQLInterface):
     async def put_item(self: Self, table_name: str, item: Dict[str, Any]) -> None:
         pass
 
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         return None
 
     async def delete_item(self: Self, table_name: str, key: Dict[str, Any]) -> None:
         pass
 
-    async def update_item(self: Self, table_name: str, key: Dict[str, Any], fields_to_update: Dict[str, Any]) -> None:
+    async def update_item(
+        self: Self,
+        table_name: str,
+        key: Dict[str, Any],
+        fields_to_update: Dict[str, Any],
+    ) -> None:
         pass
 
-    async def query(self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs) -> QueryResult:
+    async def query(
+        self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs
+    ) -> QueryResult:
         return QueryResult(items=[MOCK_QUERY_ITEM], count=1)
 
     async def scan(self: Self, table_name: str, **kwargs) -> ScanResult:
@@ -91,16 +105,25 @@ class MockNoSQLClientEmpty(NoSQLInterface):
     async def put_item(self: Self, table_name: str, item: Dict[str, Any]) -> None:
         pass
 
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         return None
 
     async def delete_item(self: Self, table_name: str, key: Dict[str, Any]) -> None:
         pass
 
-    async def update_item(self: Self, table_name: str, key: Dict[str, Any], fields_to_update: Dict[str, Any]) -> None:
+    async def update_item(
+        self: Self,
+        table_name: str,
+        key: Dict[str, Any],
+        fields_to_update: Dict[str, Any],
+    ) -> None:
         pass
 
-    async def query(self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs) -> QueryResult:
+    async def query(
+        self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs
+    ) -> QueryResult:
         return QueryResult(items=[], count=0)
 
     async def scan(self: Self, table_name: str, **kwargs) -> ScanResult:
@@ -111,13 +134,16 @@ class MockNoSQLClientEmpty(NoSQLInterface):
 # Repository mocks (for service tests)
 # ---------------------------------------------------------------------------
 
+
 class MockQueryRepository:
     """Mock for QueryRepository used in QueryService tests."""
 
     async def get_queries(self: Self, session_id: str) -> List[Dict[str, Any]]:
         return [MOCK_QUERY_ITEM]
 
-    async def create_query(self: Self, session_id: str, query_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_query(
+        self: Self, session_id: str, query_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return {
             "id": MOCK_QUERY_ID,
             "sessionId": session_id,
@@ -136,7 +162,9 @@ class MockQueryRepositoryEmpty:
     async def get_queries(self: Self, session_id: str) -> List[Dict[str, Any]]:
         return []
 
-    async def create_query(self: Self, session_id: str, query_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_query(
+        self: Self, session_id: str, query_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return {
             "id": MOCK_QUERY_ID,
             "sessionId": session_id,
@@ -171,7 +199,9 @@ class MockSessionRepositoryNotFound:
 
 def get_query_service_get_queries_200_mock():
     class QueryServiceMock:
-        async def get_queries(self: Self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
+        async def get_queries(
+            self: Self, session_id: str, user_id: str
+        ) -> List[Dict[str, Any]]:
             return [
                 {
                     "id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
@@ -196,22 +226,28 @@ def get_query_service_get_queries_200_mock():
 
     return QueryServiceMock()
 
+
 def get_query_service_get_queries_404_mock():
     class QueryServiceMock:
-        async def get_queries(self: Self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        async def get_queries(
+            self: Self, session_id: str, user_id: str
+        ) -> List[Dict[str, Any]]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
     return QueryServiceMock()
+
 
 def get_query_service_create_query_201_mock():
     class QueryServiceMock:
         async def create_query(
-                self: Self,
-                session_id: str,
-                user_id: str,
-                session_history: Optional[List[Dict[str, str]]],
-                question: str,
-            ) -> Dict[str, Any]:
+            self: Self,
+            session_id: str,
+            user_id: str,
+            session_history: Optional[List[Dict[str, str]]],
+            question: str,
+        ) -> Dict[str, Any]:
             return {
                 "id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
                 "session_id": session_id,
@@ -234,16 +270,19 @@ def get_query_service_create_query_201_mock():
 
     return QueryServiceMock()
 
+
 def get_query_service_create_query_404_mock():
     class QueryServiceMock:
         async def create_query(
-                self: Self,
-                session_id: str,
-                user_id: str,
-                question: str,
-                session_history: Optional[List[Dict[str, str]]],
-            ) -> Dict[str, Any]:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            self: Self,
+            session_id: str,
+            user_id: str,
+            question: str,
+            session_history: Optional[List[Dict[str, str]]],
+        ) -> Dict[str, Any]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
     return QueryServiceMock()
 
@@ -252,32 +291,45 @@ class MockChatbot:
     """Mock for Chatbot used in QueryService tests."""
 
     async def chat_generate(
-            self: Self,
-            query_str: str,
-            messages: Optional[List[Dict[str, Any]]] = None,
-        ) -> Dict[str, Any]:
+        self: Self,
+        query_str: str,
+        messages: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         return {
             "response": "Simulated answer",
             "context": {},
         }
 
+
 class MockMaskingResponse: ...
+
 
 class MockMaskingResponse200(MockMaskingResponse):
     status_code = 200
+
     def json(self):
         return "masked text"
 
+
 class MockMaskingErrorResponse500(MockMaskingResponse):
     status_code = 500
+
     def json(self):
         return {}
 
+
 def get_mock_async_client(mock_masking_response: MockMaskingResponse):
     class MockAsyncClient:
-        def __init__(self, **kwargs): pass
-        async def __aenter__(self): return self
-        async def __aexit__(self, *args): pass
-        async def post(self, url, json): return mock_masking_response()
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def post(self, url, json):
+            return mock_masking_response()
 
     return MockAsyncClient

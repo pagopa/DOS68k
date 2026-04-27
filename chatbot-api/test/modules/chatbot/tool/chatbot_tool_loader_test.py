@@ -14,12 +14,16 @@ from test.modules.chatbot.tool.mocks import get_vector_db_instance_mock
 def test_load_tools_invalid_custom_file_directory():
     dir: Path = Path(__file__) / "non_existing_directory"
 
-    with pytest.raises(expected_exception=FileNotFoundError, match=f"Tool config directory not found: {dir}"):
+    with pytest.raises(
+        expected_exception=FileNotFoundError,
+        match=f"Tool config directory not found: {dir}",
+    ):
         load_tools(
             llm=GoogleGenAIMock(),
             embed_model=GoogleGenAIEmbeddingMock(),
             config_dir=dir,
         )
+
 
 def test_load_tools_empty_custom_file_directory():
     dir: Path = Path(__file__).parent / "empty_tool_config_folder"
@@ -30,6 +34,7 @@ def test_load_tools_empty_custom_file_directory():
     )
 
     assert tools == {}
+
 
 def test_load_tools(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(loader, "get_vector_db_instance", get_vector_db_instance_mock)

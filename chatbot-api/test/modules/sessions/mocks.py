@@ -1,6 +1,11 @@
 from typing import Any, Dict, List, Optional, Self
 from fastapi import HTTPException, status
-from dos_utility.database.nosql import NoSQLInterface, KeyCondition, QueryResult, ScanResult
+from dos_utility.database.nosql import (
+    NoSQLInterface,
+    KeyCondition,
+    QueryResult,
+    ScanResult,
+)
 from src.modules.sessions.env import SessionSettings
 
 
@@ -46,6 +51,7 @@ MOCK_QUERY_ITEM = {
 # NoSQL client mocks (for repository tests)
 # ---------------------------------------------------------------------------
 
+
 class MockNoSQLClientWithSession(NoSQLInterface):
     async def __aenter__(self: Self) -> Self:
         return self
@@ -59,16 +65,25 @@ class MockNoSQLClientWithSession(NoSQLInterface):
     async def put_item(self: Self, table_name: str, item: Dict[str, Any]) -> None:
         pass
 
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         return None
 
     async def delete_item(self: Self, table_name: str, key: Dict[str, Any]) -> None:
         pass
 
-    async def update_item(self: Self, table_name: str, key: Dict[str, Any], fields_to_update: Dict[str, Any]) -> None:
+    async def update_item(
+        self: Self,
+        table_name: str,
+        key: Dict[str, Any],
+        fields_to_update: Dict[str, Any],
+    ) -> None:
         pass
 
-    async def query(self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs) -> QueryResult:
+    async def query(
+        self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs
+    ) -> QueryResult:
         return QueryResult(items=[MOCK_SESSION_ITEM], count=1)
 
     async def scan(self: Self, table_name: str, **kwargs) -> ScanResult:
@@ -88,16 +103,25 @@ class MockNoSQLClientEmpty(NoSQLInterface):
     async def put_item(self: Self, table_name: str, item: Dict[str, Any]) -> None:
         pass
 
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         return None
 
     async def delete_item(self: Self, table_name: str, key: Dict[str, Any]) -> None:
         pass
 
-    async def update_item(self: Self, table_name: str, key: Dict[str, Any], fields_to_update: Dict[str, Any]) -> None:
+    async def update_item(
+        self: Self,
+        table_name: str,
+        key: Dict[str, Any],
+        fields_to_update: Dict[str, Any],
+    ) -> None:
         pass
 
-    async def query(self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs) -> QueryResult:
+    async def query(
+        self: Self, table_name: str, key_conditions: List[KeyCondition], **kwargs
+    ) -> QueryResult:
         return QueryResult(items=[], count=0)
 
     async def scan(self: Self, table_name: str, **kwargs) -> ScanResult:
@@ -108,6 +132,7 @@ class MockNoSQLClientEmpty(NoSQLInterface):
 # Repository mocks (for service tests)
 # ---------------------------------------------------------------------------
 
+
 class MockSessionRepository:
     """Mock for SessionRepository that always finds the session."""
 
@@ -117,7 +142,9 @@ class MockSessionRepository:
     async def get_sessions(self: Self, user_id: str) -> List[Dict[str, Any]]:
         return [MOCK_SESSION_ITEM]
 
-    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_session(
+        self: Self, user_id: str, session_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return {
             "id": MOCK_SESSION_ID,
             "userId": user_id,
@@ -138,7 +165,9 @@ class MockSessionRepositoryNotFound:
     async def get_sessions(self: Self, user_id: str) -> List[Dict[str, Any]]:
         return []
 
-    async def create_session(self: Self, user_id: str, session_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_session(
+        self: Self, user_id: str, session_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         return {
             "id": MOCK_SESSION_ID,
             "userId": user_id,
@@ -174,6 +203,7 @@ class MockQueryRepositoryEmpty:
 # Service mocks (for controller tests)
 # ---------------------------------------------------------------------------
 
+
 def get_session_service_get_sessions_mock():
     class SessionServiceMock:
         async def get_sessions(self, user_id: str):
@@ -198,6 +228,7 @@ def get_session_service_get_sessions_mock():
 
     return SessionServiceMock()
 
+
 def get_session_service_get_session_200_mock():
     class SessionServiceMock:
         async def get_session(self, session_id: str, user_id: str):
@@ -207,21 +238,27 @@ def get_session_service_get_session_200_mock():
                 "title": "Session 1",
                 "created_at": "2024-01-01T00:00:00Z",
                 "updated_at": "2024-01-01T00:00:00Z",
-                    "expires_at": "2024-01-02T00:00:00Z",
+                "expires_at": "2024-01-02T00:00:00Z",
             }
 
     return SessionServiceMock()
 
+
 def get_session_service_get_session_404_mock():
     class SessionServiceMock:
         async def get_session(self, session_id: str, user_id: str):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
     return SessionServiceMock()
 
+
 def get_session_service_create_session_mock():
     class SessionServiceMock:
-        async def create_session(self, user_id: str, session_data: dict, is_temporary: bool):
+        async def create_session(
+            self, user_id: str, session_data: dict, is_temporary: bool
+        ):
             return {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "user_id": user_id,
@@ -233,6 +270,7 @@ def get_session_service_create_session_mock():
 
     return SessionServiceMock()
 
+
 def get_session_service_delete_session_204_mock():
     class SessionServiceMock:
         async def delete_session(self, session_id: str, user_id: str):
@@ -240,12 +278,16 @@ def get_session_service_delete_session_204_mock():
 
     return SessionServiceMock()
 
+
 def get_session_service_delete_session_404_mock():
     class SessionServiceMock:
         async def delete_session(self, session_id: str, user_id: str):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
     return SessionServiceMock()
+
 
 def get_session_service_clear_session_mock():
     class SessionServiceMock:

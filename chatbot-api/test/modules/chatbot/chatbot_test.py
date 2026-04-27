@@ -18,11 +18,15 @@ from test.modules.chatbot.mocks import (
 
 
 def test_get_agent(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_llm", get_llm_mock)
     monkeypatch.setattr(chatbot_module, "get_embed_model", get_embed_model_mock)
     monkeypatch.setattr(chatbot_module, "load_tools", load_tools_mock)
-    monkeypatch.setattr(chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_agent", get_agent_mock)
 
     get_chatbot.cache_clear()
@@ -42,13 +46,18 @@ chat_history: List[Dict[str, str]] = [
     },
 ]
 
+
 @pytest.mark.asyncio
 async def test_chat_generate_agent_run_exception(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_llm", get_llm_mock)
     monkeypatch.setattr(chatbot_module, "get_embed_model", get_embed_model_mock)
     monkeypatch.setattr(chatbot_module, "load_tools", load_tools_mock)
-    monkeypatch.setattr(chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_agent", get_agent_run_exception_mock)
     monkeypatch.setattr(chatbot_module, "Context", ContextMock)
 
@@ -59,18 +68,30 @@ async def test_chat_generate_agent_run_exception(monkeypatch: pytest.MonkeyPatch
         messages=chat_history,
     )
 
-    assert response["response"] == "Sorry, I could not process your request.\nPlease try rephrasing your question."
+    assert (
+        response["response"]
+        == "Sorry, I could not process your request.\nPlease try rephrasing your question."
+    )
     assert response["tags"] == []
     assert response["context"] == []
 
+
 @pytest.mark.asyncio
-async def test_chat_generate_invalid_structured_response(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock)
+async def test_chat_generate_invalid_structured_response(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(
+        chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_llm", get_llm_mock)
     monkeypatch.setattr(chatbot_module, "get_embed_model", get_embed_model_mock)
     monkeypatch.setattr(chatbot_module, "load_tools", load_tools_mock)
-    monkeypatch.setattr(chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock)
-    monkeypatch.setattr(chatbot_module, "get_agent", get_agent_invalid_structured_response_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock
+    )
+    monkeypatch.setattr(
+        chatbot_module, "get_agent", get_agent_invalid_structured_response_mock
+    )
     monkeypatch.setattr(chatbot_module, "Context", ContextMock)
 
     get_chatbot.cache_clear()
@@ -80,17 +101,25 @@ async def test_chat_generate_invalid_structured_response(monkeypatch: pytest.Mon
         messages=chat_history,
     )
 
-    assert response["response"] == "Sorry, I could not process your request.\nPlease try rephrasing your question."
+    assert (
+        response["response"]
+        == "Sorry, I could not process your request.\nPlease try rephrasing your question."
+    )
     assert response["tags"] == []
     assert response["context"] == []
 
+
 @pytest.mark.asyncio
 async def test_chat_generate(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_chatbot_settings", get_chatbot_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_llm", get_llm_mock)
     monkeypatch.setattr(chatbot_module, "get_embed_model", get_embed_model_mock)
     monkeypatch.setattr(chatbot_module, "load_tools", load_tools_mock)
-    monkeypatch.setattr(chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock)
+    monkeypatch.setattr(
+        chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock
+    )
     monkeypatch.setattr(chatbot_module, "get_agent", get_agent_mock)
     monkeypatch.setattr(chatbot_module, "Context", ContextMock)
 
