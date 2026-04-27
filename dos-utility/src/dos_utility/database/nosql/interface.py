@@ -54,7 +54,9 @@ class NoSQLInterface(ABC):
         ...
 
     @abstractmethod
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """Fetch a single item by primary key.
 
         Args:

@@ -25,7 +25,7 @@ async def get_queue_client_ctx() -> AsyncGenerator[QueueInterface, None]:
         >>> async with get_queue_client_ctx() as queue_client:
         >>>     msg_id = await queue_client.enqueue(msg=b"Hello World!")
     """
-    queue_settings: QueueSettings = get_queue_settings() # Get env variable values
+    queue_settings: QueueSettings = get_queue_settings()  # Get env variable values
 
     if queue_settings.QUEUE_PROVIDER is QueueProvider.REDIS:
         queue: QueueInterface = get_redis_queue()
@@ -34,6 +34,7 @@ async def get_queue_client_ctx() -> AsyncGenerator[QueueInterface, None]:
 
     async with queue as queue_client:
         yield queue_client
+
 
 # FastAPI dependency
 async def get_queue_client() -> AsyncGenerator[QueueInterface, None]:

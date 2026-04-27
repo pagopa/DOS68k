@@ -3,21 +3,41 @@ import logging
 from uuid import uuid4
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
-    VectorParams, Distance, Datatype, UpdateStatus,
-    Filter, FieldCondition, MatchValue, MatchAny, MatchText, Range,
+    VectorParams,
+    Distance,
+    Datatype,
+    UpdateStatus,
+    Filter,
+    FieldCondition,
+    MatchValue,
+    MatchAny,
+    MatchText,
+    Range,
 )
-from qdrant_client.conversions.common_types import UpdateResult, CollectionsResponse, PointStruct
+from qdrant_client.conversions.common_types import (
+    UpdateResult,
+    CollectionsResponse,
+    PointStruct,
+)
 from qdrant_client.conversions.common_types import QueryResponse
 from typing import Self, List, Optional, Annotated, Any
 from pydantic import Field, PositiveInt, PositiveFloat, PrivateAttr
 from llama_index.core.vector_stores.types import (
-    VectorStoreQuery, VectorStoreQueryResult,
-    MetadataFilters, FilterOperator, FilterCondition,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+    MetadataFilters,
+    FilterOperator,
+    FilterCondition,
 )
 from llama_index.core.schema import TextNode
 
 from ..interface import VectorDBInterface, ObjectData, SearchResult
-from ..exceptions import IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
+from ..exceptions import (
+    IndexCreationException,
+    IndexDeletionException,
+    PutObjectsException,
+    DeleteObjectsException,
+)
 from .env import QdrantVectorDBSettings, get_qdrant_vector_db_settings
 
 
@@ -27,9 +47,13 @@ class QdrantVectorDB(VectorDBInterface):
     _settings: QdrantVectorDBSettings = PrivateAttr()
     _client: Optional[AsyncQdrantClient] = PrivateAttr(default=None)
 
-    def model_post_init(self, __context: Any) -> None:  # see VectorDBInterface for why this is used instead of __init__
+    def model_post_init(
+        self, __context: Any
+    ) -> None:  # see VectorDBInterface for why this is used instead of __init__
         self._settings = get_qdrant_vector_db_settings()
-        self._client = AsyncQdrantClient(f"http://{self._settings.QDRANT_HOST}:{self._settings.QDRANT_PORT}")
+        self._client = AsyncQdrantClient(
+            f"http://{self._settings.QDRANT_HOST}:{self._settings.QDRANT_PORT}"
+        )
 
     @property
     def client(self) -> AsyncQdrantClient:
@@ -56,7 +80,9 @@ class QdrantVectorDB(VectorDBInterface):
                 )
 
                 if created is False:
-                    raise Exception(f"Qdrant gave a negative output when creating index '{index_name}'")
+                    raise Exception(
+                        f"Qdrant gave a negative output when creating index '{index_name}'"
+                    )
 
                 logging.info(f"Index '{index_name}' created successfully.")
             else:
@@ -66,10 +92,14 @@ class QdrantVectorDB(VectorDBInterface):
 
     async def delete_index(self: Self, index_name: str) -> None:
         try:
-            deleted: bool = await self._client.delete_collection(collection_name=index_name)
+            deleted: bool = await self._client.delete_collection(
+                collection_name=index_name
+            )
 
             if deleted is False:
-                raise Exception(f"Qdrant gave a negative output when deleting index '{index_name}'")
+                raise Exception(
+                    f"Qdrant gave a negative output when deleting index '{index_name}'"
+                )
 
             logging.info(f"Index '{index_name}' deleted successfully.")
         except Exception as e:
@@ -80,7 +110,12 @@ class QdrantVectorDB(VectorDBInterface):
 
         return [collection.name for collection in collections.collections]
 
-    async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
+    async def put_objects(
+        self: Self,
+        index_name: str,
+        data: List[ObjectData],
+        custom_keys: Optional[List[str]] = None,
+    ) -> List[str]:
         try:
             if custom_keys is not None:
                 ids: List[str] = custom_keys
@@ -109,33 +144,35 @@ class QdrantVectorDB(VectorDBInterface):
 
                 return ids
 
-            raise Exception(f"Adding objects to index '{index_name}' did not complete successfully.")
+            raise Exception(
+                f"Adding objects to index '{index_name}' did not complete successfully."
+            )
         except Exception as e:
             raise PutObjectsException(msg=str(e))
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         try:
             result: UpdateResult = await self._client.delete(
-                collection_name=index_name,
-                points_selector=ids,
-                wait=True
+                collection_name=index_name, points_selector=ids, wait=True
             )
 
             if result.status is UpdateStatus.COMPLETED:
                 logging.info(f"Objects deleted from index '{index_name}' successfully.")
             else:
-                raise Exception(f"Deleting objects from index '{index_name}' did not complete successfully.")
+                raise Exception(
+                    f"Deleting objects from index '{index_name}' did not complete successfully."
+                )
         except Exception as e:
             raise DeleteObjectsException(msg=str(e))
 
     async def semantic_search(
-            self: Self,
-            index_name: str,
-            embedding_query: List[float],
-            max_results: PositiveInt,
-            score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
-            filters: Optional[MetadataFilters] = None,
-        ) -> List[SearchResult]:
+        self: Self,
+        index_name: str,
+        embedding_query: List[float],
+        max_results: PositiveInt,
+        score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[SearchResult]:
         result: QueryResponse = await self._client.query_points(
             collection_name=index_name,
             query=embedding_query,
@@ -157,11 +194,11 @@ class QdrantVectorDB(VectorDBInterface):
         ]
 
     async def filter_search(
-            self: Self,
-            index_name: str,
-            filters: MetadataFilters,
-            max_results: PositiveInt,
-        ) -> List[SearchResult]:
+        self: Self,
+        index_name: str,
+        filters: MetadataFilters,
+        max_results: PositiveInt,
+    ) -> List[SearchResult]:
         records, _ = await self._client.scroll(
             collection_name=index_name,
             scroll_filter=self._build_filter_condition(filters),
@@ -180,7 +217,9 @@ class QdrantVectorDB(VectorDBInterface):
             for r in records
         ]
 
-    def _build_filter_condition(self: Self, metadata_filters: Optional[MetadataFilters]) -> Optional[Filter]:
+    def _build_filter_condition(
+        self: Self, metadata_filters: Optional[MetadataFilters]
+    ) -> Optional[Filter]:
         if not metadata_filters or not metadata_filters.filters:
             return None
 
@@ -196,27 +235,44 @@ class QdrantVectorDB(VectorDBInterface):
 
             op = f.operator
             if op == FilterOperator.NE:
-                negative.append(FieldCondition(key=f.key, match=MatchValue(value=f.value)))
+                negative.append(
+                    FieldCondition(key=f.key, match=MatchValue(value=f.value))
+                )
             elif op == FilterOperator.NIN:
                 vals = f.value if isinstance(f.value, list) else [f.value]
                 negative.append(FieldCondition(key=f.key, match=MatchAny(any=vals)))
-            elif op in (FilterOperator.TEXT_MATCH, FilterOperator.TEXT_MATCH_INSENSITIVE):
-                positive.append(FieldCondition(key=f.key, match=MatchText(text=str(f.value))))
+            elif op in (
+                FilterOperator.TEXT_MATCH,
+                FilterOperator.TEXT_MATCH_INSENSITIVE,
+            ):
+                positive.append(
+                    FieldCondition(key=f.key, match=MatchText(text=str(f.value)))
+                )
             elif op in (FilterOperator.IN, FilterOperator.ANY):
                 vals = f.value if isinstance(f.value, list) else [f.value]
                 positive.append(FieldCondition(key=f.key, match=MatchAny(any=vals)))
             elif op == FilterOperator.GT:
-                positive.append(FieldCondition(key=f.key, range=Range(gt=float(f.value))))
+                positive.append(
+                    FieldCondition(key=f.key, range=Range(gt=float(f.value)))
+                )
             elif op == FilterOperator.LT:
-                positive.append(FieldCondition(key=f.key, range=Range(lt=float(f.value))))
+                positive.append(
+                    FieldCondition(key=f.key, range=Range(lt=float(f.value)))
+                )
             elif op == FilterOperator.GTE:
-                positive.append(FieldCondition(key=f.key, range=Range(gte=float(f.value))))
+                positive.append(
+                    FieldCondition(key=f.key, range=Range(gte=float(f.value)))
+                )
             elif op == FilterOperator.LTE:
-                positive.append(FieldCondition(key=f.key, range=Range(lte=float(f.value))))
+                positive.append(
+                    FieldCondition(key=f.key, range=Range(lte=float(f.value)))
+                )
             elif op == FilterOperator.IS_EMPTY:
                 positive.append(FieldCondition(key=f.key, is_empty=True))
             else:  # EQ, CONTAINS, ALL
-                positive.append(FieldCondition(key=f.key, match=MatchValue(value=f.value)))
+                positive.append(
+                    FieldCondition(key=f.key, match=MatchValue(value=f.value))
+                )
 
         if not positive and not negative:
             return None
@@ -229,9 +285,13 @@ class QdrantVectorDB(VectorDBInterface):
         else:
             return Filter(must=positive or None, must_not=negative or None)
 
-    async def aquery(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self: Self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         if self.index_name is None:
-            raise ValueError("index_name must be set at construction time to use aquery")
+            raise ValueError(
+                "index_name must be set at construction time to use aquery"
+            )
         if query.query_embedding is None and not query.filters:
             raise ValueError("Either query_embedding or filters must be provided")
 

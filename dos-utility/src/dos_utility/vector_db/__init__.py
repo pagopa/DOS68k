@@ -5,7 +5,12 @@ from .interface import VectorDBInterface, ObjectData, SearchResult
 from .env import get_vector_db_settings, VectorDBSettings, VectorDBProvider
 from .redis import get_redis_vector_db
 from .qdrant import get_qdrant_vector_db
-from .exceptions import IndexCreationException, IndexDeletionException, PutObjectsException, DeleteObjectsException
+from .exceptions import (
+    IndexCreationException,
+    IndexDeletionException,
+    PutObjectsException,
+    DeleteObjectsException,
+)
 
 __all__ = [
     "VectorDBInterface",
@@ -19,6 +24,7 @@ __all__ = [
     "PutObjectsException",
     "DeleteObjectsException",
 ]
+
 
 def get_vector_db_instance(index_name: Optional[str] = None) -> VectorDBInterface:
     """Return a VectorDB instance directly, without a context manager.
@@ -43,8 +49,11 @@ def get_vector_db_instance(index_name: Optional[str] = None) -> VectorDBInterfac
     elif settings.VECTOR_DB_PROVIDER is VectorDBProvider.QDRANT:
         return get_qdrant_vector_db(index_name=index_name)
 
+
 @asynccontextmanager
-async def get_vector_db_ctx(index_name: Optional[str] = None) -> AsyncGenerator[VectorDBInterface, None]:
+async def get_vector_db_ctx(
+    index_name: Optional[str] = None,
+) -> AsyncGenerator[VectorDBInterface, None]:
     """Context manager to get the appropriate VectorDB implementation based on settings.
 
     Args:
@@ -61,8 +70,11 @@ async def get_vector_db_ctx(index_name: Optional[str] = None) -> AsyncGenerator[
     async with get_vector_db_instance(index_name=index_name) as vector_db:
         yield vector_db
 
+
 #! It's the same of get_vector_db_ctx, but without the @asynccontextmanager decorator (it would fail if called as FastAPI dependency)
-async def get_vector_db(index_name: Optional[str] = None) -> AsyncGenerator[VectorDBInterface, None]:
+async def get_vector_db(
+    index_name: Optional[str] = None,
+) -> AsyncGenerator[VectorDBInterface, None]:
     """FastAPI dependency to get the appropriate VectorDB implementation based on settings.
 
     Args:

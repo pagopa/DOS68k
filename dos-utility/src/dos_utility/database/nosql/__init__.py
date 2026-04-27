@@ -37,6 +37,7 @@ async def get_nosql_client_ctx() -> AsyncGenerator[NoSQLInterface, None]:
     async with nosql as nosql_client:
         yield nosql_client
 
+
 # FastAPI dependency
 async def get_nosql_client() -> AsyncGenerator[NoSQLInterface, None]:
     """FastAPI dependency to get the appropriate NoSQL client based on configuration.

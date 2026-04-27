@@ -17,17 +17,17 @@ logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 def get_query_engine_tool(
-        index: VectorStoreIndex,
-        name: str,
-        description: str,
-        llm: LLM,
-        embed_model: BaseEmbedding,
-        similarity_top_k: int = 5,
-        text_qa_template: Optional[PromptTemplate] = None,
-        refine_template: Optional[PromptTemplate] = None,
-        node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        use_async: bool = True,
-    ) -> QueryEngineTool:
+    index: VectorStoreIndex,
+    name: str,
+    description: str,
+    llm: LLM,
+    embed_model: BaseEmbedding,
+    similarity_top_k: int = 5,
+    text_qa_template: Optional[PromptTemplate] = None,
+    refine_template: Optional[PromptTemplate] = None,
+    node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
+    use_async: bool = True,
+) -> QueryEngineTool:
     """Builds a QueryEngineTool backed by a VectorStoreIndex retriever.
 
     Creates a retriever from the given index, feeds it into a
@@ -67,7 +67,9 @@ def get_query_engine_tool(
 
     logger.debug(
         "Creating QueryEngineTool %r - similarity_top_k=%d, use_async=%s",
-        name, similarity_top_k, use_async,
+        name,
+        similarity_top_k,
+        use_async,
     )
     return QueryEngineTool.from_defaults(
         query_engine=query_engine,

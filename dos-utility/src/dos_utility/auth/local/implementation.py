@@ -5,7 +5,6 @@ from ..interface import AuthInterface
 from ...utils.logger import get_logger
 
 
-
 class LocalAuthProvider(AuthInterface):
     """
     Local/Mock implementation of the AuthInterface.
@@ -30,7 +29,7 @@ class LocalAuthProvider(AuthInterface):
                     "kty": "RSA",
                     "use": "sig",
                     "n": "mock-modulus",
-                    "e": "AQAB"
+                    "e": "AQAB",
                 }
             ]
         }
@@ -59,8 +58,9 @@ class LocalAuthProvider(AuthInterface):
             "auth_time": 1000000000,
             "token_use": "access",
             "iss": "https://local-development",
-            "client_id": "local-client"
+            "client_id": "local-client",
         }
+
 
 def get_local_auth_provider() -> LocalAuthProvider:
     """Get an instance of the Local authentication provider."""

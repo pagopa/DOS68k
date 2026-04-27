@@ -11,6 +11,7 @@ class ObjectInfo:
     Attributes:
         key (str): The key (name) of the object. It can be use to retrieve the object with the `get_object` method.
     """
+
     key: str
 
 
@@ -39,7 +40,9 @@ class StorageInterface(ABC):
         ...
 
     @abstractmethod
-    def put_object(self: Self, bucket: str, name: str, data: BinaryIO, content_type: str) -> None:
+    def put_object(
+        self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
+    ) -> None:
         """Store an object in the storage.
 
         Args:

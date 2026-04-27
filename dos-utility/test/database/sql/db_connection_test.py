@@ -6,7 +6,13 @@ from dos_utility.database.sql.env import get_db_settings
 from dos_utility.database.sql import connection
 from dos_utility.database.sql.connection import get_async_engine, get_async_session
 
-from test.database.sql.mocks import URLMock, create_async_engine_mock, sessionmakerMock, get_async_engine_mock
+from test.database.sql.mocks import (
+    URLMock,
+    create_async_engine_mock,
+    sessionmakerMock,
+    get_async_engine_mock,
+)
+
 
 def test_get_async_engine(monkeypatch: pytest.MonkeyPatch):
     get_db_settings.cache_clear()
@@ -17,6 +23,7 @@ def test_get_async_engine(monkeypatch: pytest.MonkeyPatch):
     async_engine: AsyncEngine = get_async_engine()
 
     assert isinstance(async_engine, AsyncEngine)
+
 
 @pytest.mark.asyncio
 async def test_get_async_session(monkeypatch: pytest.MonkeyPatch):

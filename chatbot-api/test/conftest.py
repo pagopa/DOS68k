@@ -1,8 +1,10 @@
 import uuid
+
 try:
     uuid.uuid7  # Python 3.14+
 except AttributeError:
     from uuid6 import uuid7 as _uuid7
+
     uuid.uuid7 = _uuid7
 
 import pytest
@@ -21,6 +23,7 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest_asyncio.fixture
 async def app_test():
     from src.main import app
@@ -35,8 +38,11 @@ async def app_test():
     finally:
         app.dependency_overrides.clear()
 
+
 @pytest_asyncio.fixture
 async def client_test(app_test: FastAPI):
     # Async client for testing FastAPI app
-    async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app_test)) as client:
+    async with AsyncClient(
+        base_url="http://testserver", transport=ASGITransport(app=app_test)
+    ) as client:
         yield client

@@ -7,7 +7,6 @@ from .minio import get_minio_storage
 __all__ = ["StorageInterface", "get_storage", "ObjectInfo"]
 
 
-
 def get_storage() -> StorageInterface:
     """Get the appropriate storage interface based on configuration.
     It can also be used as a dependency in FastAPI via injection.

@@ -8,15 +8,26 @@ from dos_utility.utils.logger import get_logger
 
 from .repository import QueryRepository, get_query_repository
 from ..sessions.repository import get_session_repository, SessionRepository
-from ..env import get_masking_settings, get_logging_settings, MaskingSettings, LogSettings
+from ..env import (
+    get_masking_settings,
+    get_logging_settings,
+    MaskingSettings,
+    LogSettings,
+)
 from ..utils import format_expiration_dt
 from ..chatbot import Chatbot, get_chatbot
 
 log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
+
 class QueryService:
-    def __init__(self: Self, query_repository: QueryRepository, session_repository: SessionRepository, chatbot: Chatbot):
+    def __init__(
+        self: Self,
+        query_repository: QueryRepository,
+        session_repository: SessionRepository,
+        chatbot: Chatbot,
+    ):
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
         self.chatbot: Chatbot = chatbot
@@ -30,20 +41,31 @@ class QueryService:
             )
 
             if response.status_code != status.HTTP_200_OK:
-                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Masking service error")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Masking service error",
+                )
 
         masked_text: str = response.json()
 
         return masked_text
 
-    async def get_queries(self: Self, session_id: str, user_id: str) -> List[Dict[str, Any]]:
+    async def get_queries(
+        self: Self, session_id: str, user_id: str
+    ) -> List[Dict[str, Any]]:
         # Check whether the session exists and belongs to the user
-        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(
+            session_id=session_id, user_id=user_id
+        )
 
         if session is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
-        queries: List[Dict[str, Any]] = await self.query_repository.get_queries(session_id=session_id)
+        queries: List[Dict[str, Any]] = await self.query_repository.get_queries(
+            session_id=session_id
+        )
 
         return [
             {
@@ -60,26 +82,37 @@ class QueryService:
         ]
 
     async def create_query(
-            self: Self,
-            session_id: str,
-            user_id: str,
-            question: str,
-            session_history: Optional[List[Dict[str, str]]],
-        ) -> Dict[str, Any]:
+        self: Self,
+        session_id: str,
+        user_id: str,
+        question: str,
+        session_history: Optional[List[Dict[str, str]]],
+    ) -> Dict[str, Any]:
         # Check whether the session exists and belongs to the user
-        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(session_id=session_id, user_id=user_id)
+        session: Optional[Dict[str, Any]] = await self.session_repository.get_session(
+            session_id=session_id, user_id=user_id
+        )
 
         if session is None:
-            # Create a new session for the user if it doesn't exist, or 
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+            # Create a new session for the user if it doesn't exist, or
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+            )
 
-        question_cleaned: str = nh3.clean(html=question) # Sanitize from HTML tags and scripts
+        question_cleaned: str = nh3.clean(
+            html=question
+        )  # Sanitize from HTML tags and scripts
         logger.debug("Sanitized question: %r", question_cleaned)
 
         # Get session history
         if session_history is None:
-            session_history = await self.query_repository.get_queries(session_id=session_id)
-        logger.debug("Session history length: %d messages", len(session_history) if session_history else 0)
+            session_history = await self.query_repository.get_queries(
+                session_id=session_id
+            )
+        logger.debug(
+            "Session history length: %d messages",
+            len(session_history) if session_history else 0,
+        )
 
         # Generate answer from AI Agent
         logger.debug("Calling chatbot.chat_generate")
@@ -109,7 +142,9 @@ class QueryService:
             },
         )
 
-        logger.debug("Query stored - id=%s, session_id=%s", item["id"], item["sessionId"])
+        logger.debug(
+            "Query stored - id=%s, session_id=%s", item["id"], item["sessionId"]
+        )
 
         return {
             "id": item["id"],
@@ -122,11 +157,16 @@ class QueryService:
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }
 
+
 def get_query_service(
-        query_repository: Annotated[QueryRepository, Depends(dependency=get_query_repository)],
-        session_repository: Annotated[SessionRepository, Depends(dependency=get_session_repository)],
-        chatbot: Annotated[Chatbot, Depends(dependency=get_chatbot)],
-    ) -> QueryService:
+    query_repository: Annotated[
+        QueryRepository, Depends(dependency=get_query_repository)
+    ],
+    session_repository: Annotated[
+        SessionRepository, Depends(dependency=get_session_repository)
+    ],
+    chatbot: Annotated[Chatbot, Depends(dependency=get_chatbot)],
+) -> QueryService:
     return QueryService(
         query_repository=query_repository,
         session_repository=session_repository,

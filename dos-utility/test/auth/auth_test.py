@@ -15,8 +15,13 @@ class _MockLocalSettings:
 
 
 def test_get_auth_returns_cognito_provider(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr("dos_utility.auth.get_auth_settings", lambda: _MockAWSSettings())
-    monkeypatch.setattr("dos_utility.auth.get_aws_auth_provider", lambda: CognitoAuthProvider.__new__(CognitoAuthProvider))
+    monkeypatch.setattr(
+        "dos_utility.auth.get_auth_settings", lambda: _MockAWSSettings()
+    )
+    monkeypatch.setattr(
+        "dos_utility.auth.get_aws_auth_provider",
+        lambda: CognitoAuthProvider.__new__(CognitoAuthProvider),
+    )
 
     result = get_auth()
 
@@ -24,7 +29,9 @@ def test_get_auth_returns_cognito_provider(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_get_auth_returns_local_provider(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr("dos_utility.auth.get_auth_settings", lambda: _MockLocalSettings())
+    monkeypatch.setattr(
+        "dos_utility.auth.get_auth_settings", lambda: _MockLocalSettings()
+    )
 
     result = get_auth()
 
@@ -32,10 +39,10 @@ def test_get_auth_returns_local_provider(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_get_auth_returns_auth_interface(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr("dos_utility.auth.get_auth_settings", lambda: _MockLocalSettings())
+    monkeypatch.setattr(
+        "dos_utility.auth.get_auth_settings", lambda: _MockLocalSettings()
+    )
 
     result = get_auth()
 
     assert isinstance(result, AuthInterface)
-
-

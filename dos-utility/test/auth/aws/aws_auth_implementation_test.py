@@ -15,6 +15,7 @@ from dos_utility.auth.exceptions import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 class _MockSecretStr:
     def get_secret_value(self):
         return "test-secret"
@@ -55,7 +56,10 @@ def provider_prod(monkeypatch: pytest.MonkeyPatch) -> CognitoAuthProvider:
 # get_jwks
 # ---------------------------------------------------------------------------
 
-def test_get_jwks_test_env_uses_endpoint_url(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+
+def test_get_jwks_test_env_uses_endpoint_url(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"keys": [{"kid": "test-kid"}]}
@@ -74,7 +78,9 @@ def test_get_jwks_test_env_uses_endpoint_url(monkeypatch: pytest.MonkeyPatch, pr
     assert result == {"keys": [{"kid": "test-kid"}]}
 
 
-def test_get_jwks_prod_env_uses_cognito_url(monkeypatch: pytest.MonkeyPatch, provider_prod: CognitoAuthProvider):
+def test_get_jwks_prod_env_uses_cognito_url(
+    monkeypatch: pytest.MonkeyPatch, provider_prod: CognitoAuthProvider
+):
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"keys": []}
@@ -93,7 +99,9 @@ def test_get_jwks_prod_env_uses_cognito_url(monkeypatch: pytest.MonkeyPatch, pro
     assert "amazonaws.com" in captured_url["url"]
 
 
-def test_get_jwks_non_200_raises_http_exception(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_get_jwks_non_200_raises_http_exception(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     mock_response = MagicMock()
     mock_response.status_code = 403
 
@@ -112,12 +120,15 @@ def test_get_jwks_non_200_raises_http_exception(monkeypatch: pytest.MonkeyPatch,
 # verify_jwt
 # ---------------------------------------------------------------------------
 
+
 def test_verify_jwt_empty_token_raises(provider: CognitoAuthProvider):
     with pytest.raises(EmptyTokenException):
         provider.verify_jwt(token="")
 
 
-def test_verify_jwt_unknown_kid_raises(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_verify_jwt_unknown_kid_raises(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     monkeypatch.setattr(
         provider,
         "get_jwks",
@@ -132,7 +143,9 @@ def test_verify_jwt_unknown_kid_raises(monkeypatch: pytest.MonkeyPatch, provider
         provider.verify_jwt(token="header.payload.signature")
 
 
-def test_verify_jwt_invalid_signature_raises(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_verify_jwt_invalid_signature_raises(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     mock_key = MagicMock()
     mock_key.verify.return_value = False
 
@@ -158,7 +171,9 @@ def test_verify_jwt_invalid_signature_raises(monkeypatch: pytest.MonkeyPatch, pr
         provider.verify_jwt(token="header.payload.signature")
 
 
-def test_verify_jwt_expired_token_raises(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_verify_jwt_expired_token_raises(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     from jose import exceptions as jwt_exceptions
 
     mock_key = MagicMock()
@@ -190,7 +205,9 @@ def test_verify_jwt_expired_token_raises(monkeypatch: pytest.MonkeyPatch, provid
         provider.verify_jwt(token="header.payload.signature")
 
 
-def test_verify_jwt_malformed_token_raises(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_verify_jwt_malformed_token_raises(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     from jose import exceptions as jwt_exceptions
 
     monkeypatch.setattr(
@@ -207,7 +224,9 @@ def test_verify_jwt_malformed_token_raises(monkeypatch: pytest.MonkeyPatch, prov
         provider.verify_jwt(token="header.payload.signature")
 
 
-def test_verify_jwt_valid_token_returns_claims(monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider):
+def test_verify_jwt_valid_token_returns_claims(
+    monkeypatch: pytest.MonkeyPatch, provider: CognitoAuthProvider
+):
     mock_claims = {"sub": "user-123", "email": "user@example.com", "exp": 9999999999}
     mock_key = MagicMock()
     mock_key.verify.return_value = True

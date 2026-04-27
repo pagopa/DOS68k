@@ -4,11 +4,13 @@ from typing import Self, Any, Dict, List, Optional
 
 class NlpEngineMock:
     """Mock for presidio_analyzer.nlp_engine.NlpEngine."""
+
     pass
 
 
 class NlpEngineProviderMock:
     """Mock for presidio_analyzer.nlp_engine.NlpEngineProvider."""
+
     def __init__(self: Self, nlp_configuration: Dict[str, Any]) -> None:
         pass
 
@@ -18,6 +20,7 @@ class NlpEngineProviderMock:
 
 class AnalyzerRegistryMock:
     """Mock for AnalyzerEngine.registry."""
+
     def __init__(self: Self) -> None:
         self.recognizers: List[Any] = []
 
@@ -27,6 +30,7 @@ class AnalyzerRegistryMock:
 
 class AnalyzerEngineMock:
     """Mock for presidio_analyzer.AnalyzerEngine."""
+
     def __init__(
         self: Self,
         nlp_engine: Any = None,
@@ -55,6 +59,7 @@ class AnalyzerEngineMock:
 
 class FakeLang:
     """Mimics langdetect.language.Language with str() returning just the lang code."""
+
     def __init__(self: Self, code: str) -> None:
         self.code: str = code
 
@@ -70,6 +75,7 @@ class FakeLang:
 
 class PresidioPIIMock:
     """Mock for PresidioPII used in MaskService tests."""
+
     def __init__(self: Self) -> None:
         self.mask_pii_called_with: Optional[str] = None
         self.mask_pii_return_value: str = "masked"
@@ -81,6 +87,7 @@ class PresidioPIIMock:
 
 class MaskServiceMock:
     """Mock for MaskService used in controller tests."""
+
     def __init__(self: Self) -> None:
         self.mask_return_value: str = "masked output"
 
@@ -94,6 +101,7 @@ class ConfigPathMock:
     Chains Path(__file__).resolve().parents[3] to return base_dir,
     so that / "config" / "presidio.yaml" resolves to a real temp path.
     """
+
     def __init__(self: Self, base_dir: Path) -> None:
         self._base_dir: Path = base_dir
 

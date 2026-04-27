@@ -15,31 +15,40 @@ from test.vector_db.mocks import (
     RedisVectorDBMock,
 )
 
+
 @pytest.mark.asyncio
 async def test_vector_db_ctx_qdrant(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock
+    )
     monkeypatch.setattr(vector_db, "get_qdrant_vector_db", get_qdrant_vector_db_mock)
 
     async with vector_db.get_vector_db_ctx() as vdb:
         assert isinstance(vdb, type(get_qdrant_vector_db_mock()))
 
+
 @pytest.mark.asyncio
 async def test_vector_db_ctx_redis(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock
+    )
     monkeypatch.setattr(vector_db, "get_redis_vector_db", get_redis_vector_db_mock)
 
     async with vector_db.get_vector_db_ctx() as vdb:
         assert isinstance(vdb, type(get_redis_vector_db_mock()))
 
+
 @pytest.mark.asyncio
 async def test_get_vector_db_qdrant(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock
+    )
     monkeypatch.setattr(vector_db, "get_qdrant_vector_db", get_qdrant_vector_db_mock)
 
     vector_db_gen: AsyncGenerator = vector_db.get_vector_db()
@@ -47,76 +56,103 @@ async def test_get_vector_db_qdrant(monkeypatch: pytest.MonkeyPatch):
 
     assert isinstance(vdb, VectorDBInterface)
 
+
 @pytest.mark.asyncio
 async def test_get_vector_db_redis(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock
+    )
     monkeypatch.setattr(vector_db, "get_redis_vector_db", get_redis_vector_db_mock)
 
     vector_db_gen: AsyncGenerator = vector_db.get_vector_db()
     vdb: VectorDBInterface = await vector_db_gen.__anext__()
 
     assert isinstance(vdb, VectorDBInterface)
+
 
 def test_vector_db_interface_add_raises(monkeypatch: pytest.MonkeyPatch):
     vdb = QdrantVectorDBMock()
     with pytest.raises(NotImplementedError):
         vdb.add(nodes=[])
 
+
 def test_vector_db_interface_delete_raises(monkeypatch: pytest.MonkeyPatch):
     vdb = QdrantVectorDBMock()
     with pytest.raises(NotImplementedError):
         vdb.delete(ref_doc_id="id1")
 
+
 def test_vector_db_interface_sync_query(monkeypatch: pytest.MonkeyPatch):
-    from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult
+    from llama_index.core.vector_stores.types import (
+        VectorStoreQuery,
+        VectorStoreQueryResult,
+    )
+
     vdb = QdrantVectorDBMock()
     result = vdb.query(query=VectorStoreQuery(similarity_top_k=5))
     assert isinstance(result, VectorStoreQueryResult)
 
+
 @pytest.mark.asyncio
 async def test_vector_db_interface_sync_query_within_running_loop():
-    from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryResult
+    from llama_index.core.vector_stores.types import (
+        VectorStoreQuery,
+        VectorStoreQueryResult,
+    )
+
     vdb = QdrantVectorDBMock()
     result = vdb.query(query=VectorStoreQuery(similarity_top_k=5))
     assert isinstance(result, VectorStoreQueryResult)
+
 
 def test_get_vector_db_instance_qdrant(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock
+    )
     monkeypatch.setattr(vector_db, "get_qdrant_vector_db", get_qdrant_vector_db_mock)
 
     vdb: VectorDBInterface = vector_db.get_vector_db_instance()
 
     assert isinstance(vdb, QdrantVectorDBMock)
 
+
 def test_get_vector_db_instance_redis(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock
+    )
     monkeypatch.setattr(vector_db, "get_redis_vector_db", get_redis_vector_db_mock)
 
     vdb: VectorDBInterface = vector_db.get_vector_db_instance()
 
     assert isinstance(vdb, RedisVectorDBMock)
 
+
 @pytest.mark.asyncio
 async def test_vector_db_ctx_with_index_name(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_qdrant_mock
+    )
     monkeypatch.setattr(vector_db, "get_qdrant_vector_db", get_qdrant_vector_db_mock)
 
     async with vector_db.get_vector_db_ctx(index_name="my_index") as vdb:
         assert isinstance(vdb, VectorDBInterface)
 
+
 @pytest.mark.asyncio
 async def test_get_vector_db_with_index_name(monkeypatch: pytest.MonkeyPatch):
     get_vector_db_settings.cache_clear()
 
-    monkeypatch.setattr(vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock)
+    monkeypatch.setattr(
+        vector_db, "get_vector_db_settings", get_vector_db_settings_redis_mock
+    )
     monkeypatch.setattr(vector_db, "get_redis_vector_db", get_redis_vector_db_mock)
 
     vector_db_gen: AsyncGenerator = vector_db.get_vector_db(index_name="my_index")

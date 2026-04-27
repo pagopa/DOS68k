@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
+
 class AuthInterface(ABC):
     """Abstract base class for authentication providers.
 
