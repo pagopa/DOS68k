@@ -4,7 +4,6 @@ from test.modules.mask.mocks import PresidioPIIMock
 
 
 class TestMaskService:
-
     def test_mask_delegates_to_presidio(self) -> None:
         """MaskService.mask delegates to PresidioPII.mask_pii."""
         mock_presidio: PresidioPIIMock = PresidioPIIMock()
@@ -27,7 +26,6 @@ class TestMaskService:
 
 
 class TestGetMaskService:
-
     def test_returns_mask_service(self) -> None:
         """get_mask_service factory returns a MaskService instance."""
         get_mask_service.cache_clear()

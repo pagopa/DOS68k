@@ -9,7 +9,9 @@ from test.modules.mask.mocks import MaskServiceMock
 
 
 @pytest.mark.asyncio
-async def test_mask_endpoint_success(app_test: FastAPI, client_test: AsyncClient) -> None:
+async def test_mask_endpoint_success(
+    app_test: FastAPI, client_test: AsyncClient
+) -> None:
     """POST /mask/ with valid body returns 200 and masked text."""
     mock_service: MaskServiceMock = MaskServiceMock()
     mock_service.mask_return_value = "masked output"
@@ -22,7 +24,9 @@ async def test_mask_endpoint_success(app_test: FastAPI, client_test: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_mask_endpoint_missing_body(app_test: FastAPI, client_test: AsyncClient) -> None:
+async def test_mask_endpoint_missing_body(
+    app_test: FastAPI, client_test: AsyncClient
+) -> None:
     """POST /mask/ with no body returns 422."""
     mock_service: MaskServiceMock = MaskServiceMock()
     app_test.dependency_overrides[get_mask_service] = lambda: mock_service
@@ -32,7 +36,9 @@ async def test_mask_endpoint_missing_body(app_test: FastAPI, client_test: AsyncC
 
 
 @pytest.mark.asyncio
-async def test_mask_endpoint_empty_text(app_test: FastAPI, client_test: AsyncClient) -> None:
+async def test_mask_endpoint_empty_text(
+    app_test: FastAPI, client_test: AsyncClient
+) -> None:
     """POST /mask/ with empty text returns 200 (empty string is valid)."""
     mock_service: MaskServiceMock = MaskServiceMock()
     mock_service.mask_return_value = ""
