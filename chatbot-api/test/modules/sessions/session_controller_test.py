@@ -27,7 +27,10 @@ async def test_get_sessions(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.get(
         url=f"{sessions_router.prefix}/all",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 200
@@ -41,7 +44,10 @@ async def test_get_session_200(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.get(
         url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 200
@@ -55,7 +61,10 @@ async def test_get_session_404(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.get(
         url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 404
@@ -69,7 +78,10 @@ async def test_create_session(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.post(
         url=f"{sessions_router.prefix}",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
         json={"title": "New Session", "is_temporary": False},
     )
 
@@ -84,7 +96,10 @@ async def test_delete_session_204(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.delete(
         url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 204
@@ -98,7 +113,10 @@ async def test_delete_session_404(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.delete(
         url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 404
@@ -112,7 +130,10 @@ async def test_clear_session_200(app_test: FastAPI, client_test: AsyncClient):
 
     response: Response = await client_test.post(
         url=f"{sessions_router.prefix}/123e4567-e89b-12d3-a456-426614174000/clear",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 200
