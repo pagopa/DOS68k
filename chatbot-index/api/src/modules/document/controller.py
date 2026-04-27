@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File, status
 from typing import List, Annotated
 
+from dos_utility.auth import get_user, User
+
 from .dto import UploadDocumentResponse, DocumentInfo
 from .service import DocumentService, get_document_service
-from ..auth import get_user_id
 
 
 router: APIRouter = APIRouter(prefix="/index/{index_id}/documents", tags=["documents"])
@@ -28,9 +29,9 @@ async def upload_document(
     index_id: str,
     file: Annotated[UploadFile, File(description="Document file to upload")],
     service: Annotated[DocumentService, Depends(dependency=get_document_service)],
-    user: Annotated[str, Depends(dependency=get_user_id)],
+    user: Annotated[User, Depends(dependency=get_user)],
 ) -> UploadDocumentResponse:
-    return await service.upload_document(index_id=index_id, file=file, user=user)
+    return await service.upload_document(index_id=index_id, file=file, user_id=user.id)
 
 
 @router.get(
@@ -40,7 +41,7 @@ async def upload_document(
     responses={
         status.HTTP_404_NOT_FOUND: {"description": "Index not found"},
     },
-    dependencies=[Depends(dependency=get_user_id)],
+    dependencies=[Depends(dependency=get_user)],
     summary="List all documents in an index",
 )
 async def list_documents(
@@ -59,7 +60,7 @@ async def list_documents(
             "description": "Index not found or document not found"
         },
     },
-    dependencies=[Depends(dependency=get_user_id)],
+    dependencies=[Depends(dependency=get_user)],
     summary="Delete a document from an index",
 )
 async def delete_document(

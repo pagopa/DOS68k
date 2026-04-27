@@ -67,7 +67,7 @@ class DocumentService:
             )
 
     async def upload_document(
-        self: Self, index_id: str, file: UploadFile, user: str
+        self: Self, index_id: str, file: UploadFile, user_id: str
     ) -> UploadDocumentResponse:
         self._validate_file_extension(file.filename)
         await self.index_service.verify_index_exists(index_id=index_id)
@@ -87,7 +87,7 @@ class DocumentService:
 
         msg: dict = {
             "indexId": index_id,
-            "userId": user,
+            "userId": user_id,
             "objectKey": object_key,
             "documentType": file.content_type,
         }
