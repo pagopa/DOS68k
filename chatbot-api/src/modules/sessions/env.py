@@ -8,6 +8,7 @@ class SessionSettings(BaseSettings):
     SESSIONS_TABLENAME: Annotated[str, Field(default="sessions")]
     SESSION_EXPIRATION_DAYS: PositiveInt
 
+
 @lru_cache
 def get_session_settings() -> SessionSettings:
     return SessionSettings()

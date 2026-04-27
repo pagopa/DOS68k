@@ -61,10 +61,14 @@ class Chatbot:
         self.tool_names: List[str] = list(tools_map.keys())
         logger.debug(
             "Chatbot initialized - provider=%s, model_id=%s, tools=%s",
-            self.__settings.provider, self.__settings.model_id, self.tool_names,
+            self.__settings.provider,
+            self.__settings.model_id,
+            self.tool_names,
         )
 
-        agent_config: AgentYamlSettings = get_agent_yaml_settings(file=self.__settings.agent_config_path)
+        agent_config: AgentYamlSettings = get_agent_yaml_settings(
+            file=self.__settings.agent_config_path
+        )
         self.agent: ReActAgent = get_agent(
             name=agent_config.name,
             description=agent_config.description,
@@ -75,7 +79,9 @@ class Chatbot:
             tools=list(tools_map.values()),
         )
 
-    def __get_context(self: Self, tool_calls: List[ToolSelection]) -> Dict[str, List[Dict[str, Any]]]:
+    def __get_context(
+        self: Self, tool_calls: List[ToolSelection]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Retrieve context for the answer, if any RAG tool has been called.
 
         Args:
@@ -109,11 +115,13 @@ class Chatbot:
                     context[filename] = []
 
                 # Add new chunk
-                context[filename].append({
-                    "chunk_id": chunk_id,
-                    "content": content,
-                    "score": score,
-                })
+                context[filename].append(
+                    {
+                        "chunk_id": chunk_id,
+                        "content": content,
+                        "score": score,
+                    }
+                )
 
         return context
 
@@ -128,10 +136,15 @@ class Chatbot:
         Returns:
             Dict with keys: response, tags, contexts.
         """
-        structured: Optional[Dict[str, Any]] = engine_response.structured_response # This is the DOS68KAgentOutput class
+        structured: Optional[Dict[str, Any]] = (
+            engine_response.structured_response
+        )  # This is the DOS68KAgentOutput class
 
         if not isinstance(structured, dict):
-            logger.debug("Structured output parsing failed - got type=%s, falling back to error response", type(structured).__name__)
+            logger.debug(
+                "Structured output parsing failed - got type=%s, falling back to error response",
+                type(structured).__name__,
+            )
             # Structured output parsing failed — return a safe fallback.
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
@@ -139,14 +152,19 @@ class Chatbot:
                 "context": [],
             }
 
-        logger.debug("Structured output parsed successfully - tool_calls=%d", len(engine_response.tool_calls))
+        logger.debug(
+            "Structured output parsed successfully - tool_calls=%d",
+            len(engine_response.tool_calls),
+        )
         return {
             "response": structured["response"],
-            "tags": [], # Left missing for now
+            "tags": [],  # Left missing for now
             "context": self.__get_context(tool_calls=engine_response.tool_calls),
         }
 
-    def __messages_to_chathistory(self: Self, messages: Optional[List[Dict[str, str]]] = None) -> List[ChatMessage]:
+    def __messages_to_chathistory(
+        self: Self, messages: Optional[List[Dict[str, str]]] = None
+    ) -> List[ChatMessage]:
         """Converts the API chat history format into LlamaIndex ChatMessage objects.
 
         Args:
@@ -166,18 +184,24 @@ class Chatbot:
                     if message.get("answer") is not None
                     else None
                 )
-                chat_history.append(ChatMessage(role=MessageRole.USER, content=user_content))
+                chat_history.append(
+                    ChatMessage(role=MessageRole.USER, content=user_content)
+                )
 
                 if assistant_content is not None:
-                    chat_history.append(ChatMessage(role=MessageRole.ASSISTANT, content=assistant_content))
+                    chat_history.append(
+                        ChatMessage(
+                            role=MessageRole.ASSISTANT, content=assistant_content
+                        )
+                    )
 
         return chat_history
 
     async def chat_generate(
-            self: Self,
-            query_str: str,
-            messages: Optional[List[Dict[str, str]]] = None,
-        ) -> Dict[str, Any]:
+        self: Self,
+        query_str: str,
+        messages: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict[str, Any]:
         """Generates a response to the user's query.
 
         Args:
@@ -187,8 +211,14 @@ class Chatbot:
         Returns:
             Dict with keys: response, tags, references, contexts.
         """
-        chat_history: List[ChatMessage] = self.__messages_to_chathistory(messages=messages)
-        logger.debug("chat_generate - query=%r, chat_history_length=%d", query_str, len(chat_history))
+        chat_history: List[ChatMessage] = self.__messages_to_chathistory(
+            messages=messages
+        )
+        logger.debug(
+            "chat_generate - query=%r, chat_history_length=%d",
+            query_str,
+            len(chat_history),
+        )
 
         try:
             ctx: Context = Context.from_dict(workflow=self.agent, data={})
@@ -199,8 +229,12 @@ class Chatbot:
                 ctx=ctx,
                 early_stopping_method="generate",
             )
-            logger.debug("Agent run completed - response type=%s", type(engine_response).__name__)
-            response_json: Dict[str, Any] = self.__get_response_json(engine_response=engine_response)
+            logger.debug(
+                "Agent run completed - response type=%s", type(engine_response).__name__
+            )
+            response_json: Dict[str, Any] = self.__get_response_json(
+                engine_response=engine_response
+            )
         except Exception as e:
             response_json = {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
