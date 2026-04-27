@@ -21,7 +21,10 @@ async def test_get_queries_200(
 
     response: Response = await client_test.get(
         url=f"{query_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 200
@@ -35,7 +38,10 @@ async def test_get_queries_404(
 
     response: Response = await client_test.get(
         url=f"{query_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
     )
 
     assert response.status_code == 404
@@ -49,7 +55,10 @@ async def test_create_query_201(
 
     response: Response = await client_test.post(
         url=f"{query_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
         json={"question": "What is the capital of France?"},
     )
 
@@ -64,7 +73,10 @@ async def test_create_query_404(
 
     response: Response = await client_test.post(
         url=f"{query_router.prefix}/123e4567-e89b-12d3-a456-426614174000",
-        headers={"X-User-Id": "123e4567-e89b-12d3-a456-426614174000"},
+        headers={
+            "X-User-Id": "123e4567-e89b-12d3-a456-426614174000",
+            "X-User-Role": "user",
+        },
         json={"question": "What is the capital of France?"},
     )
 
