@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Form
 from typing import Annotated, Literal
 
 from dos_utility.auth import get_admin_user, get_user, User
@@ -21,7 +21,7 @@ router: APIRouter = APIRouter(prefix="/evaluate", tags=["evaluate"])
 )
 async def simple_feedback(
     query_id: str,
-    feedback: Literal[1, 0, -1],
+    feedback: Annotated[Literal[1, -1], Form(description="1 for OK, -1 for KO")],
     user: Annotated[User, Depends(dependency=get_user)], # Any user can do it, as long as he's the 'owner' of the message
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
 ) -> SimpleFeedbackResponse:
