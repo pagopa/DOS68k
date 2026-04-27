@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from fastapi import Header, Depends
+from fastapi import Header
 from typing import Annotated
 from uuid import UUID
 from enum import StrEnum
@@ -12,7 +12,7 @@ class UserRole(StrEnum):
 
 @dataclass
 class User:
-    id: UUID
+    id: str
     role: UserRole
 
 
@@ -29,4 +29,4 @@ def get_user(
     Return:
         User: user object with id and role
     """
-    return User(id=x_user_id, role=x_user_role)
+    return User(id=str(x_user_id), role=x_user_role)
