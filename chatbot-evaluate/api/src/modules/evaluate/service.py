@@ -1,5 +1,6 @@
 import json
 import random
+
 from logging import Logger
 from typing import Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
@@ -23,9 +24,10 @@ class EvaluationService:
         self.settings: Settings = get_settings()
         self.logger: Logger = logger.get_logger(__name__)
 
-    async def create_simple_feedback(self, query_id: str, feedback: int) -> Dict[str, Any]:
+    async def create_simple_feedback(self: Self, user_id: str, query_id: str, feedback: int) -> Dict[str, Any]:
         self.logger.info(f"Creating simple feedback for query_id: {query_id}, feedback: {feedback}")
 
+        #! usa metodo query
         scan_result: ScanResult = await self.nosql.scan(table_name=self.settings.QUERY_TABLENAME)
 
         query_item: Optional[Dict[str, Any]] = next(
@@ -47,7 +49,7 @@ class EvaluationService:
 
         return updated_item
 
-    async def evaluate(self, query_id: str) -> dict:
+    async def evaluate(self: Self, query_id: str) -> dict:
         self.logger.info(f"Evaluating query_id: {query_id}")
 
         scan_result: ScanResult = await self.nosql.scan(table_name=self.settings.QUERY_TABLENAME)
@@ -82,7 +84,7 @@ class EvaluationService:
         return {"query_id": query_id, "status": "queued"}
 
 
-    async def evaluate_all(self, session_id: str) -> dict:
+    async def evaluate_all(self: Self, session_id: str) -> dict:
         self.logger.info(f"Evaluating all queries for session_id: {session_id}")
 
         query_result: QueryResult = await self.nosql.query(
