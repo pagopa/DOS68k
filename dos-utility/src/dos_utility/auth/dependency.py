@@ -4,19 +4,22 @@ from typing import Annotated
 from uuid import UUID
 from enum import StrEnum
 
+
 class UserRole(StrEnum):
     ADMIN = "admin"
     USER = "user"
+
 
 @dataclass
 class User:
     id: UUID
     role: UserRole
 
+
 def get_user(
-        x_user_id: Annotated[UUID, Header()],
-        x_user_role: Annotated[UserRole, Header()],
-    ) -> User:
+    x_user_id: Annotated[UUID, Header()],
+    x_user_role: Annotated[UserRole, Header()],
+) -> User:
     """FastAPI dependency to get logged user infos.
 
     Args:

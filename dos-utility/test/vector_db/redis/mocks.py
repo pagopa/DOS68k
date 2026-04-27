@@ -6,9 +6,11 @@ class _IndexInfoMock:
     def __init__(self: Self):
         self.prefix = ""
 
+
 class _SchemaMock:
     def __init__(self: Self):
         self.index = _IndexInfoMock()
+
 
 class RedisClientMock:
     def __init__(self: Self, *args, **kwargs):
@@ -20,6 +22,7 @@ class RedisClientMock:
     async def execute_command(self: Self, *args, **kwargs) -> List[bytes]:
         if args[0] == "FT._LIST":
             return [b"index1", b"index2"]
+
 
 class AsyncSearchIndexMock:
     def __init__(self: Self, *args, **kwargs):
@@ -66,25 +69,31 @@ class AsyncSearchIndexMock:
             },
         ]
 
+
 class AsyncSearchIndexCreationIndexFailedMock(AsyncSearchIndexMock):
     def create(self: Self, *args, **kwargs) -> None:
         raise Exception("Index creation failed")
+
 
 class AsyncSearchIndexDeletionIndexFailedMock(AsyncSearchIndexMock):
     async def delete(self: Self, drop: bool) -> bool:
         return False
 
+
 class AsyncSearchIndexRedisSearchErrorNonExistingIndexMock(AsyncSearchIndexMock):
     async def delete(self: Self, drop: bool) -> bool:
         raise RedisSearchError("Error while deleting index: Unknown Index name")
+
 
 class AsyncSearchIndexDeletionIndexFailedRedisSearchErrorMock(AsyncSearchIndexMock):
     async def delete(self: Self, drop: bool) -> bool:
         raise RedisSearchError("Different RedisSearch error")
 
+
 class AsyncSearchIndexPutObjectsFailedMock(AsyncSearchIndexMock):
     async def load(self: Self, *args, **kwargs) -> List[str]:
         raise Exception("Failed to put objects")
+
 
 class AsyncSearchIndexDeleteObjectsFailedMock(AsyncSearchIndexMock):
     async def drop_keys(self: Self, *args, **kwargs) -> int:

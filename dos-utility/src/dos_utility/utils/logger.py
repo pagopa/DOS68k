@@ -1,4 +1,5 @@
 """Shared logger utility for all services."""
+
 import logging
 import sys
 

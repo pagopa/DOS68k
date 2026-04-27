@@ -2,27 +2,50 @@ import asyncio
 from abc import abstractmethod
 from typing import Self, List, Annotated, Optional, Any
 from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery, VectorStoreQueryResult, MetadataFilters
-
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+    MetadataFilters,
+)
 
 
 class ObjectData(BaseModel):
-    """Represents a single object to be stored in the vector database. Each object corresponds to a chunk of text from a file, along with its embedding vector.
-    """
-    filename: Annotated[str, Field(description="The name of the file the object comes from.")]
-    chunk_id: Annotated[int, Field(description="The chunk ID within the file. If the file is not chunked set it to 0.")]
+    """Represents a single object to be stored in the vector database. Each object corresponds to a chunk of text from a file, along with its embedding vector."""
+
+    filename: Annotated[
+        str, Field(description="The name of the file the object comes from.")
+    ]
+    chunk_id: Annotated[
+        int,
+        Field(
+            description="The chunk ID within the file. If the file is not chunked set it to 0."
+        ),
+    ]
     content: Annotated[str, Field(description="The content of the chunk.")]
-    vector: Annotated[List[float], Field(description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension.")]
+    vector: Annotated[
+        List[float],
+        Field(
+            description="The embedding vector of the content. Make sure its dimension matches the vector DB index dimension."
+        ),
+    ]
+
 
 class SearchResult(BaseModel):
-    """Represents a single result from a vector DB search (semantic or filter-based).
-    """
+    """Represents a single result from a vector DB search (semantic or filter-based)."""
+
     id: Annotated[str, Field(description="Unique identifier of the document")]
-    filename: Annotated[str, Field(description="Name of the file containing the document")]
+    filename: Annotated[
+        str, Field(description="Name of the file containing the document")
+    ]
     chunk_id: Annotated[int, Field(description="Chunk identifier within the document")]
     content: Annotated[str, Field(description="Content of the document chunk")]
-    score: Annotated[Optional[float], Field(description="Similarity score between 0 and 1. None for filter-only results.")]
-
+    score: Annotated[
+        Optional[float],
+        Field(
+            description="Similarity score between 0 and 1. None for filter-only results."
+        ),
+    ]
 
 
 class VectorDBInterface(BasePydanticVectorStore):
@@ -51,7 +74,9 @@ class VectorDBInterface(BasePydanticVectorStore):
     def delete(self: Self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         raise NotImplementedError
 
-    def query(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    def query(
+        self: Self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -61,6 +86,7 @@ class VectorDBInterface(BasePydanticVectorStore):
             # Inside an already-running event loop (e.g. FastAPI) — create a new
             # thread to avoid "cannot run nested event loop" errors.
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 return pool.submit(asyncio.run, self.aquery(query, **kwargs)).result()
         else:
@@ -145,7 +171,12 @@ class VectorDBInterface(BasePydanticVectorStore):
         ...
 
     @abstractmethod
-    async def put_objects(self: Self, index_name: str, data: List[ObjectData], custom_keys: Optional[List[str]]=None) -> List[str]:
+    async def put_objects(
+        self: Self,
+        index_name: str,
+        data: List[ObjectData],
+        custom_keys: Optional[List[str]] = None,
+    ) -> List[str]:
         """Put objects into the vector database.
         If custom keys are provided and they match keys of already existing objects, those objects will be overwritten.
 
@@ -203,13 +234,13 @@ class VectorDBInterface(BasePydanticVectorStore):
 
     @abstractmethod
     async def semantic_search(
-            self: Self,
-            index_name: str,
-            embedding_query: List[float],
-            max_results: PositiveInt,
-            score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
-            filters: Optional[MetadataFilters] = None,
-        ) -> List[SearchResult]:
+        self: Self,
+        index_name: str,
+        embedding_query: List[float],
+        max_results: PositiveInt,
+        score_threshold: Annotated[PositiveFloat, Field(ge=0.0, le=1.0)],
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[SearchResult]:
         """Perform a semantic search in the vector database.
 
         Args:
@@ -237,11 +268,11 @@ class VectorDBInterface(BasePydanticVectorStore):
 
     @abstractmethod
     async def filter_search(
-            self: Self,
-            index_name: str,
-            filters: MetadataFilters,
-            max_results: PositiveInt,
-        ) -> List[SearchResult]:
+        self: Self,
+        index_name: str,
+        filters: MetadataFilters,
+        max_results: PositiveInt,
+    ) -> List[SearchResult]:
         """Perform a metadata filter search in the vector database, without a query embedding.
 
         Args:
@@ -265,7 +296,9 @@ class VectorDBInterface(BasePydanticVectorStore):
         ...
 
     @abstractmethod
-    async def aquery(self: Self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self: Self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """LlamaIndex integration point. Routes to semantic_search or filter_search
         based on whether query.query_embedding is set, then converts the results to
         the VectorStoreQueryResult format expected by LlamaIndex.

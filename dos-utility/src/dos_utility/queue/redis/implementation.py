@@ -12,11 +12,17 @@ from .env import RedisQueueSettings, get_redis_queue_settings
 
 class RedisQueue(QueueInterface):
     def __init__(self: Self) -> None:
-        self._settings: RedisQueueSettings = get_redis_queue_settings() # Load redis env variables
+        self._settings: RedisQueueSettings = (
+            get_redis_queue_settings()
+        )  # Load redis env variables
 
     async def __aenter__(self: Self) -> Self:
-        connection_pool: ConnectionPool = get_redis_connection_pool(decode_responses=False)
-        self._redis_client: Redis = Redis(connection_pool=connection_pool) # Create redis client
+        connection_pool: ConnectionPool = get_redis_connection_pool(
+            decode_responses=False
+        )
+        self._redis_client: Redis = Redis(
+            connection_pool=connection_pool
+        )  # Create redis client
 
         # Create group if it doesn't exist (id="0" = read old; "$" = only new)
         try:
@@ -30,12 +36,12 @@ class RedisQueue(QueueInterface):
             if "BUSYGROUP" in str(e):
                 logging.info("Redis group already exists, ignoring error")
             else:
-                raise # Reraise other exceptions
+                raise  # Reraise other exceptions
 
         return self
 
     async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
-        await self._redis_client.aclose() # Close redis client connection
+        await self._redis_client.aclose()  # Close redis client connection
 
     async def is_healthy(self: Self) -> bool:
         try:
@@ -47,9 +53,11 @@ class RedisQueue(QueueInterface):
             logging.error(f"Redis health check failed: {e}")
 
             return False
-    
+
     async def enqueue(self: Self, msg: bytes) -> str:
-        msg_id: str = await self._redis_client.xadd(name=self._settings.REDIS_STREAM, fields={b"body": msg}) # Add message to Redis stream
+        msg_id: str = await self._redis_client.xadd(
+            name=self._settings.REDIS_STREAM, fields={b"body": msg}
+        )  # Add message to Redis stream
 
         return msg_id
 
@@ -57,7 +65,7 @@ class RedisQueue(QueueInterface):
         response: List = await self._redis_client.xreadgroup(
             groupname=self._settings.REDIS_GROUP,
             consumername=uuid4().hex,
-            streams={self._settings.REDIS_STREAM: ">"}, # read new messages
+            streams={self._settings.REDIS_STREAM: ">"},  # read new messages
             count=1,
             block=1,
             noack=True,
@@ -72,7 +80,9 @@ class RedisQueue(QueueInterface):
 
     async def acknowledge(self: Self, ack_token: str) -> None:
         # Acknowledge message processing
-        _ = await self._redis_client.xack(self._settings.REDIS_STREAM, self._settings.REDIS_GROUP, ack_token)
+        _ = await self._redis_client.xack(
+            self._settings.REDIS_STREAM, self._settings.REDIS_GROUP, ack_token
+        )
 
 
 def get_redis_queue() -> RedisQueue:

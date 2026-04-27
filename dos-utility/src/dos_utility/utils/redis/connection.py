@@ -4,8 +4,11 @@ from typing import Optional
 
 from .env import RedisConnectionSettings, get_redis_connection_settings
 
+
 @lru_cache
-def get_redis_connection_pool(decode_responses: Optional[bool]=None) -> ConnectionPool:
+def get_redis_connection_pool(
+    decode_responses: Optional[bool] = None,
+) -> ConnectionPool:
     """Get a Redis connection pool.
 
     Args:
@@ -19,4 +22,6 @@ def get_redis_connection_pool(decode_responses: Optional[bool]=None) -> Connecti
             decode_responses=decode_responses,
         )
 
-    return ConnectionPool.from_url(url=f"redis://{connection_settings.REDIS_HOST}:{connection_settings.REDIS_PORT}/0")
+    return ConnectionPool.from_url(
+        url=f"redis://{connection_settings.REDIS_HOST}:{connection_settings.REDIS_PORT}/0"
+    )

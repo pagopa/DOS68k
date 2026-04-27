@@ -14,12 +14,16 @@ from .env import SQSQueueSettings, get_sqs_queue_settings
 
 class SQSQueue(QueueInterface):
     def __init__(self: Self) -> None:
-        self._settings: SQSQueueSettings = get_sqs_queue_settings() # Load sqs env variables
-        self._aws_credentials: AWSCredentialsSettings = get_aws_credentials_settings() # Load AWS credentials
+        self._settings: SQSQueueSettings = (
+            get_sqs_queue_settings()
+        )  # Load sqs env variables
+        self._aws_credentials: AWSCredentialsSettings = (
+            get_aws_credentials_settings()
+        )  # Load AWS credentials
 
     async def __aenter__(self: Self) -> Self:
         # Since boto3 is blocking, we run it in a separate thread to respect asyncio interface
-        loop: AbstractEventLoop = asyncio.get_event_loop() # Get current event loop
+        loop: AbstractEventLoop = asyncio.get_event_loop()  # Get current event loop
 
         kwargs: Dict[str, str] = {}
 
@@ -27,7 +31,9 @@ class SQSQueue(QueueInterface):
             kwargs["aws_access_key_id"] = self._aws_credentials.AWS_ACCESS_KEY_ID
 
         if self._aws_credentials.AWS_SECRET_ACCESS_KEY is not None:
-            kwargs["aws_secret_access_key"] = self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+            kwargs["aws_secret_access_key"] = (
+                self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+            )
 
         # Initialize SQS client
         self._client = await loop.run_in_executor(
@@ -51,7 +57,9 @@ class SQSQueue(QueueInterface):
         try:
             await loop.run_in_executor(
                 None,
-                lambda: self._client.get_queue_url(QueueName=self._settings.SQS_QUEUE_NAME), # Simple call to check if queue is accessible
+                lambda: self._client.get_queue_url(
+                    QueueName=self._settings.SQS_QUEUE_NAME
+                ),  # Simple call to check if queue is accessible
             )
 
             return True
@@ -66,7 +74,9 @@ class SQSQueue(QueueInterface):
             None,
             lambda: self._client.send_message(
                 QueueUrl=self._settings.SQS_QUEUE_URL,
-                MessageBody=base64.b64encode(msg).decode("utf-8"), # SQS only wants string messages, so we base64 encode the bytes
+                MessageBody=base64.b64encode(msg).decode(
+                    "utf-8"
+                ),  # SQS only wants string messages, so we base64 encode the bytes
                 MessageGroupId="default",
                 MessageDeduplicationId=uuid4().hex,
             ),
@@ -89,7 +99,9 @@ class SQSQueue(QueueInterface):
 
         if len(messages) > 0:
             message = messages[0]
-            msg_body = base64.b64decode(message["Body"].encode("utf-8")) # Decode the base64 encoded message back to bytes, to respect the interface
+            msg_body = base64.b64decode(
+                message["Body"].encode("utf-8")
+            )  # Decode the base64 encoded message back to bytes, to respect the interface
             ack_token = message["ReceiptHandle"]
 
             return msg_body, ack_token
@@ -106,6 +118,7 @@ class SQSQueue(QueueInterface):
                 ReceiptHandle=ack_token,
             ),
         )
+
 
 def get_sqs_queue() -> SQSQueue:
     return SQSQueue()

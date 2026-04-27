@@ -29,10 +29,16 @@ class DynamoDBNoSQL(NoSQLInterface):
             kwargs["aws_access_key_id"] = self._aws_credentials.AWS_ACCESS_KEY_ID
 
         if self._aws_credentials.AWS_SECRET_ACCESS_KEY is not None:
-            kwargs["aws_secret_access_key"] = self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+            kwargs["aws_secret_access_key"] = (
+                self._aws_credentials.AWS_SECRET_ACCESS_KEY.get_secret_value()
+            )
 
         if self._settings.DYNAMODB_ENDPOINT_URL is not None:
-            kwargs["endpoint_url"] = self._settings.DYNAMODB_ENDPOINT_URL + (f":{self._settings.DYNAMODB_PORT}" if self._settings.DYNAMODB_PORT else "")
+            kwargs["endpoint_url"] = self._settings.DYNAMODB_ENDPOINT_URL + (
+                f":{self._settings.DYNAMODB_PORT}"
+                if self._settings.DYNAMODB_PORT
+                else ""
+            )
 
         self._resource: ServiceResource = await loop.run_in_executor(
             None,
@@ -74,7 +80,9 @@ class DynamoDBNoSQL(NoSQLInterface):
             lambda: table.put_item(Item=item),
         )
 
-    async def get_item(self: Self, table_name: str, key: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def get_item(
+        self: Self, table_name: str, key: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         loop: AbstractEventLoop = asyncio.get_event_loop()
         table = self._resource.Table(self.__get_table_name(table_name=table_name))
         response = await loop.run_in_executor(
@@ -128,7 +136,9 @@ class DynamoDBNoSQL(NoSQLInterface):
 
         return response.get("Attributes")
 
-    def __build_key_condition_expression(self: Self, key_conditions: List[KeyCondition]) -> Any:
+    def __build_key_condition_expression(
+        self: Self, key_conditions: List[KeyCondition]
+    ) -> Any:
         """Build a DynamoDB KeyConditionExpression from a list of KeyCondition objects."""
         expression: Any = None
 
@@ -170,7 +180,9 @@ class DynamoDBNoSQL(NoSQLInterface):
         table = self._resource.Table(self.__get_table_name(table_name))
 
         kwargs: Dict[str, Any] = {
-            "KeyConditionExpression": self.__build_key_condition_expression(key_conditions),
+            "KeyConditionExpression": self.__build_key_condition_expression(
+                key_conditions
+            ),
             "ScanIndexForward": sort_ascending,
         }
 

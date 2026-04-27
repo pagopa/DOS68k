@@ -1,6 +1,10 @@
 import pytest
 
-from dos_utility.vector_db.env import get_vector_db_settings, VectorDBProvider, VectorDBSettings
+from dos_utility.vector_db.env import (
+    get_vector_db_settings,
+    VectorDBProvider,
+    VectorDBSettings,
+)
 
 
 @pytest.mark.parametrize(
@@ -10,7 +14,9 @@ from dos_utility.vector_db.env import get_vector_db_settings, VectorDBProvider, 
         ("qdrant", VectorDBProvider.QDRANT),
     ],
 )
-def test_get_vector_db_settings(monkeypatch: pytest.MonkeyPatch, env_value: str, expected_provider: VectorDBProvider) -> None:
+def test_get_vector_db_settings(
+    monkeypatch: pytest.MonkeyPatch, env_value: str, expected_provider: VectorDBProvider
+) -> None:
     get_vector_db_settings.cache_clear()
 
     monkeypatch.setenv("VECTOR_DB_PROVIDER", env_value)

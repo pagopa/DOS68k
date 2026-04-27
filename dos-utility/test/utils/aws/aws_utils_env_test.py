@@ -1,6 +1,9 @@
 import pytest
 
-from dos_utility.utils.aws.env import AWSCredentialsSettings, get_aws_credentials_settings
+from dos_utility.utils.aws.env import (
+    AWSCredentialsSettings,
+    get_aws_credentials_settings,
+)
 
 
 def test_get_aws_credentials_settings(monkeypatch: pytest.MonkeyPatch) -> None:

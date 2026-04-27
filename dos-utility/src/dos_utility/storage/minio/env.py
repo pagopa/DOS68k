@@ -11,6 +11,7 @@ class MinIOStorageSettings(BaseSettings):
     MINIO_REGION: str
     MINIO_SECURE: bool = False
 
+
 @lru_cache()
 def get_minio_storage_settings() -> MinIOStorageSettings:
     return MinIOStorageSettings()

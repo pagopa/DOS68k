@@ -1,6 +1,9 @@
 import pytest
 
-from dos_utility.utils.redis.env import RedisConnectionSettings, get_redis_connection_settings
+from dos_utility.utils.redis.env import (
+    RedisConnectionSettings,
+    get_redis_connection_settings,
+)
 
 
 def test_get_redis_connection_settings(monkeypatch: pytest.MonkeyPatch) -> None:
