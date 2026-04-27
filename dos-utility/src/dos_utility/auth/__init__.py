@@ -3,6 +3,7 @@ from .interface import AuthInterface
 from .aws import get_aws_auth_provider
 from .local import get_local_auth_provider
 from .exceptions import EmptyTokenException, TokenExpiredException, InvalidTokenException, InvalidTokenKeyException
+from .dependency import get_user, User, UserRole
 
 
 __all__ = [
@@ -12,6 +13,9 @@ __all__ = [
     "TokenExpiredException",
     "InvalidTokenException",
     "InvalidTokenKeyException",
+    "get_user",
+    "User",
+    "UserRole",
 ]
 
 def get_auth() -> AuthInterface:
