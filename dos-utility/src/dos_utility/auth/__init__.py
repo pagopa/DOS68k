@@ -8,7 +8,7 @@ from .exceptions import (
     InvalidTokenException,
     InvalidTokenKeyException,
 )
-from .dependency import get_user, User, UserRole
+from .dependency import get_user, get_admin_user, User, UserRole
 
 
 __all__ = [
@@ -19,6 +19,7 @@ __all__ = [
     "InvalidTokenException",
     "InvalidTokenKeyException",
     "get_user",
+    "get_admin_user",
     "User",
     "UserRole",
 ]
