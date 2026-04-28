@@ -25,7 +25,7 @@ async def process_task(body: bytes) -> None:
     storage_settings: StorageSettings = get_storage_settings()
     logger: Logger = get_logger(name=__file__, level=settings.log_level)
 
-    loader = get_document_loader(bucket_name=storage_settings.bucket_name)
+    loader = get_document_loader(bucket_name=storage_settings.index_documents_bucket_name)
     parser = get_parser(
         chunk_size = task_settings.embed_chunk_size,
         chunk_overlap = task_settings.embed_chunk_overlap

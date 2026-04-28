@@ -28,7 +28,7 @@ class GlobalSettings(BaseSettings):
     log_level: Annotated[PositiveInt, Field(default=20)]
 
 class StorageSettings(BaseSettings):
-    bucket_name: str
+    index_documents_bucket_name: str
 
 
 @lru_cache
