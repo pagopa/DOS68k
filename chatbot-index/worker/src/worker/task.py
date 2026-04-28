@@ -7,7 +7,7 @@ from llama_index.core.vector_stores.types import FilterOperator
 from loaders import get_document_loader, Message, Document
 from parsers import get_parser, ChunkData
 from embedder import get_embedder
-from env import get_task_settings, get_global_settings, GlobalSettings
+from env import get_task_settings, TaskSettings, get_global_settings, GlobalSettings, get_storage_settings, StorageSettings
 
 from dos_utility.vector_db import get_vector_db_ctx, ObjectData
 from dos_utility.utils.logger import get_logger
@@ -21,10 +21,11 @@ async def process_task(body: bytes) -> None:
         body (bytes): The body of the task to be processed.
     """
     settings: GlobalSettings = get_global_settings()
+    task_settings: TaskSettings = get_task_settings()
+    storage_settings: StorageSettings = get_storage_settings()
     logger: Logger = get_logger(name=__file__, level=settings.log_level)
-    task_settings = get_task_settings()
 
-    loader = get_document_loader(bucket_name=task_settings.bucket_name)
+    loader = get_document_loader(bucket_name=storage_settings.bucket_name)
     parser = get_parser(
         chunk_size = task_settings.embed_chunk_size,
         chunk_overlap = task_settings.embed_chunk_overlap
