@@ -81,7 +81,7 @@ class RedisVectorDB(VectorDBInterface):
             index_schema: IndexSchema = IndexSchema(
                 index=index_info,
                 fields=[
-                    {"name": "filename", "type": "text"},
+                    {"name": "filename", "type": "tag"},
                     {"name": "chunk_id", "type": "numeric"},
                     {"name": "content", "type": "text", "attrs": {"weight": 1.0}},
                     {
