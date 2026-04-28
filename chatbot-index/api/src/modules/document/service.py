@@ -128,6 +128,7 @@ class DocumentService:
             bucket=self.index_bucket_settings.index_documents_bucket_name,
             name=object_key,
         )  # Delete object from storage
+        self.logger.debug("Document deleted from storage")
 
         # Delete all vector db chunks for the specified document (1000 at a time)
         while True:
@@ -143,6 +144,8 @@ class DocumentService:
                 max_results=1000,
             )
             vdb_objects_len: int = len(vdb_objects)
+
+            self.logger.debug(f"Found {vdb_objects_len} chunks to delete")
 
             if vdb_objects_len == 0:
                 self.logger.debug("No more chunks to delete, loop ended")
