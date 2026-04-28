@@ -83,7 +83,8 @@ services:
       - redis-queue
       - minio
       - redis-vdb
-      # - localstack
+      - localstack
+      - chatbot-index-worker
 
   chatbot-index-worker:
     build:
@@ -93,6 +94,8 @@ services:
       - ./chatbot-index/worker/.env
     depends_on:
       - redis-queue
+      - minio
+      - redis-vdb
       - localstack
 
   masking:
