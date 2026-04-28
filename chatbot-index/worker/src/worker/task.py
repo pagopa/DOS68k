@@ -73,7 +73,7 @@ async def process_task(body: bytes) -> None:
             )
 
             doc_to_delete.extend([x.id for x in results])
-        
+
         try:
             logger.info(f"Adding {len(data_to_store)} chunks to index '{message.indexId}' ")
             await vector_db.put_objects(data=data_to_store, index_name=message.indexId)

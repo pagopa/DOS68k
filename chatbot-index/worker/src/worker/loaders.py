@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Annotated, BinaryIO
+from typing import Annotated, BinaryIO, Literal
 from pydantic import Field, BaseModel
 import pymupdf
 
@@ -7,7 +7,7 @@ from dos_utility.storage import get_storage
 
 
 def get_loaders():
-    return {"pdf": PDFLoader(), "txt": TextLoader(), "md": TextLoader()}
+    return {"application/pdf": PDFLoader(), "text/plain": TextLoader(), "text/markdown": TextLoader()}
 
 
 class Message(BaseModel):
@@ -19,7 +19,8 @@ class Message(BaseModel):
         str, Field(description="Key of the document to store on the vector db")
     ]
     documentType: Annotated[
-        str, Field(description="Type of document to store on the vector db")
+        Literal["application/pdf", "text/markdown", "text/plain"],
+        Field(description="Type of document to store on the vector db")
     ]
 
 
