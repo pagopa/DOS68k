@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from typing import List, Annotated
 
-from dos_utility.auth import get_user, User
+from dos_utility.auth import get_admin_user, User
 
 from .dto import CreateIndexResponse
 from .service import IndexService, get_index_service
@@ -23,7 +23,7 @@ router: APIRouter = APIRouter(prefix="/index", tags=["indexes"])
 async def post_index(
     index_id: str,
     service: Annotated[IndexService, Depends(dependency=get_index_service)],
-    user: Annotated[User, Depends(dependency=get_user)],
+    user: Annotated[User, Depends(dependency=get_admin_user)],
 ) -> CreateIndexResponse:
     return await service.create_index(index_id=index_id, user_id=user.id)
 
@@ -35,7 +35,7 @@ async def post_index(
         status.HTTP_200_OK: {"description": "Index deleted successfully"},
         status.HTTP_404_NOT_FOUND: {"description": "Index not found"},
     },
-    dependencies=[Depends(dependency=get_user)],
+    dependencies=[Depends(dependency=get_admin_user)],
     summary="Delete an existing index",
 )
 async def delete_index(
@@ -52,7 +52,7 @@ async def delete_index(
     responses={
         status.HTTP_200_OK: {"description": "Indexes retrieved successfully"},
     },
-    dependencies=[Depends(dependency=get_user)],
+    dependencies=[Depends(dependency=get_admin_user)],
     summary="Get all existing indexes",
 )
 async def get_all_indexes(
