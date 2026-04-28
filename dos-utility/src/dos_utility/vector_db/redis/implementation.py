@@ -65,7 +65,7 @@ class RedisVectorDB(VectorDBInterface):
 
     async def is_healthy(self: Self) -> bool:
         try:
-            response = await self._redis_client.ping()
+            response = await self._redis_aclient.ping()
             return response
         except Exception as e:
             logging.error(f"Redis health check failed: {e}")
