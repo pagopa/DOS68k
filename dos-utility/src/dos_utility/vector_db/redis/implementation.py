@@ -165,6 +165,10 @@ class RedisVectorDB(VectorDBInterface):
             raise PutObjectsException(msg=str(e))
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
+        if len(ids) == 0:
+            logging.info("No objects to delete")
+            return
+
         try:
             index: AsyncSearchIndex = await self.__get_index(index_name=index_name)
             _ = await index.drop_keys(keys=ids)

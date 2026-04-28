@@ -163,6 +163,10 @@ class QdrantVectorDB(VectorDBInterface):
             raise PutObjectsException(msg=str(e))
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
+        if len(ids) == 0:
+            logging.info("No objects to delete")
+            return
+
         try:
             result: UpdateResult = await self._client.delete(
                 collection_name=index_name, points_selector=ids, wait=True
