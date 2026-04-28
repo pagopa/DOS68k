@@ -37,8 +37,8 @@ class IndexService:
 
         if index_id not in existing_indexes:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Index '{index_id}' already exists",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Index '{index_id}' does not exist",
             )
 
     async def create_index(
