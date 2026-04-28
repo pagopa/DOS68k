@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from fastapi import Header
+from fastapi import Header, Depends, HTTPException, status
 from typing import Annotated
 from uuid import UUID
 from enum import StrEnum
@@ -30,3 +30,20 @@ def get_user(
         User: user object with id and role
     """
     return User(id=str(x_user_id), role=x_user_role)
+
+def get_admin_user(user: Annotated[User, Depends(dependency=get_user)]) -> User:
+    """Get user and verify if he has admin role. If not, throw a 403 exception.
+
+    Args:
+        user (User): logged user
+
+    Raises:
+        HTTPException: 403 if user has not admin privileges
+
+    Return:
+        User: logged user
+    """
+    if user.role is not UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+
+    return user
