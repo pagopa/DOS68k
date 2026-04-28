@@ -4,10 +4,17 @@ import random
 from logging import Logger
 from typing import Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
+from uuid import UUID
 
 from dos_utility.utils import logger
 from dos_utility.storage import StorageInterface, get_storage
-from dos_utility.database.nosql import NoSQLInterface, get_nosql_client, ScanResult, KeyCondition, ConditionOperator, QueryResult
+from dos_utility.database.nosql import (
+    NoSQLInterface,
+    get_nosql_client,
+    KeyCondition,
+    ConditionOperator,
+    QueryResult,
+)
 from dos_utility.queue import QueueInterface, get_queue_client
 
 from ...env import (
@@ -17,79 +24,116 @@ from ...env import (
 
 
 class EvaluationService:
-    def __init__(self: Self, storage: StorageInterface, nosql: NoSQLInterface, queue: QueueInterface):
+    def __init__(
+        self: Self,
+        storage: StorageInterface,
+        nosql: NoSQLInterface,
+        queue: QueueInterface,
+    ):
         self.storage: StorageInterface = storage
         self.nosql: NoSQLInterface = nosql
         self.queue: QueueInterface = queue
         self.settings: Settings = get_settings()
-        self.logger: Logger = logger.get_logger(name=__file__, level=self.settings.LOG_LEVEL)
-
-    async def create_simple_feedback(self: Self, user_id: str, query_id: str, feedback: int) -> Dict[str, Any]:
-        self.logger.info(f"Creating simple feedback for query_id: {query_id}, feedback: {feedback}")
-
-        #! usa metodo query
-        scan_result: ScanResult = await self.nosql.scan(table_name=self.settings.QUERY_TABLENAME)
-
-        query_item: Optional[Dict[str, Any]] = next(
-            (item for item in scan_result.items if item.get("id") == query_id),
-            None,
+        self.logger: Logger = logger.get_logger(
+            name=__file__, level=self.settings.LOG_LEVEL
         )
 
-        if query_item is None:
+    async def create_simple_feedback(
+        self: Self, user_id: str, query_id: UUID, feedback: int
+    ) -> Dict[str, Any]:
+        self.logger.info(
+            f"Creating simple feedback for query_id: {query_id}, feedback: {feedback}"
+        )
+
+        query_id_str: str = str(query_id)
+        query_result: QueryResult = await self.nosql.query(
+            table_name=self.settings.QUERY_TABLENAME,
+            key_conditions=[
+                KeyCondition(
+                    field="id",
+                    operator=ConditionOperator.EQ,
+                    value=query_id_str,
+                ),
+            ],
+        )
+
+        if query_result is None or len(query_result.items) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Query with id {query_id} not found",
+                detail=f"Query {query_id_str} not found",
+            )
+
+        query: Dict[str, Any] = query_result.items[0]
+
+        if query["userId"] != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized",
             )
 
         updated_item: Optional[Dict[str, Any]] = await self.nosql.update_item(
             table_name=self.settings.QUERY_TABLENAME,
-            key={"sessionId": query_item["sessionId"], "id": query_id},
+            key={"sessionId": query["sessionId"], "id": query_id_str},
             fields_to_update={"feedback": feedback},
         )
 
         return updated_item
 
-    async def evaluate(self: Self, query_id: str) -> dict:
+    async def evaluate(self: Self, query_id: UUID) -> dict:
         self.logger.info(f"Evaluating query_id: {query_id}")
 
-        scan_result: ScanResult = await self.nosql.scan(table_name=self.settings.QUERY_TABLENAME)
-
-        query_item: Optional[Dict[str, Any]] = next(
-            (item for item in scan_result.items if item.get("id") == query_id),
-            None,
+        query_id_str: str = str(query_id)
+        query_result: QueryResult = await self.nosql.query(
+            table_name=self.settings.QUERY_TABLENAME,
+            key_conditions=[
+                KeyCondition(
+                    field="id",
+                    operator=ConditionOperator.EQ,
+                    value=query_id_str,
+                ),
+            ],
         )
 
-        if query_item is None:
+        if query_result is None or len(query_result.items):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Query with id {query_id} not found",
+                detail=f"Query {query_id_str} not found",
             )
-        elif query_item.get("isEvaluated", True):
+
+        query: Dict[str, Any] = query_result.items[0]
+
+        if query.get("isEvaluated", True):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Query with id {query_id} has already been evaluated",
+                detail=f"Query {query_id_str} has already been evaluated",
             )
 
         await self.nosql.update_item(
             table_name=self.settings.QUERY_TABLENAME,
-            key={"sessionId": query_item["sessionId"], "id": query_id},
+            key={"sessionId": query["sessionId"], "id": query_id_str},
             fields_to_update={"isEvaluated": True},
         )
 
-        msg: bytes = json.dumps({"queryId": query_id}).encode("utf-8")
+        msg: bytes = json.dumps({"queryId": query_id_str}).encode("utf-8")
         msg_id: str = await self.queue.enqueue(msg=msg)
 
-        self.logger.info(f"Message enqueued with id: {msg_id} for query_id: {query_id}")
+        self.logger.info(
+            f"Message enqueued with id: {msg_id} for query_id: {query_id_str}"
+        )
 
         return {"query_id": query_id, "status": "queued"}
 
-
-    async def evaluate_all(self: Self, session_id: str) -> dict:
+    async def evaluate_all(self: Self, session_id: UUID) -> dict:
         self.logger.info(f"Evaluating all queries for session_id: {session_id}")
 
+        session_id_str: str = str(session_id)
         query_result: QueryResult = await self.nosql.query(
             table_name=self.settings.QUERY_TABLENAME,
-            key_conditions=[KeyCondition(field="sessionId", operator=ConditionOperator.EQ, value=session_id)],
+            key_conditions=[
+                KeyCondition(
+                    field="sessionId", operator=ConditionOperator.EQ, value=session_id_str
+                )
+            ],
         )
 
         queries = query_result.items
@@ -112,8 +156,9 @@ class EvaluationService:
         msg: bytes = json.dumps({"queryIds": query_ids}).encode("utf-8")
         msg_id: str = await self.queue.enqueue(msg=msg)
 
-        self.logger.info(f"Message enqueued with id: {msg_id} for {len(query_ids)} queries")
-
+        self.logger.info(
+            f"Message enqueued with id: {msg_id} for {len(query_ids)} queries"
+        )
 
         self.logger.info(f"Marked {len(selected)} queries as evaluated")
 
@@ -128,7 +173,9 @@ class EvaluationService:
             for qid in query_ids
         ]
 
-        msg_id: str = await self.queue.enqueue(msg=json.dumps(evaluations).encode("utf-8"))
+        msg_id: str = await self.queue.enqueue(
+            msg=json.dumps(evaluations).encode("utf-8")
+        )
         self.logger.info(f"Message enqueued with id: {msg_id}")
 
         for item in selected:

@@ -6,6 +6,7 @@ from dos_utility.queue import QueueInterface, get_queue_client
 
 router: APIRouter = APIRouter(prefix="/health", tags=["Health checks"])
 
+
 @router.get(path="", summary="Check Chatbot Evaluate API service is running")
 async def health_check():
     # Simple health check endpoint to verify the service is running
@@ -13,6 +14,7 @@ async def health_check():
         "status": "ok",
         "service": "Chatbot Evaluate API",
     }
+
 
 @router.get(
     path="/db",
@@ -27,8 +29,11 @@ async def health_check_db():
         "database": "connected",
     }
 
+
 @router.get(path="/queue", summary="Check Chatbot API queue connectivity")
-async def health_check_queue(queue_client: Annotated[QueueInterface, Depends(dependency=get_queue_client)]):
+async def health_check_queue(
+    queue_client: Annotated[QueueInterface, Depends(dependency=get_queue_client)],
+):
     # Health check endpoint to verify queue connectivity
     healthy: bool = await queue_client.is_healthy()
 
