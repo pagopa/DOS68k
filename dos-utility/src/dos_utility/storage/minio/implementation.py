@@ -35,24 +35,34 @@ class MinIO(StorageInterface):
             response: HTTPResponse = self.client.get_object(
                 bucket_name=bucket, object_name=name
             )
+            data = response.read()
         finally:
             response.close()
             response.release_conn()
 
-        return response.read()
+        return data
 
     def put_object(
         self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
     ) -> None:
+        # Get data length
+        data.seek(0, 2)
+        length: int = data.tell()
+        data.seek(0)
+
         self.client.put_object(
-            bucket_name=bucket, object_name=name, data=data, content_type=content_type
+            bucket_name=bucket,
+            object_name=name,
+            data=data,
+            content_type=content_type,
+            length=length,
         )
 
     def delete_object(self: Self, bucket: str, name: str) -> None:
         self.client.remove_object(bucket_name=bucket, object_name=name)
 
     def list_objects(self: Self, bucket: str) -> List[ObjectInfo]:
-        response: Iterator[Object] = self.client.list_objects(bucket_name=bucket)
+        response: Iterator[Object] = self.client.list_objects(bucket_name=bucket, recursive=True)
         objects: List[ObjectInfo] = []
 
         for obj in response:

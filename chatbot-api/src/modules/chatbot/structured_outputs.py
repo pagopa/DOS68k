@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import Annotated
 from pydantic import BaseModel, Field
 
 
