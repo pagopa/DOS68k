@@ -22,11 +22,17 @@ async def main():
                 msg, ack_token = await queue_client.dequeue()
 
                 if msg is not None:
-                    logger.info("Task found. Start processing..")
+                    logger.info("Task found. Start processing...")
+                    logger.debug(f"Message: {msg}")
+
                     await process_task(body=msg)
+
+                    logger.info("Task correctly processed")
 
                     if ack_token is not None:
                         await queue_client.acknowledge(ack_token=ack_token)
+
+                        logger.debug("Message aknowledged")
             except Exception:
                 traceback.print_exc()
 
