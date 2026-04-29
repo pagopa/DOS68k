@@ -47,6 +47,7 @@ services:
       - localstack
       - masking
       - redis-vdb
+      - qdrant
 
   chatbot-evaluate-api:
     build:
@@ -83,6 +84,7 @@ services:
       - redis-queue
       - minio
       - redis-vdb
+      - qdrant
       - localstack
       - chatbot-index-worker
 
@@ -96,6 +98,7 @@ services:
       - redis-queue
       - minio
       - redis-vdb
+      - qdrant
       - localstack
 
   masking:
@@ -147,13 +150,13 @@ services:
     volumes:
       - redis_vdb_data:/data
 
-  # qdrant:
-  #   image: qdrant/qdrant:latest
-  #   container_name: qdrantdb
-  #   ports:
-  #     - "6333:6333"
-  #   volumes:
-  #     - ./qdrant_storage:/qdrant_storage
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrantdb
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_storage:/qdrant_storage
 
   redis-queue:
     image: redis:8.4
