@@ -2,87 +2,114 @@
 
 ## Overview
 
-The chatbot-index-api service manages document indexes for the RAG pipeline. It lets users create and delete indexes, upload documents (PDF, Markdown, plain text) into an index, and list or remove indexed documents.
+The **Chatbot Index API** is the document indexing gateway for the DOS68K RAG platform. It provides a simple HTTP API for creating indexes, uploading documents, and managing the documents within each index.
 
-When a document is uploaded, the file is stored in object storage (MinIO or AWS S3) and a message is enqueued for asynchronous processing by the chatbot-index worker, which handles the actual embedding and vector DB ingestion.
+**Key responsibilities:**
+- Create, delete, and list document indexes
+- Upload documents (PDF, Markdown, plain text) to indexes
+- List and delete documents from indexes
+- Enqueue documents for asynchronous processing by the [Chatbot Index Worker](../worker/README.md)
 
-## Prerequisites
+The service stores uploaded documents in object storage (MinIO or AWS S3) and sends processing messages to a queue (Redis or SQS). The worker service then asynchronously embeds the documents and ingests them into the vector DB.
 
-In order to work locally with this service you need the following softwares:
+## Quick Start
 
-- uv
-- docker
-- [task](https://taskfile.dev/)
+### Prerequisites
 
-## Test
+- `uv` (Python package manager)
+- `docker` and `docker compose`
+- `task` (task runner, optional but recommended)
 
-Run unit tests with coverage report, no threshold enforced:
-
-```bash
-task test:quick
-```
-
-Run unit tests enforcing a minimum coverage threshold (default: 80%):
+### Start the service
 
 ```bash
-task test
-```
-
-To override the minimum coverage threshold:
-
-```bash
-task test COV_THREASHOLD=90
-```
-
-## Env config
-
-This service uses multiple modules from the dos-utility package. In order to use it correctly you have to set an `.env` file with the correct configuration. Follow below links for instructions:
-
-- [Queue](../../dos-utility/docs/features.md#3-queue-interface)
-- [Storage](../../dos-utility/docs/features.md#4-storage-interface)
-- [Vector DB](../../dos-utility/docs/features.md#5-vector-db-interface)
-
-Once you've done that, update your `.env` with these:
-
-```bash
-export FRONTEND_URL=<frontend-url> # For CORS origins, with format http(s)://hostname
-
-export INDEX_DOCUMENTS_BUCKET_NAME=<bucket-name> # Name of the storage bucket for uploaded documents (required, no default)
-
-export EMBED_DIM=768 # Embedding vector dimension. Must match the value configured in the chatbot-index worker. Defaults to 768
-
-export LOG_LEVEL=20 # Python logging level (10=DEBUG, 20=INFO, 30=WARNING, 40=ERROR, 50=CRITICAL). Defaults to 20 (INFO)
-```
-
-## Start service
-
-If you want to independently start this service, run the following commands.
-
-```bash
-cd ../.. # Make sure to be at the repo root level
+cd ../..  # Go to repo root
 docker compose up -d --build chatbot-index-api
 ```
 
-Now you can access the service OpenAPI specification at `http://localhost:8003`.
+The API will be available at `http://localhost:8003`. The OpenAPI specification is at `http://localhost:8003/docs`.
 
-## Post-start activities
+### Create storage bucket
 
-This service interacts with external storage. The bucket specified in `INDEX_DOCUMENTS_BUCKET_NAME` must exist before the service can upload or retrieve documents — it is not created automatically.
+Before uploading documents, create the storage bucket:
 
-- **MinIO (default in compose.yaml)**: access the MinIO web console at `http://localhost:9001` (default credentials: `admin` / `minioadmin`) and create the bucket from the UI, or use the AWS CLI:
-  ```bash
-  aws --endpoint-url http://localhost:9000 s3 mb s3://chatbot-index \
-    --region us-east-1
-  ```
-- **AWS S3**: create the bucket through the AWS console or CLI as you normally would.
-
-To verify all external dependencies (queue, storage, vector DB) are reachable after starting:
-
+**MinIO (default):**
+```bash
+aws --endpoint-url http://localhost:9000 s3 mb s3://chatbot-index --region us-east-1
 ```
-GET http://localhost:8003/health/queue
-GET http://localhost:8003/health/storage
-GET http://localhost:8003/health/vdb
+
+Or access the MinIO console at `http://localhost:9001` (username: `admin`, password: `minioadmin`) and create the bucket from the UI.
+
+**AWS S3:** Use the AWS console or CLI as normal.
+
+### Health check
+
+Verify all dependencies are connected:
+
+```bash
+curl http://localhost:8003/health
+curl http://localhost:8003/health/queue
+curl http://localhost:8003/health/storage
+curl http://localhost:8003/health/vdb
 ```
+
+## Documentation
+
+- **[Configuration Guide](./docs/CONFIGURATION.md)** — Detailed setup for each provider (Redis, SQS, MinIO, S3, Qdrant)
+- **[Integration Guide](./docs/INTEGRATION.md)** — API examples and usage patterns
+
+## API Overview
+
+All endpoints require two headers (except `/health` endpoints):
+- `X-User-Id: <uuid>` — Unique user identifier
+- `X-User-Role: admin` — User role (currently only `admin` is supported)
+
+**Health checks (no auth required):**
+- `GET /health` — Service status
+- `GET /health/{queue,storage,vdb}` — Dependency status
+
+**Index management:**
+- `POST /index/{index_id}` — Create index
+- `DELETE /index/{index_id}` — Delete index
+- `GET /index/all` — List all indexes
+
+**Document management:**
+- `POST /index/{index_id}/documents` — Upload document
+- `GET /index/{index_id}/documents` — List documents
+- `DELETE /index/{index_id}/documents/{document_name}` — Delete document
+
+See the [Integration Guide](./docs/INTEGRATION.md) for detailed endpoint documentation and examples.
+
+## Local Development
+
+### Run tests
+
+```bash
+task test                   # Run with 80% coverage threshold
+task test COV_THREASHOLD=90 # Custom threshold
+task test:quick            # No coverage enforcement
+```
+
+### Lint and format
+
+```bash
+uv run ruff check src
+uv run ruff format src
+```
+
+## Configuration
+
+Minimal configuration needed to start:
+
+```bash
+export FRONTEND_URL=http://localhost          # CORS origin
+export QUEUE_PROVIDER=redis                   # Queue backend
+export STORAGE_PROVIDER=minio                 # Storage backend
+export VECTOR_DB_PROVIDER=redis               # Vector DB backend
+export INDEX_DOCUMENTS_BUCKET_NAME=chatbot-index  # Storage bucket name
+```
+
+See the [Configuration Guide](./docs/CONFIGURATION.md) for complete provider-specific settings.
 
 ---
 
