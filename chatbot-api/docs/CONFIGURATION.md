@@ -11,6 +11,17 @@ The chatbot-api requires configuration for three main areas:
 
 All providers are swappable and can be configured via environment variables. Start with the [Quick Setup](#quick-setup) section, then dive into provider-specific details.
 
+## Authentication
+
+All API endpoints (except health checks) require two headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-User-Id` | UUID of the authenticated user |
+| `X-User-Role` | User's role: `admin` or `user` |
+
+These headers are typically injected by the API gateway (KrakenD) in production. For local testing, include them in each request. See [INTEGRATION.md](./INTEGRATION.md#authentication) for examples.
+
 ## Quick Setup
 
 Copy `.env.template` to `.env` and fill in these essential variables:

@@ -4,14 +4,22 @@ This document describes all HTTP endpoints exposed by the chatbot-api service. T
 
 ## Authentication
 
-All endpoints (except health checks) require the `X-User-Id` header:
+All endpoints (except health checks) require two authentication headers:
+
+| Header | Type | Values | Description |
+|--------|------|--------|-------------|
+| `X-User-Id` | UUID | Any valid UUID | Unique identifier of the authenticated user |
+| `X-User-Role` | String | `admin` or `user` | Role-based access level |
+
+**Example:**
 
 ```bash
 curl -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+     -H "X-User-Role: user" \
      http://localhost:8000/sessions/all
 ```
 
-The `X-User-Id` value should be a UUID representing the current user. In production, this is injected by the API gateway (KrakenD).
+In production, these headers are injected by the API gateway (KrakenD). For local development or testing, include them manually in each request.
 
 ## OpenAPI Documentation
 
@@ -80,6 +88,7 @@ Retrieve all chat sessions for the authenticated user.
 **Headers:**
 ```
 X-User-Id: <uuid>
+X-User-Role: admin | user
 ```
 
 **Response (200 OK):**
@@ -113,6 +122,7 @@ Retrieve a specific session by ID.
 **Headers:**
 ```
 X-User-Id: <uuid>
+X-User-Role: admin | user
 ```
 
 **Response (200 OK):**
@@ -189,6 +199,7 @@ Delete all queries (messages) in a session, but keep the session itself.
 **Headers:**
 ```
 X-User-Id: <uuid>
+X-User-Role: admin | user
 ```
 
 **Response (200 OK):**
@@ -218,6 +229,7 @@ Permanently delete a session and all its queries.
 **Headers:**
 ```
 X-User-Id: <uuid>
+X-User-Role: admin | user
 ```
 
 **Response (204 No Content)**
@@ -249,6 +261,7 @@ Retrieve all messages in a session, ordered by creation date.
 **Headers:**
 ```
 X-User-Id: <uuid>
+X-User-Role: admin | user
 ```
 
 **Response (200 OK):**
@@ -450,8 +463,9 @@ from datetime import datetime
 
 BASE_URL = "http://localhost:8000"
 USER_ID = str(uuid.uuid4())
+USER_ROLE = "user"  # or "admin"
 
-headers = {"X-User-Id": USER_ID}
+headers = {"X-User-Id": USER_ID, "X-User-Role": USER_ROLE}
 
 # Create a session
 session_resp = requests.post(
@@ -490,8 +504,9 @@ requests.delete(f"{BASE_URL}/sessions/{session['id']}", headers=headers)
 ```javascript
 const BASE_URL = "http://localhost:8000";
 const userId = crypto.randomUUID();
+const userRole = "user"; // or "admin"
 
-const headers = { "X-User-Id": userId };
+const headers = { "X-User-Id": userId, "X-User-Role": userRole };
 
 // Create a session
 const sessionResp = await fetch(`${BASE_URL}/sessions`, {

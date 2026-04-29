@@ -35,6 +35,7 @@ curl http://localhost:8000/health
 # Create a session and send a query
 curl -X POST http://localhost:8000/sessions \
   -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -H "X-User-Role: user" \
   -H "Content-Type: application/json" \
   -d '{"title": "My Chat", "isTemporary": false}'
 ```
