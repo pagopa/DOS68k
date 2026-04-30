@@ -15,11 +15,11 @@ jobs:
         working-directory: chatbot-api
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -31,11 +31,11 @@ jobs:
         working-directory: chatbot-evaluate/api
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -47,11 +47,11 @@ jobs:
         working-directory: chatbot-evaluate/worker
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -63,11 +63,11 @@ jobs:
         working-directory: chatbot-index/api
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -79,11 +79,11 @@ jobs:
         working-directory: chatbot-index/worker
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -95,11 +95,11 @@ jobs:
         working-directory: auth
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
 
@@ -111,10 +111,10 @@ jobs:
         working-directory: masking
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
       - name: Install Taskfile
-        uses: go-task/setup-task@v1
+        uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1
       - name: Run test
         run: task test COV_THREASHOLD=${{ vars.COV_THREASHOLD || '80' }}
