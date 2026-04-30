@@ -1,10 +1,10 @@
-ARG PYTHON_VERSION=3.14-slim
+ARG PYTHON_VERSION=3.14-slim@sha256:5b3879b6f3cb77e712644d50262d05a7c146b7312d784a18eff7ff5462e77033
 FROM python:${PYTHON_VERSION} AS builder
 
 WORKDIR /app
 
 # Install uv.
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:3b7b60a81d3c57ef471703e5c83fd4aaa33abcd403596fb22ab07db85ae91347 /uv /uvx /bin/
 
 # Force uv to use the system Python so .venv/bin/python symlinks remain valid
 # in the final stage (uv's managed Python cache is not copied over)
