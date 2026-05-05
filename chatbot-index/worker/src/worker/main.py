@@ -37,5 +37,5 @@ async def main():
                 traceback.print_exc()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     asyncio.run(main())
