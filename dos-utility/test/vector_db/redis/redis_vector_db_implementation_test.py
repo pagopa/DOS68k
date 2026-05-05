@@ -22,6 +22,7 @@ from llama_index.core.vector_stores.types import (
 from test.utils.redis.mocks import get_queue_pool_mock
 from test.vector_db.redis.mocks import (
     RedisClientMock,
+    RedisClientPingExceptionMock,
     AsyncSearchIndexMock,
     AsyncSearchIndexCreationIndexFailedMock,
     AsyncSearchIndexDeletionIndexFailedMock,
@@ -675,3 +676,46 @@ async def test_redis_vector_db_aquery_no_embedding_no_filters(
         ValueError, match="Either query_embedding or filters must be provided"
     ):
         await db.aquery(VectorStoreQuery(similarity_top_k=5))
+
+
+@pytest.mark.asyncio
+async def test_redis_vector_db_is_healthy_returns_true(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientMock)
+
+    db = RedisVectorDB()
+    result = await db.is_healthy()
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_redis_vector_db_is_healthy_returns_false_on_exception(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientPingExceptionMock)
+
+    db = RedisVectorDB()
+    result = await db.is_healthy()
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_redis_vector_db_delete_objects_empty_ids(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientMock)
+
+    async with RedisVectorDB() as db:
+        await db.delete_objects(index_name="test_index", ids=[])
+
+    assert True

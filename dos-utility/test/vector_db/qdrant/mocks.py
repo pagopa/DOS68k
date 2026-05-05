@@ -12,6 +12,11 @@ from qdrant_client.http.models import (
 
 
 @dataclass
+class _HealthStatusMock:
+    status: str = "ok"
+
+
+@dataclass
 class ScrollRecordMock:
     id: str
     payload: dict = field(default_factory=dict)
@@ -32,6 +37,9 @@ class AsyncQdrantClientMock:
 
     async def close(self: Self) -> None:
         pass
+
+    async def health(self: Self) -> _HealthStatusMock:
+        return _HealthStatusMock(status="ok")
 
     async def collection_exists(self: Self, collection_name: str) -> bool:
         return False
@@ -158,3 +166,13 @@ class AsyncQdrantClientDeleteObjectsFailedMock(AsyncQdrantClientMock):
         self: Self, collection_name: str, points_selector: List[str], wait: bool
     ) -> UpdateResult:
         return UpdateResult(status=UpdateStatus.ACKNOWLEDGED)
+
+
+class AsyncQdrantClientHealthUnhealthyMock(AsyncQdrantClientMock):
+    async def health(self: Self) -> _HealthStatusMock:
+        return _HealthStatusMock(status="error")
+
+
+class AsyncQdrantClientHealthExceptionMock(AsyncQdrantClientMock):
+    async def health(self: Self) -> _HealthStatusMock:
+        raise Exception("Connection refused")

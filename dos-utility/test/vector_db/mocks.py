@@ -30,6 +30,9 @@ class VectorDBMock(VectorDBInterface):
     def client(self: Self) -> Any:
         return None
 
+    async def is_healthy(self: Self) -> bool:
+        return True
+
     async def __aenter__(self: Self) -> Self:
         return self
 
