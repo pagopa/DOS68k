@@ -3,8 +3,7 @@ import pytest
 from typing import Tuple
 from httpx import AsyncClient, Response
 
-from src.routers.health import router as health_router
-from src.routers import health
+from src.modules.health.controller import router as health_router
 
 from test.mocks import QueueMock, StorageMock, VectorDBMock
 
@@ -44,8 +43,6 @@ async def test_health_check_queue_disconnected(
     client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
 ):
     client, queue_client, _, _ = client_test
-
-    # Simulate disconnected queue by setting ping_response to False
     queue_client.healthy = False
 
     response: Response = await client.get(url=f"{health_router.prefix}/queue")
@@ -61,9 +58,7 @@ async def test_health_check_queue_disconnected(
 @pytest.mark.asyncio
 async def test_health_check_storage_connected(
     client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
-    monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr(health, "StorageInterface", StorageMock)
     client, _, _, _ = client_test
 
     response: Response = await client.get(url=f"{health_router.prefix}/storage")
@@ -79,10 +74,7 @@ async def test_health_check_storage_connected(
 @pytest.mark.asyncio
 async def test_health_check_storage_disconnected(
     client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
-    monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr(health, "StorageInterface", StorageMock)
-
     client, _, storage_client, _ = client_test
     storage_client.healthy = False
 
@@ -93,4 +85,37 @@ async def test_health_check_storage_disconnected(
         "status": "ok",
         "service": "Chatbot Index API",
         "storage": "NOT connected",
+    }
+
+
+@pytest.mark.asyncio
+async def test_health_check_vdb_connected(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
+    client, _, _, _ = client_test
+
+    response: Response = await client.get(url=f"{health_router.prefix}/vdb")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "service": "Chatbot Index API",
+        "vector_db": "connected",
+    }
+
+
+@pytest.mark.asyncio
+async def test_health_check_vdb_disconnected(
+    client_test: Tuple[AsyncClient, QueueMock, StorageMock, VectorDBMock],
+):
+    client, _, _, vdb_client = client_test
+    vdb_client.healthy = False
+
+    response: Response = await client.get(url=f"{health_router.prefix}/vdb")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ok",
+        "service": "Chatbot Index API",
+        "vector_db": "NOT connected",
     }

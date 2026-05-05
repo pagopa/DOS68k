@@ -29,14 +29,14 @@ class MinioMock:
         return HTTPResponseMock(b"mocked data")
 
     def put_object(
-        self: Self, bucket_name: str, object_name: str, data: BytesIO, content_type: str
+        self: Self, bucket_name: str, object_name: str, data: BytesIO, content_type: str, **kwargs
     ) -> None:
         pass
 
     def remove_object(self: Self, bucket_name: str, object_name: str) -> None:
         pass
 
-    def list_objects(self: Self, bucket_name: str) -> Iterator[Object]:
+    def list_objects(self: Self, bucket_name: str, **kwargs) -> Iterator[Object]:
         return [
             Object(bucket_name="bucket-name", object_name="mocked-object-1"),
             Object(bucket_name="bucket-name", object_name="mocked-object-2"),

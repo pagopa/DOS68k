@@ -6,7 +6,6 @@ from httpx import AsyncClient, Response
 
 from src.modules.index.controller import router as index_router
 from src.modules.index.service import get_index_service
-from src.modules.auth import get_user_id
 
 from test.mocks import QueueMock, StorageMock, VectorDBMock
 from test.modules.index.mocks import (
@@ -20,7 +19,7 @@ from test.modules.index.mocks import (
 )
 
 
-HEADERS = {"x-user-id": MOCK_USER_ID}
+HEADERS = {"x-user-id": MOCK_USER_ID, "x-user-role": "admin"}
 
 
 @pytest.mark.asyncio
@@ -40,7 +39,7 @@ async def test_create_index_201(
 
     assert response.status_code == 201
     data = response.json()
-    assert data["index_id"] == "my-index"
+    assert data["indexId"] == "my-index"
     assert data["userId"] == MOCK_USER_ID
     assert "createdAt" in data
 

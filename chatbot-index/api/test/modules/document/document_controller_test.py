@@ -6,7 +6,6 @@ from httpx import AsyncClient, Response
 
 from src.modules.document.controller import router as document_router
 from src.modules.document.service import get_document_service
-from src.modules.auth import get_user_id
 
 from test.mocks import QueueMock, StorageMock, VectorDBMock
 from test.modules.document.mocks import (
@@ -22,7 +21,7 @@ from test.modules.document.mocks import (
 )
 
 
-HEADERS = {"x-user-id": MOCK_USER_ID}
+HEADERS = {"x-user-id": MOCK_USER_ID, "x-user-role": "admin"}
 INDEX_ID = "test-index"
 DOCUMENT_NAME = "test.pdf"
 BASE_URL = document_router.prefix.replace("{index_id}", INDEX_ID)
