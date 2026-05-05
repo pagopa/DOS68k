@@ -2,6 +2,7 @@ from typing import Self, List, Dict, Optional, BinaryIO
 from fastapi import HTTPException, status
 
 from dos_utility.storage import ObjectInfo
+from dos_utility.vector_db import SearchResult
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +72,18 @@ class MockVectorDBWithIndexes:
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         self.deleted_ids.extend(ids)
 
+    async def filter_search(
+        self: Self, index_name: str, filters, max_results: int = 1000
+    ) -> List[SearchResult]:
+        for f in filters.filters:
+            if f.key == "filename" and f.value not in self.deleted_ids:
+                return [
+                    SearchResult(
+                        id=f.value, filename=f.value, chunk_id=0, content="", score=None
+                    )
+                ]
+        return []
+
 
 class MockVectorDBEmpty:
     """VectorDB mock with no indexes."""
@@ -80,6 +93,11 @@ class MockVectorDBEmpty:
 
     async def delete_objects(self: Self, index_name: str, ids: List[str]) -> None:
         pass
+
+    async def filter_search(
+        self: Self, index_name: str, filters, max_results: int = 1000
+    ) -> List[SearchResult]:
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -99,13 +117,35 @@ class MockQueueClient:
 
 
 # ---------------------------------------------------------------------------
+# IndexService mocks (for service tests)
+# ---------------------------------------------------------------------------
+
+
+class MockIndexServiceExists:
+    """Mock IndexService where all indexes exist."""
+
+    async def verify_index_exists(self: Self, index_id: str) -> None:
+        pass
+
+
+class MockIndexServiceNotExists:
+    """Mock IndexService where no index exists."""
+
+    async def verify_index_exists(self: Self, index_id: str) -> None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Index '{index_id}' does not exist",
+        )
+
+
+# ---------------------------------------------------------------------------
 # Service mocks (for controller tests)
 # ---------------------------------------------------------------------------
 
 
 def get_document_service_upload_202_mock():
     class DocumentServiceMock:
-        async def upload_document(self, index_id: str, file, user: str):
+        async def upload_document(self, index_id: str, file, user_id: str):
             return {
                 "index_id": index_id,
                 "document_name": file.filename,
@@ -117,7 +157,7 @@ def get_document_service_upload_202_mock():
 
 def get_document_service_upload_404_mock():
     class DocumentServiceMock:
-        async def upload_document(self, index_id: str, file, user: str):
+        async def upload_document(self, index_id: str, file, user_id: str):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Index '{index_id}' not found",
@@ -128,7 +168,7 @@ def get_document_service_upload_404_mock():
 
 def get_document_service_upload_415_mock():
     class DocumentServiceMock:
-        async def upload_document(self, index_id: str, file, user: str):
+        async def upload_document(self, index_id: str, file, user_id: str):
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 detail="Unsupported file type '.docx'. Allowed types: .md, .pdf, .txt",

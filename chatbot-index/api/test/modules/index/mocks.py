@@ -1,4 +1,4 @@
-from typing import Self, List
+from typing import Self, List, Optional, BinaryIO
 from fastapi import HTTPException, status
 
 from dos_utility.vector_db import (
@@ -6,6 +6,7 @@ from dos_utility.vector_db import (
     IndexCreationException,
     IndexDeletionException,
 )
+from dos_utility.storage import ObjectInfo
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +79,32 @@ class MockVectorDBDeleteFails:
 
     async def delete_index(self: Self, index_name: str) -> None:
         raise IndexDeletionException(msg="deletion failed")
+
+
+# ---------------------------------------------------------------------------
+# Storage mocks (for service tests)
+# ---------------------------------------------------------------------------
+
+
+class MockStorage:
+    def __init__(self: Self, initial_objects: Optional[List[str]] = None):
+        self._objects: List[str] = list(initial_objects) if initial_objects else []
+
+    def is_healthy(self: Self) -> bool:
+        return True
+
+    def list_objects(self: Self, bucket: str) -> List[ObjectInfo]:
+        return [ObjectInfo(key=k) for k in self._objects]
+
+    def delete_object(self: Self, bucket: str, name: str) -> None:
+        if name in self._objects:
+            self._objects.remove(name)
+
+    def put_object(
+        self: Self, bucket: str, name: str, data: BinaryIO, content_type: str
+    ) -> None:
+        if name not in self._objects:
+            self._objects.append(name)
 
 
 # ---------------------------------------------------------------------------
