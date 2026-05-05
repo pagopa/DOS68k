@@ -46,7 +46,9 @@ class IndexService:
     ) -> CreateIndexResponse:
         try:
             await self.verify_index_exists(index_id=index_id)
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Index already exists")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Index already exists"
+            )
         except HTTPException as e:
             # If index does not exists it's ok, it means we can create it
             if e.status_code == status.HTTP_404_NOT_FOUND:

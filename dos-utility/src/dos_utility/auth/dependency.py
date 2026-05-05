@@ -31,6 +31,7 @@ def get_user(
     """
     return User(id=str(x_user_id), role=x_user_role)
 
+
 def get_admin_user(user: Annotated[User, Depends(dependency=get_user)]) -> User:
     """Get user and verify if he has admin role. If not, throw a 403 exception.
 
@@ -44,6 +45,8 @@ def get_admin_user(user: Annotated[User, Depends(dependency=get_user)]) -> User:
         User: logged user
     """
     if user.role is not UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized"
+        )
 
     return user
