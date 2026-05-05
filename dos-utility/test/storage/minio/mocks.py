@@ -29,7 +29,12 @@ class MinioMock:
         return HTTPResponseMock(b"mocked data")
 
     def put_object(
-        self: Self, bucket_name: str, object_name: str, data: BytesIO, content_type: str, **kwargs
+        self: Self,
+        bucket_name: str,
+        object_name: str,
+        data: BytesIO,
+        content_type: str,
+        **kwargs,
     ) -> None:
         pass
 
