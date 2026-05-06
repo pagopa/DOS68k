@@ -1,8 +1,12 @@
 from functools import lru_cache
-from parsers import ChunkData
-from models import get_embed_model, BaseEmbedding
+from logging import Logger
 
 from dos_utility.vector_db import ObjectData
+from dos_utility.utils.logger import get_logger
+
+from parsers import ChunkData
+from models import get_embed_model, BaseEmbedding
+from env import get_global_settings
 
 
 class Embedder:
@@ -17,6 +21,8 @@ class Embedder:
         embed_retry_min_seconds: int,
         model_api_key: str,
     ):
+        settings = get_global_settings()
+        self._logger: Logger = get_logger(name=__name__, level=settings.log_level)
         self.provider = provider
         self.embed_model_id = embed_model_id
         self.embed_batch_size = embed_batch_size
@@ -25,7 +31,6 @@ class Embedder:
         self.embed_retries = embed_retries
         self.embed_retry_min_seconds = embed_retry_min_seconds
         self.model_api_key = model_api_key
-
         self.embed_model: BaseEmbedding = get_embed_model(
             provider=self.provider,
             model_id=self.embed_model_id,
@@ -39,9 +44,16 @@ class Embedder:
 
     def transform(self, chunks: list[ChunkData]) -> list[ObjectData]:
         embedded_chunks = []
-        for chunk in chunks:
+
+        for idx, chunk in enumerate(chunks):
+            if (idx + 1) % max(1, len(chunks) // 10) == 0 or idx == 0:
+                self._logger.debug(
+                    f"Embedding progress: {idx + 1}/{len(chunks)} chunks"
+                )
+
             embedding = self.embed_model.get_text_embedding(chunk.content)
             embedded_chunks.append(ObjectData(**chunk.model_dump(), vector=embedding))
+
         return embedded_chunks
 
 

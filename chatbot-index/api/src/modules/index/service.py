@@ -29,7 +29,7 @@ class IndexService:
         self.settings: Settings = get_settings()
         self.embedding_settings: EmbeddingsSettings = get_embedding_settings()
         self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
-        self.logger: Logger = get_logger(name=__file__, level=self.settings.log_level)
+        self.logger: Logger = get_logger(name=__name__, level=self.settings.log_level)
 
     async def verify_index_exists(self: Self, index_id: str) -> None:
         """If index does not exists, it raises an HTTPException"""

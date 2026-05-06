@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends
 from datetime import datetime
@@ -6,6 +7,7 @@ try:
     from uuid import uuid7
 except ImportError:  # pragma: no cover
     from uuid6 import uuid7  # backport for Python < 3.14  # pragma: no cover
+
 from dos_utility.database.nosql import (
     NoSQLInterface,
     get_nosql_client,
@@ -13,14 +15,20 @@ from dos_utility.database.nosql import (
     KeyCondition,
     ConditionOperator,
 )
+from dos_utility.utils.logger import get_logger
 
 from .env import get_session_settings, SessionSettings
+from ..env import get_logging_settings, LogSettings
 
 
 class SessionRepository:
     def __init__(self: Self, nosql_client: NoSQLInterface):
         self.nosql_client: NoSQLInterface = nosql_client
         self.env: SessionSettings = get_session_settings()
+        self.__log_settings: LogSettings = get_logging_settings()
+        self.logger: Logger = get_logger(
+            name=__name__, level=self.__log_settings.log_level
+        )
 
     async def get_session(
         self: Self, session_id: str, user_id: str
@@ -38,6 +46,7 @@ class SessionRepository:
         )
 
         if len(query_result.items) == 0:
+            self.logger.debug(f"No session '{session_id}' found")
             return None
 
         return query_result.items[0]
