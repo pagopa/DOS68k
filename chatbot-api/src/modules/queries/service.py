@@ -17,9 +17,6 @@ from ..env import (
 from ..utils import format_expiration_dt
 from ..chatbot import Chatbot, get_chatbot
 
-log_settings: LogSettings = get_logging_settings()
-logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
-
 
 class QueryService:
     def __init__(
@@ -32,6 +29,10 @@ class QueryService:
         self.session_repository: SessionRepository = session_repository
         self.chatbot: Chatbot = chatbot
         self.masking_settings: MaskingSettings = get_masking_settings()
+        self.__log_settings: LogSettings = get_logging_settings()
+        self.logger: Logger = get_logger(
+            name=__name__, level=self.__log_settings.log_level
+        )
 
     async def __mask_pii(self: Self, text: str) -> str:
         async with AsyncClient(timeout=Timeout(timeout=20.0)) as client:
@@ -47,6 +48,8 @@ class QueryService:
                 )
 
         masked_text: str = response.json()
+
+        self.logger.debug("Masked PII")
 
         return masked_text
 
@@ -102,20 +105,16 @@ class QueryService:
         question_cleaned: str = nh3.clean(
             html=question
         )  # Sanitize from HTML tags and scripts
-        logger.debug("Sanitized question: %r", question_cleaned)
+        self.logger.debug("Sanitized question: %r", question_cleaned)
 
         # Get session history
         if session_history is None:
             session_history = await self.query_repository.get_queries(
                 session_id=session_id
             )
-        logger.debug(
-            "Session history length: %d messages",
-            len(session_history) if session_history else 0,
-        )
 
         # Generate answer from AI Agent
-        logger.debug("Calling chatbot.chat_generate")
+        self.logger.debug("Generating answer with AI agent...")
         response_json: Dict[str, Any] = await self.chatbot.chat_generate(
             query_str=question_cleaned,
             messages=session_history,
@@ -127,10 +126,8 @@ class QueryService:
         answer_masked: str = answer
 
         if self.masking_settings.mask_pii is True:
-            logger.debug("PII masking enabled, calling masking service")
             question_masked = await self.__mask_pii(text=question_cleaned)
             answer_masked = await self.__mask_pii(text=answer)
-            logger.debug("PII masking completed")
 
         item: Dict[str, Any] = await self.query_repository.create_query(
             session_id=session_id,
@@ -142,7 +139,7 @@ class QueryService:
             },
         )
 
-        logger.debug(
+        self.logger.debug(
             "Query stored - id=%s, session_id=%s", item["id"], item["sessionId"]
         )
 

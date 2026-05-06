@@ -19,6 +19,9 @@ class RedisClientMock:
     async def aclose(self: Self):
         pass
 
+    async def ping(self: Self) -> bool:
+        return True
+
     async def execute_command(self: Self, *args, **kwargs) -> List[bytes]:
         if args[0] == "FT._LIST":
             return [b"index1", b"index2"]
@@ -98,3 +101,8 @@ class AsyncSearchIndexPutObjectsFailedMock(AsyncSearchIndexMock):
 class AsyncSearchIndexDeleteObjectsFailedMock(AsyncSearchIndexMock):
     async def drop_keys(self: Self, *args, **kwargs) -> int:
         raise Exception("Failed to delete objects")
+
+
+class RedisClientPingExceptionMock(RedisClientMock):
+    async def ping(self: Self) -> bool:
+        raise Exception("Connection refused")

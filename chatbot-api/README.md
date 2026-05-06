@@ -1,74 +1,88 @@
 # Chatbot API
 
-## Overview
+The chatbot-api is a FastAPI service that provides session-based chat with an LLM, backed by RAG (Retrieval-Augmented Generation) for document-aware answers. Users can create sessions (chats) and send questions; the service retrieves relevant documents from a vector database and generates answers using an LLM.
 
-The chatbot-api service is responsible for generating answers to user questions through an LLM. Each user can create new sessions (chats) and start chatting with the chatbot. Each session can be either temporary or not. If temporary, all queries (messages) within that session will have an expiration date that matches the one of the session.
+## Quick Start
 
-> ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️ <br>
-> If you choose to use DynamoDB as database, temporary session will be automatically deleted after the expiration date. If you choose any other db that doesn't have this feature, you have to manually set a job to delete expired chats. See the [env](#env-config) section for more details.
-
-## Prerequisites
-
-In order to work locally with this service you need the following softwares:
-
-- uv
-- docker
-- [task](https://taskfile.dev/)
-
-## Test
-
-Run unit tests with coverage report, no threshold enforced:
+### 1. Install Dependencies
 
 ```bash
-task test:quick
+# From the repo root
+docker compose up -d --build chatbot-api
 ```
 
-Run unit tests enforcing a minimum coverage threshold (default: 80%):
+This starts the chatbot-api, plus its dependencies (LocalStack, Redis, and others).
+
+### 2. Configure Environment
+
+Copy `.env.template` to `.env` and update:
 
 ```bash
-task test
+FRONTEND_URL=http://localhost
+VECTOR_DB_PROVIDER=redis
+PROVIDER=google
+MODEL_API_KEY=your-api-key  # Get from https://aistudio.google.com
 ```
 
-To override the minimum coverage threshold:
+See [CONFIGURATION.md](./docs/CONFIGURATION.md) for all options.
+
+### 3. Test the Service
 
 ```bash
-task test COV_THREASHOLD=90
+# Health check
+curl http://localhost:8000/health
+
+# Create a session and send a query
+curl -X POST http://localhost:8000/sessions \
+  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
+  -H "X-User-Role: user" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My Chat", "isTemporary": false}'
 ```
 
-## Env config
+Full API documentation is at `http://localhost:8000`.
 
-This service uses multiple modules from the dos-utility package. In order to use it correctly you have to set an `.env` file with the correct configuration. Follow below links for instructions:
+---
 
-- [NoSQL database](../dos-utility/docs/features.md#6-nosql-db-interface)
-- [Vector db](../dos-utility/docs/features.md#5-vector-db-interface)
+## Documentation
 
-Once you've done that, update your .env with these:
+- **[CONFIGURATION.md](./docs/CONFIGURATION.md)** — Environment variables, provider selection, database setup, customization
+- **[INTEGRATION.md](./docs/INTEGRATION.md)** — Complete REST API reference with examples
+
+---
+
+## Development
+
+### Prerequisites
+
+- `uv` (Python package manager)
+- `docker` and `docker compose`
+- `task` (task runner)
+
+### Run Tests
 
 ```bash
-export FRONTEND_URL=<frontend-url> # For CORS origins, with format http(s)://hostname
-
-export SESSIONS_TABLENAME=sessions # DynamoDB table name for sessions. Defaults to "sessions"
-export QUERY_TABLENAME=queries # DynamoDB table name for queries. Defaults to "queries"
-
-export SESSION_EXPIRATION_DAYS=30 # Number of days after wich the session will be automatically deleted from DynamoDB (only valid for DynamoDB)
-
-export MASK_PII=true # Boolean. If true, the chatbot-api service will call the masking service to mask PII within user question and agent answer before storing them to the DB.
-export MASKING_SERVICE_URL=<masking-url> # With format http(s)://masking-host:<port>. Only populate this variable if MASK_PII is true
-
-export LOG_LEVEL=20 # Python logging level (10=DEBUG, 20=INFO, 30=WARNING, 40=ERROR, 50=CRITICAL). Defaults to 20 (INFO). Set to 10 to enable debug logs across the service, useful for tracing incoming requests, agent reasoning, tool usage, retrieved chunks and generated responses.
+task test                # Run with 80% coverage threshold
+task test:quick         # Run without coverage threshold
+task test COV_THRESHOLD=90  # Override threshold
 ```
+
+Test files use `.env.test` for configuration and don't require a real database.
+
+### Lint & Format
+
+```bash
+uvx ruff check src/       # Lint Python code
+uvx ruff format src/      # Format Python code
+```
+
+---
 
 ## Customization
 
-### Custom RAG tools
+### Custom RAG Tools
 
-The chatbot agent discovers its RAG tools at startup by reading YAML config files from a tools directory. Each YAML file registers one tool backed by a vector DB index. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the full schema and field descriptions.
-
-To provide your own tools, create one YAML file per tool and make them available to the container using **one** of the following methods:
-
-**Option A — Docker volume mount** (recommended for local development)
-
-Uncomment the volumes section in `compose.yaml` under the `chatbot-api` service:
+Mount tool configurations from a local directory using Docker volumes in `compose.yaml`:
 
 ```yaml
 chatbot-api:
@@ -76,25 +90,11 @@ chatbot-api:
     - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
 ```
 
-This mounts the local folder into the container, replacing the built-in config directory. Sample tool configs matching the [populate script](#populate-vector-db) topics are available in [`scripts/tool_config/`](./scripts/tool_config/).
+Or set `TOOLS_CONFIG_DIR=/path/to/tools` in `.env`. Each tool is a YAML file defining a vector index namespace. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the schema.
 
-**Option B — `TOOLS_CONFIG_DIR` environment variable**
+### Custom Agent Behavior
 
-Set the `TOOLS_CONFIG_DIR` env var in your `.env` file to point to a custom directory inside the container:
-
-```bash
-export TOOLS_CONFIG_DIR=/app/my-tools
-```
-
-### Custom agent configuration
-
-The agent's identity, behavioral rules (`system_prompt`), and reasoning format (`system_header`) are defined in a YAML config file. The default config is [`src/modules/chatbot/agent/agent.yaml`](./src/modules/chatbot/agent/agent.yaml).
-
-To override it:
-
-**Option A — Docker volume mount**
-
-Uncomment the agent volume line in `compose.yaml`:
+Mount a custom agent config using Docker volumes in `compose.yaml`:
 
 ```yaml
 chatbot-api:
@@ -102,44 +102,22 @@ chatbot-api:
     - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
 ```
 
-**Option B — `AGENT_CONFIG_PATH` environment variable**
-
-Set the `AGENT_CONFIG_PATH` env var in your `.env` file:
-
-```bash
-export AGENT_CONFIG_PATH=/app/my-agent.yaml
-```
-
-The YAML file must contain the fields: `name`, `description`, `system_prompt`, and `system_header`. See the default [`agent.yaml`](./src/modules/chatbot/agent/agent.yaml) for reference.
+Or set `AGENT_CONFIG_PATH=/path/to/agent.yaml` in `.env`. The file must contain `name`, `description`, `system_prompt`, and `system_header` fields.
 
 ---
 
-## Scripts
+## Populate Vector DB (For Testing)
 
-### Populate vector DB
-
-The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds the vector database with sample documents so you can test the full pipeline (vector DB &rarr; LlamaIndex &rarr; ReAct agent) without a real document ingestion flow.
-
-**Available topics:**
-
-| Topic | Index name | Content |
-|---|---|---|
-| software-dev | `software-dev` | REST APIs, Docker, FastAPI, asyncio, vector databases, RAG, Pydantic |
-| zephyr-corp | `zephyr-corp` | Fictional company HR policies: onboarding, leave, remote work, expenses |
-| borgonero-fc | `borgonero-fc` | Fictional football club: history, stadium, seasons, players, transfers |
-
-**Prerequisites:**
-
-- A running vector DB (Redis or Qdrant). Start Redis with: `docker compose up -d redis-vdb`
-- Run the script from the `chatbot-api` directory so that `uv` picks up the local `.venv` and `dos-utility` dependency
-
-**Usage:**
+The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds sample documents into the vector database:
 
 ```bash
 cd chatbot-api
 
-# Use real Google embeddings instead of random vectors
-uv run python scripts/populate_vector_db.py --provider redis --embed-provider google --google-api-key YOUR_KEY
+uv run python scripts/populate_vector_db.py \
+  --provider redis \
+  --topic software-dev \
+  --embed-provider google \
+  --google-api-key YOUR_KEY
 ```
 
 **Environment variables and CLI flags:**

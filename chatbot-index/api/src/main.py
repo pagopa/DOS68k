@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .env import get_settings
-from .routers import health
+from .modules.index.controller import router as index_router
+from .modules.document.controller import router as document_router
+from .modules.health.controller import router as health_router
 
 app: FastAPI = FastAPI(
     title="Chatbot Index API",
@@ -18,4 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router=health.router)
+app.include_router(router=health_router)
+app.include_router(router=index_router)
+app.include_router(router=document_router)

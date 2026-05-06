@@ -115,6 +115,16 @@ class VectorDBInterface(BasePydanticVectorStore):
         ...
 
     @abstractmethod
+    async def is_healthy(self: Self) -> bool:
+        """Check if the VectorDB service is healthy/reachable.
+        If the implementation could raise an exception when not healthy, it should be caught and False returned.
+
+        Returns:
+            bool: True if healthy, False otherwise.
+        """
+        ...
+
+    @abstractmethod
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
         """Create a new index in the vector database.
         The index will have this static structure:

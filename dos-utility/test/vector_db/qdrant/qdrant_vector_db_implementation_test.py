@@ -29,6 +29,8 @@ from test.vector_db.qdrant.mocks import (
     AsyncQdrantClientDeleteCollectionFailedMock,
     AsyncQdrantClientPutObjectsFailedMock,
     AsyncQdrantClientDeleteObjectsFailedMock,
+    AsyncQdrantClientHealthUnhealthyMock,
+    AsyncQdrantClientHealthExceptionMock,
 )
 
 
@@ -842,3 +844,77 @@ async def test_aquery_no_embedding_no_filters(monkeypatch: pytest.MonkeyPatch):
         ValueError, match="Either query_embedding or filters must be provided"
     ):
         await db.aquery(VectorStoreQuery(similarity_top_k=5))
+
+
+@pytest.mark.asyncio
+async def test_is_healthy_returns_true(monkeypatch: pytest.MonkeyPatch):
+    get_qdrant_vector_db_settings.cache_clear()
+
+    monkeypatch.setattr(
+        implementation,
+        "get_qdrant_vector_db_settings",
+        get_qdrant_vector_db_settings_mock,
+    )
+    monkeypatch.setattr(implementation, "AsyncQdrantClient", AsyncQdrantClientMock)
+
+    db = QdrantVectorDB()
+    result = await db.is_healthy()
+
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_is_healthy_returns_false_when_status_not_ok(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    get_qdrant_vector_db_settings.cache_clear()
+
+    monkeypatch.setattr(
+        implementation,
+        "get_qdrant_vector_db_settings",
+        get_qdrant_vector_db_settings_mock,
+    )
+    monkeypatch.setattr(
+        implementation, "AsyncQdrantClient", AsyncQdrantClientHealthUnhealthyMock
+    )
+
+    db = QdrantVectorDB()
+    result = await db.is_healthy()
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_is_healthy_returns_false_on_exception(monkeypatch: pytest.MonkeyPatch):
+    get_qdrant_vector_db_settings.cache_clear()
+
+    monkeypatch.setattr(
+        implementation,
+        "get_qdrant_vector_db_settings",
+        get_qdrant_vector_db_settings_mock,
+    )
+    monkeypatch.setattr(
+        implementation, "AsyncQdrantClient", AsyncQdrantClientHealthExceptionMock
+    )
+
+    db = QdrantVectorDB()
+    result = await db.is_healthy()
+
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_delete_objects_empty_ids(monkeypatch: pytest.MonkeyPatch):
+    get_qdrant_vector_db_settings.cache_clear()
+
+    monkeypatch.setattr(
+        implementation,
+        "get_qdrant_vector_db_settings",
+        get_qdrant_vector_db_settings_mock,
+    )
+    monkeypatch.setattr(implementation, "AsyncQdrantClient", AsyncQdrantClientMock)
+
+    async with QdrantVectorDB() as db:
+        await db.delete_objects(index_name="test_index", ids=[])
+
+    assert True

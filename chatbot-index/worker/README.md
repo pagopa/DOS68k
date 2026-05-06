@@ -1,33 +1,54 @@
-# Chatbot Index worker
+# Chatbot Index Worker
+
+The index worker is the async document processing engine of DOS68k. It listens to a queue for indexing jobs, downloads documents from object storage, splits them into chunks, generates vector embeddings, and writes them to the vector database — making documents searchable by the chatbot.
 
 ## Prerequisites
 
-In order to work locally with this service you need the following softwares:
-
-- uv
-- docker
+- [uv](https://docs.astral.sh/uv/)
+- [Docker](https://docs.docker.com/get-docker/)
 - [task](https://taskfile.dev/)
 
-## Test
+## Quick start
 
-Run unit tests with coverage report, no threshold enforced:
+### 1. Configure environment
 
-```bash
-task test:quick
-```
-
-Run unit tests enforcing a minimum coverage threshold (default: 80%):
+Copy `.env.template` to `.env` and fill in the required values:
 
 ```bash
-task test
+cp .env.template .env
 ```
 
-To override the minimum coverage threshold:
+At minimum, set these providers:
+- `QUEUE_PROVIDER` — Queue backend (`sqs` or `redis`)
+- `STORAGE_PROVIDER` — Storage backend (`aws_s3` or `minio`)
+- `VECTOR_DB_PROVIDER` — Vector DB backend (`redis` or `qdrant`)
+- `PROVIDER` — Embedding provider (`google`)
+- `MODEL_API_KEY` — API key for the embedding provider
 
+For detailed configuration, see [CONFIGURATION.md](docs/CONFIGURATION.md).
+
+### 2. Run the worker
+
+**Docker (recommended):**
 ```bash
-task test COV_THREASHOLD=90
+docker compose up -d --build chatbot-index-worker
 ```
 
-## Env config
+**Locally:**
+```bash
+uv run src/worker/main.py
+```
 
-This service uses a queue to read messages to process. In order to use it correctly you have to set an `.env` file with the correct queue configuration. Follow instructions [here](../../dos-utility/docs/features.md#3-queue-interface).
+## Supported documents
+
+| Format | MIME type |
+|---|---|
+| PDF | `application/pdf` (text extracted page by page) |
+| Plain text | `text/plain` |
+| Markdown | `text/markdown` |
+
+## Next steps
+
+- **Configure providers**: See [CONFIGURATION.md](docs/CONFIGURATION.md) for queue, storage, and vector DB setup
+- **Customize embeddings**: Learn about chunking and embedding settings in [CONFIGURATION.md](docs/CONFIGURATION.md)
+- **Test**: Run `task test` to verify the setup

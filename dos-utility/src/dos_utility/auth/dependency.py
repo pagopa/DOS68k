@@ -44,6 +44,8 @@ def get_admin_user(user: Annotated[User, Depends(dependency=get_user)]) -> User:
         User: logged user
     """
     if user.role is not UserRole.ADMIN:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Unauthorized"
+        )
 
     return user

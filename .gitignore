@@ -9,3 +9,9 @@ vector-db/
 localstack/data/
 .venv
 qdrant_storage/
+
+*.ipynb
+chatbot-index/evaluation*
+Makefile
+chatbot-api/evaluation*
+chatbot-index/worker/scripts*

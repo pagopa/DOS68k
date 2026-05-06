@@ -1,5 +1,6 @@
 import pytest
 
+from io import BytesIO
 from typing import BinaryIO, List
 from dos_utility.storage.minio import implementation
 from dos_utility.storage.minio.implementation import MinIO
@@ -79,7 +80,7 @@ def test_minio_put_object(monkeypatch: pytest.MonkeyPatch):
     minio.put_object(
         bucket="test-bucket",
         name="test-object",
-        data=b"test data",
+        data=BytesIO(b"test data"),
         content_type="text/plain",
     )
 
