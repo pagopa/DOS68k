@@ -149,7 +149,7 @@ class Chatbot:
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "context": [],
+                "context": {},
             }
 
         logger.debug(
@@ -214,14 +214,11 @@ class Chatbot:
         chat_history: List[ChatMessage] = self.__messages_to_chathistory(
             messages=messages
         )
-        logger.debug(
-            "chat_generate - query=%r, chat_history_length=%d",
-            query_str,
-            len(chat_history),
-        )
+        logger.debug(f"Converted chat history, {len(chat_history)} messages")
 
         try:
             ctx: Context = Context.from_dict(workflow=self.agent, data={})
+
             logger.debug("Running agent...")
             engine_response: AgentOutput = await self.agent.run(
                 user_msg=query_str,
@@ -229,9 +226,8 @@ class Chatbot:
                 ctx=ctx,
                 early_stopping_method="generate",
             )
-            logger.debug(
-                "Agent run completed - response type=%s", type(engine_response).__name__
-            )
+            logger.debug("Agent run completed")
+
             response_json: Dict[str, Any] = self.__get_response_json(
                 engine_response=engine_response
             )
@@ -239,7 +235,7 @@ class Chatbot:
             response_json = {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "context": [],
+                "context": {},
             }
             logger.warning(f"Exception: {e}")
 

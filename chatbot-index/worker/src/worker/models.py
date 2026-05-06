@@ -1,11 +1,14 @@
+from logging import Logger
 from typing import Literal, Optional
 from google.genai import types
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
-# from dos_utility.utils.logger import get_logger
-# from ..env import get_logging_settings, LogSettings
-# log_settings: LogSettings = get_logging_settings()
-# logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
+from dos_utility.utils.logger import get_logger
+
+from env import get_global_settings
+
+settings = get_global_settings()
+logger: Logger = get_logger(name=__name__, level=settings.log_level)
 
 
 def get_embed_model(
@@ -35,6 +38,10 @@ def get_embed_model(
     if provider == "google":
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
+        logger.debug(
+            f"Loading embedding model - provider={provider}, model_id={model_id}, embed_dim={embed_dim}, batch_size={embed_batch_size}, task_type={task_type}"
+        )
+
         embed_model = GoogleGenAIEmbedding(
             model_name=model_id,
             api_key=api_key,
@@ -46,6 +53,9 @@ def get_embed_model(
                 task_type=task_type,
             ),
         )
-        # logger.debug("Embedding model loaded - provider=google, model_id=%s, embed_dim=%s", model_id, embed_dim)
+
+        logger.debug(
+            f"Embedding model successfully initialized - provider={provider}, model_id={model_id}"
+        )
 
     return embed_model

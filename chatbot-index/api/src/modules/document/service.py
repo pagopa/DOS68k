@@ -42,7 +42,7 @@ class DocumentService:
         self.settings: Settings = get_settings()
         self.index_bucket_settings: IndexBucketSettings = get_index_bucket_settings()
         self.index_service: IndexService = index_service
-        self.logger: Logger = get_logger(name=__file__, level=self.settings.log_level)
+        self.logger: Logger = get_logger(name=__name__, level=self.settings.log_level)
 
     @staticmethod
     def _validate_file_extension(filename: str) -> None:
@@ -148,7 +148,7 @@ class DocumentService:
             self.logger.debug(f"Found {vdb_objects_len} chunks to delete")
 
             if vdb_objects_len == 0:
-                self.logger.debug("No more chunks to delete, loop ended")
+                self.logger.debug("No more chunks to delete")
                 break
 
             await self.vdb.delete_objects(

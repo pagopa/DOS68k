@@ -2,8 +2,13 @@ import pytest
 
 from src.worker import loaders
 from src.worker.loaders import (
-    Message, Document, PDFLoader, TextLoader, DocumentLoader,
-    get_loaders, get_document_loader,
+    Message,
+    Document,
+    PDFLoader,
+    TextLoader,
+    DocumentLoader,
+    get_loaders,
+    get_document_loader,
 )
 from test.worker.mocks import StorageMock, PyMuPDFMock
 
@@ -21,25 +26,25 @@ def test_get_loaders():
 
 def test_message_model():
     msg = Message(
-        indexId="idx1",
-        userId="user1",
-        objectKey="doc.pdf",
-        documentType="application/pdf",
+        index_id="idx1",
+        user_id="user1",
+        object_key="doc.pdf",
+        document_type="application/pdf",
     )
 
-    assert msg.indexId == "idx1"
-    assert msg.userId == "user1"
-    assert msg.objectKey == "doc.pdf"
-    assert msg.documentType == "application/pdf"
+    assert msg.index_id == "idx1"
+    assert msg.user_id == "user1"
+    assert msg.object_key == "doc.pdf"
+    assert msg.document_type == "application/pdf"
 
 
 def test_message_model_invalid_document_type():
     with pytest.raises(Exception):
         Message(
-            indexId="idx1",
-            userId="user1",
-            objectKey="doc.pdf",
-            documentType="application/xml",
+            index_id="idx1",
+            user_id="user1",
+            object_key="doc.pdf",
+            document_type="application/xml",
         )
 
 
@@ -65,10 +70,10 @@ def test_document_loader_read(monkeypatch):
 
     document_loader = DocumentLoader(bucket_name="test-bucket")
     msg = Message(
-        indexId="idx1",
-        userId="user1",
-        objectKey="doc.txt",
-        documentType="text/plain",
+        index_id="idx1",
+        user_id="user1",
+        object_key="doc.txt",
+        document_type="text/plain",
     )
 
     result = document_loader.read(message=msg)

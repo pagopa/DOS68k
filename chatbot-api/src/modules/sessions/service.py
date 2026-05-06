@@ -1,9 +1,13 @@
+from logging import Logger
 from typing import Self, List, Annotated, Dict, Any, Optional
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 
+from dos_utility.utils.logger import get_logger
+
 from .env import get_session_settings, SessionSettings
 from .repository import SessionRepository, get_session_repository
+from ..env import get_logging_settings, LogSettings
 from ..queries.repository import get_query_repository, QueryRepository
 from ..utils import format_expiration_dt
 
@@ -17,6 +21,10 @@ class SessionService:
         self.session_repository: SessionRepository = session_repository
         self.query_repository: QueryRepository = query_repository
         self.settings: SessionSettings = get_session_settings()
+        self.__log_settings: LogSettings = get_logging_settings()
+        self.logger: Logger = get_logger(
+            name=__name__, level=self.__log_settings.log_level
+        )
 
     async def get_session(self: Self, session_id: str, user_id: str) -> Dict[str, Any]:
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(
@@ -93,6 +101,8 @@ class SessionService:
             await self.query_repository.delete_query(
                 query_id=query["id"], session_id=session_id
             )
+
+        self.logger.debug("All session queries deleted")
 
     async def clear_session(
         self: Self, session_id: str, user_id: str

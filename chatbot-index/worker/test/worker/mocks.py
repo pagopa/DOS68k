@@ -36,10 +36,17 @@ class StorageSettingsMock:
 
 
 class LoggerMock:
-    def info(self, *args, **kwargs): pass
-    def debug(self, *args, **kwargs): pass
-    def error(self, *args, **kwargs): pass
-    def warning(self, *args, **kwargs): pass
+    def info(self, *args, **kwargs):
+        pass
+
+    def debug(self, *args, **kwargs):
+        pass
+
+    def error(self, *args, **kwargs):
+        pass
+
+    def warning(self, *args, **kwargs):
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +55,9 @@ class LoggerMock:
 
 
 class QueueClientMock:
-    def __init__(self: Self, messages: List[Optional[bytes]], ack_tokens: List[Optional[str]]):
+    def __init__(
+        self: Self, messages: List[Optional[bytes]], ack_tokens: List[Optional[str]]
+    ):
         self._messages = messages
         self._ack_tokens = ack_tokens
         self._index = 0
@@ -76,6 +85,7 @@ def make_queue_client_ctx_mock(client: QueueClientMock):
     @asynccontextmanager
     async def ctx_mock():
         yield client
+
     return ctx_mock
 
 
@@ -106,9 +116,13 @@ class VectorDBMock:
         return list(self._indexes)
 
     async def create_index(self: Self, index_name: str, vector_dim: int) -> None:
-        self.create_index_calls.append({"index_name": index_name, "vector_dim": vector_dim})
+        self.create_index_calls.append(
+            {"index_name": index_name, "vector_dim": vector_dim}
+        )
 
-    async def filter_search(self: Self, index_name: str, filters, max_results: int) -> List:
+    async def filter_search(
+        self: Self, index_name: str, filters, max_results: int
+    ) -> List:
         return self._filter_results
 
     async def put_objects(self: Self, index_name: str, data: list) -> None:
@@ -122,6 +136,7 @@ def make_vector_db_ctx_mock(vdb: VectorDBMock):
     @asynccontextmanager
     async def ctx_mock(**kwargs):
         yield vdb
+
     return ctx_mock
 
 

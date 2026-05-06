@@ -15,22 +15,27 @@ from test.worker.mocks import (
     make_vector_db_ctx_mock,
 )
 
-TASK_BODY = json.dumps({
-    "indexId": "idx1",
-    "userId": "user1",
-    "objectKey": "doc.pdf",
-    "documentType": "application/pdf",
-}).encode()
+TASK_BODY = json.dumps(
+    {
+        "indexId": "idx1",
+        "userId": "user1",
+        "objectKey": "doc.pdf",
+        "documentType": "application/pdf",
+    }
+).encode()
 
 _MOCK_DOCUMENT = Document(filename="doc.pdf", content=["page 1"])
 _MOCK_CHUNKS = [ChunkData(filename="doc.pdf", chunk_id=0, content="chunk 1")]
-_MOCK_OBJECTS = [ObjectData(filename="doc.pdf", chunk_id=0, content="chunk 1", vector=[0.1, 0.2])]
+_MOCK_OBJECTS = [
+    ObjectData(filename="doc.pdf", chunk_id=0, content="chunk 1", vector=[0.1, 0.2])
+]
 
 
 def _make_loader_mock():
     class _LoaderMock:
         def read(self, message):
             return _MOCK_DOCUMENT
+
     return _LoaderMock()
 
 
@@ -38,6 +43,7 @@ def _make_parser_mock():
     class _ParserMock:
         def transform(self, document):
             return _MOCK_CHUNKS
+
     return _ParserMock()
 
 
@@ -45,6 +51,7 @@ def _make_embedder_mock():
     class _EmbedderMock:
         def transform(self, chunks):
             return _MOCK_OBJECTS
+
     return _EmbedderMock()
 
 
@@ -53,8 +60,12 @@ def _patch_dependencies(monkeypatch, vdb_mock: VectorDBMock):
     monkeypatch.setattr(task, "get_task_settings", lambda: TaskSettingsMock())
     monkeypatch.setattr(task, "get_storage_settings", lambda: StorageSettingsMock())
     monkeypatch.setattr(task, "get_logger", lambda name, level: LoggerMock())
-    monkeypatch.setattr(task, "get_document_loader", lambda bucket_name: _make_loader_mock())
-    monkeypatch.setattr(task, "get_parser", lambda chunk_size, chunk_overlap: _make_parser_mock())
+    monkeypatch.setattr(
+        task, "get_document_loader", lambda bucket_name: _make_loader_mock()
+    )
+    monkeypatch.setattr(
+        task, "get_parser", lambda chunk_size, chunk_overlap: _make_parser_mock()
+    )
     monkeypatch.setattr(task, "get_embedder", lambda **kwargs: _make_embedder_mock())
     monkeypatch.setattr(task, "get_vector_db_ctx", make_vector_db_ctx_mock(vdb_mock))
 
@@ -76,7 +87,9 @@ async def test_process_task_index_not_exists(monkeypatch):
 
 async def test_process_task_index_exists(monkeypatch):
     existing_results = [
-        SearchResult(id="old_id_1", filename="doc.pdf", chunk_id=0, content="old", score=None),
+        SearchResult(
+            id="old_id_1", filename="doc.pdf", chunk_id=0, content="old", score=None
+        ),
     ]
     vdb_mock = VectorDBMock(indexes=["idx1"], filter_results=existing_results)
     _patch_dependencies(monkeypatch, vdb_mock)

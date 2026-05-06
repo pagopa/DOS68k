@@ -16,7 +16,9 @@ _TASK_BODY = b'{"indexId": "idx1", "userId": "user1", "objectKey": "doc.pdf", "d
 def _patch_dependencies(monkeypatch, queue_client: QueueClientMock):
     monkeypatch.setattr(main, "get_global_settings", lambda: GlobalSettingsMock())
     monkeypatch.setattr(main, "get_logger", lambda name, level: LoggerMock())
-    monkeypatch.setattr(main, "get_queue_client_ctx", make_queue_client_ctx_mock(queue_client))
+    monkeypatch.setattr(
+        main, "get_queue_client_ctx", make_queue_client_ctx_mock(queue_client)
+    )
 
 
 async def test_main_processes_task_and_acknowledges(monkeypatch):
@@ -83,7 +85,6 @@ async def test_main_catches_process_task_exception(monkeypatch):
         raise Exception("processing error")
 
     monkeypatch.setattr(main, "process_task", _mock_process_task)
-    monkeypatch.setattr(main.traceback, "print_exc", lambda: None)
 
     with pytest.raises(SystemExit):
         await main.main()
