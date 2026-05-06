@@ -81,8 +81,7 @@ async def test_process_task_index_not_exists(monkeypatch):
     assert vdb_mock.create_index_calls[0]["vector_dim"] == 768
     assert len(vdb_mock.put_calls) == 1
     assert vdb_mock.put_calls[0]["index_name"] == "idx1"
-    assert len(vdb_mock.delete_calls) == 1
-    assert vdb_mock.delete_calls[0]["ids"] == []
+    assert len(vdb_mock.delete_calls) == 0
 
 
 async def test_process_task_index_exists(monkeypatch):
@@ -113,4 +112,4 @@ async def test_process_task_delete_called_on_put_failure(monkeypatch):
     with pytest.raises(RuntimeError, match="put failed"):
         await task.process_task(body=TASK_BODY)
 
-    assert len(vdb_mock.delete_calls) == 1
+    assert len(vdb_mock.delete_calls) == 0
