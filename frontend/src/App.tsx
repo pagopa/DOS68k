@@ -6,6 +6,7 @@ import { RequireAdmin } from '@/routes/require-admin'
 import { LoginPage } from '@/pages/login'
 import { ChatPage } from '@/pages/chat'
 import { AdminPage } from '@/pages/admin'
+import { Toaster } from '@/components/ui/sonner'
 
 function RootRedirect() {
   const { user } = useAuth()
@@ -23,6 +24,10 @@ function AppRoutes() {
         element={<RequireAuth><ChatPage /></RequireAuth>}
       />
       <Route
+        path="/chat/:sessionId"
+        element={<RequireAuth><ChatPage /></RequireAuth>}
+      />
+      <Route
         path="/admin"
         element={<RequireAuth><RequireAdmin><AdminPage /></RequireAdmin></RequireAuth>}
       />
@@ -35,6 +40,7 @@ export default function App() {
     <BrowserRouter>
       <AuthContextProvider>
         <AppRoutes />
+        <Toaster />
       </AuthContextProvider>
     </BrowserRouter>
   )

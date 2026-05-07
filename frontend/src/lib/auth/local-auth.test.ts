@@ -31,9 +31,14 @@ describe('LocalAuthProvider', () => {
     expect(auth.isAuthenticated()).toBe(true)
   })
 
-  it('getUser returns the persisted role after login', () => {
+  it('getUser returns the persisted role and a fixed id after login', () => {
     auth.login('admin')
-    expect(auth.getUser()).toEqual({ role: 'admin' })
+    expect(auth.getUser()).toEqual({ role: 'admin', id: '00000000-0000-0000-0000-000000000002' })
+  })
+
+  it('getUser returns different ids per role', () => {
+    auth.login('user')
+    expect(auth.getUser()?.id).toBe('00000000-0000-0000-0000-000000000001')
   })
 
   it('getToken returns a non-empty string after login', () => {
@@ -65,6 +70,6 @@ describe('LocalAuthProvider', () => {
     auth.login('admin')
     const newInstance = new LocalAuthProvider()
     expect(newInstance.isAuthenticated()).toBe(true)
-    expect(newInstance.getUser()).toEqual({ role: 'admin' })
+    expect(newInstance.getUser()).toMatchObject({ role: 'admin' })
   })
 })
