@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { QueryResponseDTO } from '@/lib/api'
+import { Sources } from './sources'
 
 interface PendingEntry {
   question: string
@@ -60,6 +61,7 @@ export function MessageList({ queries, pending }: MessageListProps) {
         <div key={q.id} className="flex flex-col gap-2">
           <QuestionBubble text={q.question} />
           <AnswerBubble text={q.answer} />
+          <Sources context={q.context} />
         </div>
       ))}
 
