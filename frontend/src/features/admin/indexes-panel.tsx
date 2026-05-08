@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,62 @@ import {
 } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
 import { useIndexes, useCreateIndex, useDeleteIndex } from './hooks'
+
+function NewIndexDialog({ onCreated }: { onCreated: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [indexId, setIndexId] = useState('')
+  const { mutate: createIndex, isPending } = useCreateIndex()
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const id = indexId.trim()
+    if (!id) return
+    createIndex(id, {
+      onSuccess: () => {
+        setOpen(false)
+        setIndexId('')
+        onCreated(id)
+      },
+      onError: (err) => {
+        if (err instanceof ApiError && err.status === 409) {
+          toast.error(`Index "${id}" already exists.`)
+        } else {
+          toast.error('Failed to create index.')
+        }
+      },
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button size="sm" className="w-full" onClick={() => setOpen(true)}>
+        <Plus className="h-4 w-4" />New Index
+      </Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Index</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
+            placeholder="index-id"
+            value={indexId}
+            onChange={(e) => setIndexId(e.target.value)}
+            autoFocus
+            disabled={isPending}
+          />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" disabled={isPending || !indexId.trim()}>
+              {isPending ? 'Creating…' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function DeleteIndexDialog({
   indexId,
@@ -62,33 +118,11 @@ export function IndexesPanel({
   selectedIndex: string | null
   onSelectIndex: (id: string) => void
 }) {
-  const [newIndexId, setNewIndexId] = useState('')
-  const [inlineError, setInlineError] = useState<string | null>(null)
-
   const { data: indexes, isLoading, isError } = useIndexes()
-  const { mutate: createIndex, isPending: isCreating } = useCreateIndex()
   const { mutate: deleteIndex } = useDeleteIndex()
 
   if (isError) {
     toast.error('Failed to load indexes')
-  }
-
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    const id = newIndexId.trim()
-    if (!id) return
-    setInlineError(null)
-    createIndex(id, {
-      onSuccess: () => {
-        setNewIndexId('')
-        onSelectIndex(id)
-      },
-      onError: (err) => {
-        if (err instanceof ApiError && err.status === 409) {
-          setInlineError(`Index "${id}" already exists.`)
-        }
-      },
-    })
   }
 
   const sorted = indexes ? [...indexes].sort() : []
@@ -97,21 +131,7 @@ export function IndexesPanel({
     <div className="flex flex-col h-full">
       <div className="border-b p-3">
         <p className="mb-2 text-xs font-semibold uppercase text-gray-500 tracking-wide">Indexes</p>
-        <form onSubmit={handleCreate} className="flex gap-2">
-          <Input
-            placeholder="index-id"
-            value={newIndexId}
-            onChange={(e) => { setNewIndexId(e.target.value); setInlineError(null) }}
-            className="flex-1 text-sm"
-            disabled={isCreating}
-          />
-          <Button type="submit" size="sm" disabled={isCreating || !newIndexId.trim()}>
-            {isCreating ? 'Creating…' : 'New'}
-          </Button>
-        </form>
-        {inlineError && (
-          <p role="alert" className="mt-1.5 text-xs text-red-600">{inlineError}</p>
-        )}
+        <NewIndexDialog onCreated={onSelectIndex} />
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
