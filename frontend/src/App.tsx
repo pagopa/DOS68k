@@ -1,53 +1,47 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import HealthDashboard from './pages/HealthDashboard'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthContextProvider } from '@/lib/auth/context'
+import { useAuth } from '@/lib/auth/use-auth'
+import { RequireAuth } from '@/routes/require-auth'
+import { RequireAdmin } from '@/routes/require-admin'
+import { LoginPage } from '@/pages/login'
+import { ChatPage } from '@/pages/chat'
+import { AdminPage } from '@/pages/admin'
+import { Toaster } from '@/components/ui/sonner'
 
-function Home() {
-  const [count, setCount] = useState(0)
+function RootRedirect() {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/login" replace />
+  return <Navigate to={user.role === 'admin' ? '/admin' : '/chat'} replace />
+}
 
+function AppRoutes() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-        <p>
-          <Link to="/health" style={{ color: '#646cff', textDecoration: 'underline' }}>
-            Go to Health Dashboard
-          </Link>
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route
+        path="/chat"
+        element={<RequireAuth><ChatPage /></RequireAuth>}
+      />
+      <Route
+        path="/chat/:sessionId"
+        element={<RequireAuth><ChatPage /></RequireAuth>}
+      />
+      <Route
+        path="/admin"
+        element={<RequireAuth><RequireAdmin><AdminPage /></RequireAdmin></RequireAuth>}
+      />
+    </Routes>
   )
 }
 
-function App() {
+export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/health" element={<HealthDashboard />} />
-      </Routes>
-    </Router>
+    <BrowserRouter>
+      <AuthContextProvider>
+        <AppRoutes />
+        <Toaster />
+      </AuthContextProvider>
+    </BrowserRouter>
   )
 }
-
-export default App
