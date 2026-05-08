@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { createApiClient, ApiError } from './index'
-import type { SessionDTO, QueryResponseDTO } from './types'
+import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus } from './types'
 
 const BASE = 'http://test-gateway'
 
@@ -370,5 +370,253 @@ describe('createQuery', () => {
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
+  })
+})
+
+// ------- getIndexes -------
+
+describe('getIndexes', () => {
+  it('sends GET to /index/all', async () => {
+    let capturedMethod: string | undefined
+    server.use(
+      http.get(`${BASE}/index/all`, ({ request }) => {
+        capturedMethod = request.method
+        return HttpResponse.json(['idx-1', 'idx-2'])
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).getIndexes()
+    expect(capturedMethod).toBe('GET')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.get(`${BASE}/index/all`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json([])
+      })
+    )
+    await createApiClient(BASE, () => 'idx-token', () => null).getIndexes()
+    expect(authHeader).toBe('Bearer idx-token')
+  })
+
+  it('parses response JSON into string[]', async () => {
+    server.use(
+      http.get(`${BASE}/index/all`, () => HttpResponse.json(['idx-1', 'idx-2']))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).getIndexes()
+    expect(result).toEqual(['idx-1', 'idx-2'])
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.get(`${BASE}/index/all`, () => HttpResponse.json({ detail: 'Forbidden' }, { status: 403 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).getIndexes().catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(403)
+  })
+})
+
+// ------- createIndex -------
+
+const mockCreateIndexResponse: CreateIndexResponse = {
+  indexId: 'my-index',
+  userId: '00000000-0000-0000-0000-000000000002',
+  createdAt: '2024-01-15T10:00:00Z',
+}
+
+describe('createIndex', () => {
+  it('sends POST to /index/{indexId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(`${BASE}/index/my-index`, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json(mockCreateIndexResponse, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).createIndex('my-index')
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain('/index/my-index')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(`${BASE}/index/my-index`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json(mockCreateIndexResponse, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => 'admin-tok', () => null).createIndex('my-index')
+    expect(authHeader).toBe('Bearer admin-tok')
+  })
+
+  it('parses response into CreateIndexResponse with camelCase aliases', async () => {
+    server.use(
+      http.post(`${BASE}/index/my-index`, () => HttpResponse.json(mockCreateIndexResponse, { status: 201 }))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).createIndex('my-index')
+    expect(result).toEqual(mockCreateIndexResponse)
+    expect(result).toHaveProperty('indexId', 'my-index')
+    expect(result).toHaveProperty('userId')
+    expect(result).not.toHaveProperty('index_id')
+  })
+
+  it('throws ApiError with status 409 on duplicate index', async () => {
+    server.use(
+      http.post(`${BASE}/index/dup`, () => HttpResponse.json({ detail: 'Index already exists' }, { status: 409 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).createIndex('dup').catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(409)
+  })
+
+  it('throws ApiError on other non-2xx', async () => {
+    server.use(
+      http.post(`${BASE}/index/fail`, () => HttpResponse.json({ detail: 'Error' }, { status: 500 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).createIndex('fail').catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(500)
+  })
+})
+
+// ------- deleteIndex -------
+
+describe('deleteIndex', () => {
+  it('sends DELETE to /index/{indexId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.delete(`${BASE}/index/my-index`, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json({ message: "Index 'my-index' deleted successfully" })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).deleteIndex('my-index')
+    expect(capturedMethod).toBe('DELETE')
+    expect(capturedUrl).toContain('/index/my-index')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.delete(`${BASE}/index/my-index`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json({ message: 'deleted' })
+      })
+    )
+    await createApiClient(BASE, () => 'del-tok', () => null).deleteIndex('my-index')
+    expect(authHeader).toBe('Bearer del-tok')
+  })
+
+  it('throws ApiError with status 404 when index not found', async () => {
+    server.use(
+      http.delete(`${BASE}/index/ghost`, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).deleteIndex('ghost').catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(404)
+  })
+})
+
+// ------- health endpoints -------
+
+const mockHealth: HealthStatus = { status: 'ok', service: 'Chatbot Index API' }
+
+describe('getHealthQueue', () => {
+  it('sends GET to /health/queue', async () => {
+    let capturedMethod: string | undefined
+    server.use(
+      http.get(`${BASE}/health/queue`, ({ request }) => {
+        capturedMethod = request.method
+        return HttpResponse.json({ ...mockHealth, queue: 'connected' })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).getHealthQueue()
+    expect(capturedMethod).toBe('GET')
+  })
+
+  it('parses response into HealthStatus', async () => {
+    server.use(
+      http.get(`${BASE}/health/queue`, () => HttpResponse.json({ ...mockHealth, queue: 'connected' }))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).getHealthQueue()
+    expect(result).toMatchObject({ status: 'ok', queue: 'connected' })
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.get(`${BASE}/health/queue`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).getHealthQueue().catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(503)
+  })
+})
+
+describe('getHealthStorage', () => {
+  it('sends GET to /health/storage', async () => {
+    let capturedMethod: string | undefined
+    server.use(
+      http.get(`${BASE}/health/storage`, ({ request }) => {
+        capturedMethod = request.method
+        return HttpResponse.json({ ...mockHealth, storage: 'connected' })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).getHealthStorage()
+    expect(capturedMethod).toBe('GET')
+  })
+
+  it('parses response into HealthStatus', async () => {
+    server.use(
+      http.get(`${BASE}/health/storage`, () => HttpResponse.json({ ...mockHealth, storage: 'connected' }))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).getHealthStorage()
+    expect(result).toMatchObject({ status: 'ok', storage: 'connected' })
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.get(`${BASE}/health/storage`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).getHealthStorage().catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(503)
+  })
+})
+
+describe('getHealthVdb', () => {
+  it('sends GET to /health/vdb', async () => {
+    let capturedMethod: string | undefined
+    server.use(
+      http.get(`${BASE}/health/vdb`, ({ request }) => {
+        capturedMethod = request.method
+        return HttpResponse.json({ ...mockHealth, vector_db: 'connected' })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).getHealthVdb()
+    expect(capturedMethod).toBe('GET')
+  })
+
+  it('parses response into HealthStatus', async () => {
+    server.use(
+      http.get(`${BASE}/health/vdb`, () => HttpResponse.json({ ...mockHealth, vector_db: 'connected' }))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).getHealthVdb()
+    expect(result).toMatchObject({ status: 'ok', vector_db: 'connected' })
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.get(`${BASE}/health/vdb`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
+    )
+    const err = await createApiClient(BASE, () => null, () => null).getHealthVdb().catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(503)
   })
 })

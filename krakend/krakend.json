@@ -153,6 +153,114 @@
       ]
     },
     {
+      "endpoint": "/index/all",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/all",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/index/{indexId}",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/{indexId}",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "POST",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/index/{indexId}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/{indexId}",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "DELETE",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/health/queue",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/health/queue",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/health/storage",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/health/storage",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/health/vdb",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/health/vdb",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
       "endpoint": "/chatbot/{path}",
       "method": "GET",
       "output_encoding": "no-op",

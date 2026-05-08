@@ -39,6 +39,20 @@ export interface CreateQueryInput {
   sessionHistory: HistoryEntry[]
 }
 
+export interface CreateIndexResponse {
+  indexId: string
+  userId: string
+  createdAt: string
+}
+
+export interface HealthStatus {
+  status: string
+  service: string
+  queue?: string
+  storage?: string
+  vector_db?: string
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly body?: unknown

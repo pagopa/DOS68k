@@ -1,5 +1,8 @@
 import { ApiError } from './types'
-import type { SessionDTO, CreateSessionInput, QueryResponseDTO, CreateQueryInput } from './types'
+import type {
+  SessionDTO, CreateSessionInput, QueryResponseDTO, CreateQueryInput,
+  CreateIndexResponse, HealthStatus,
+} from './types'
 
 export type GetToken = () => string | null
 export type GetUser = () => { id: string; role: string } | null
@@ -62,6 +65,24 @@ export function createApiClient(baseUrl: string, getToken: GetToken, getUser: Ge
     },
     createQuery(sessionId: string, input: CreateQueryInput): Promise<QueryResponseDTO> {
       return req(`/queries/${sessionId}`, { method: 'POST', json: input })
+    },
+    getIndexes(): Promise<string[]> {
+      return req('/index/all')
+    },
+    createIndex(indexId: string): Promise<CreateIndexResponse> {
+      return req(`/index/${indexId}`, { method: 'POST' })
+    },
+    deleteIndex(indexId: string): Promise<void> {
+      return req(`/index/${indexId}`, { method: 'DELETE' })
+    },
+    getHealthQueue(): Promise<HealthStatus> {
+      return req('/health/queue')
+    },
+    getHealthStorage(): Promise<HealthStatus> {
+      return req('/health/storage')
+    },
+    getHealthVdb(): Promise<HealthStatus> {
+      return req('/health/vdb')
     },
   }
 }

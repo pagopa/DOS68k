@@ -4,4 +4,5 @@ export { ApiError } from './types'
 export type {
   SessionDTO, CreateSessionInput,
   QueryResponseDTO, CreateQueryInput, FileContext, HistoryEntry,
+  CreateIndexResponse, HealthStatus,
 } from './types'
