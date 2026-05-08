@@ -1,5 +1,5 @@
 import { ApiError } from './types'
-import type { SessionDTO, CreateSessionInput } from './types'
+import type { SessionDTO, CreateSessionInput, QueryResponseDTO, CreateQueryInput } from './types'
 
 export type GetToken = () => string | null
 export type GetUser = () => { id: string; role: string } | null
@@ -56,6 +56,12 @@ export function createApiClient(baseUrl: string, getToken: GetToken, getUser: Ge
     },
     deleteSession(id: string): Promise<void> {
       return req(`/sessions/${id}`, { method: 'DELETE' })
+    },
+    getQueries(sessionId: string): Promise<QueryResponseDTO[]> {
+      return req(`/queries/${sessionId}`)
+    },
+    createQuery(sessionId: string, input: CreateQueryInput): Promise<QueryResponseDTO> {
+      return req(`/queries/${sessionId}`, { method: 'POST', json: input })
     },
   }
 }

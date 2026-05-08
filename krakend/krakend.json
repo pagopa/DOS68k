@@ -117,6 +117,42 @@
       ]
     },
     {
+      "endpoint": "/queries/{sessionId}",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/queries/{sessionId}",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/queries/{sessionId}",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/queries/{sessionId}",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "POST",
+          "host": [
+            "http://chatbot-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
       "endpoint": "/chatbot/{path}",
       "method": "GET",
       "output_encoding": "no-op",
