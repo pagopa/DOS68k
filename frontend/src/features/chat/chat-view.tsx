@@ -12,8 +12,8 @@ export function ChatView({ sessionId }: ChatViewProps) {
   const [draft, setDraft] = useState('')
   const [pending, setPending] = useState<{ question: string; isWaiting: boolean } | null>(null)
 
-  const { data: queries = [] } = useQueries(sessionId)
   const mutation = useCreateQuery(sessionId)
+  const { data: queries = [] } = useQueries(sessionId, !mutation.isPending)
 
   function buildHistory(currentQueries: QueryResponseDTO[]) {
     return [...currentQueries]

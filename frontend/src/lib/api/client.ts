@@ -12,9 +12,10 @@ async function doRequest<T>(
   path: string,
   getToken: GetToken,
   getUser: GetUser,
-  init: RequestInit & { json?: unknown } = {}
+  init: RequestInit & { json?: unknown; timeoutMs?: number } = {}
 ): Promise<T> {
-  const { json, ...rest } = init
+  const { json, timeoutMs, ...rest } = init
+  if (timeoutMs) rest.signal = AbortSignal.timeout(timeoutMs)
   const headers: Record<string, string> = {}
 
   const token = getToken()
@@ -64,7 +65,7 @@ export function createApiClient(baseUrl: string, getToken: GetToken, getUser: Ge
       return req(`/queries/${sessionId}`)
     },
     createQuery(sessionId: string, input: CreateQueryInput): Promise<QueryResponseDTO> {
-      return req(`/queries/${sessionId}`, { method: 'POST', json: input })
+      return req(`/queries/${sessionId}`, { method: 'POST', json: input, timeoutMs: 30_000 })
     },
     getIndexes(): Promise<string[]> {
       return req('/index/all')

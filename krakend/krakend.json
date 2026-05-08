@@ -137,6 +137,7 @@
     {
       "endpoint": "/queries/{sessionId}",
       "method": "POST",
+      "timeout": "30000ms",
       "output_encoding": "no-op",
       "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
       "backend": [

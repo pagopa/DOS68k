@@ -52,12 +52,12 @@ export function useDeleteSession() {
   })
 }
 
-export function useQueries(sessionId: string) {
+export function useQueries(sessionId: string, enabled = true) {
   const client = useApiClient()
   return useQuery({
     queryKey: queriesKey(sessionId),
     queryFn: () => client.getQueries(sessionId),
-    enabled: !!sessionId,
+    enabled: !!sessionId && enabled,
   })
 }
 
