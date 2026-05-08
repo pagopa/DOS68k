@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth/use-auth'
 import { createApiClient, ApiError } from '@/lib/api'
 
 const INDEXES_KEY = ['indexes'] as const
+const documentsKey = (indexId: string) => ['documents', indexId] as const
 
 function useApiClient() {
   const { getToken, getUser } = useAuth()
@@ -45,6 +46,41 @@ export function useDeleteIndex() {
     onSuccess: () => qc.invalidateQueries({ queryKey: INDEXES_KEY }),
     onError: (err) => {
       const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to delete index'
+      toast.error(message)
+    },
+  })
+}
+
+export function useDocuments(indexId: string) {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: documentsKey(indexId),
+    queryFn: () => client.getDocuments(indexId),
+    enabled: !!indexId,
+  })
+}
+
+export function useUploadDocument(indexId: string) {
+  const qc = useQueryClient()
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (file: File) => client.uploadDocument(indexId, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: documentsKey(indexId) }),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Upload failed'
+      toast.error(message)
+    },
+  })
+}
+
+export function useDeleteDocument(indexId: string) {
+  const qc = useQueryClient()
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (documentName: string) => client.deleteDocument(indexId, documentName),
+    onSuccess: () => qc.invalidateQueries({ queryKey: documentsKey(indexId) }),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to delete document'
       toast.error(message)
     },
   })

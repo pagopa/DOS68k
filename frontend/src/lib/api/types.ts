@@ -45,6 +45,14 @@ export interface CreateIndexResponse {
   createdAt: string
 }
 
+export interface DocumentInfo {
+  documentName: string
+}
+
+export interface UploadDocumentResponse {
+  message: string
+}
+
 export interface HealthStatus {
   status: string
   service: string

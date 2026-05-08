@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { createApiClient, ApiError } from './index'
-import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus } from './types'
+import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse } from './types'
 
 const BASE = 'http://test-gateway'
 
@@ -618,5 +618,231 @@ describe('getHealthVdb', () => {
     const err = await createApiClient(BASE, () => null, () => null).getHealthVdb().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(503)
+  })
+})
+
+// ------- getDocuments -------
+
+const mockDocuments: DocumentInfo[] = [
+  { documentName: 'readme.pdf' },
+  { documentName: 'guide.md' },
+]
+
+describe('getDocuments', () => {
+  it('sends GET to /index/{indexId}/documents', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.get(`${BASE}/index/my-index/documents`, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json(mockDocuments)
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).getDocuments('my-index')
+    expect(capturedMethod).toBe('GET')
+    expect(capturedUrl).toContain('/index/my-index/documents')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.get(`${BASE}/index/my-index/documents`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json([])
+      })
+    )
+    await createApiClient(BASE, () => 'doc-token', () => null).getDocuments('my-index')
+    expect(authHeader).toBe('Bearer doc-token')
+  })
+
+  it('parses response JSON into DocumentInfo[]', async () => {
+    server.use(
+      http.get(`${BASE}/index/my-index/documents`, () => HttpResponse.json(mockDocuments))
+    )
+    const result = await createApiClient(BASE, () => null, () => null).getDocuments('my-index')
+    expect(result).toEqual(mockDocuments)
+    expect(result[0]).toHaveProperty('documentName', 'readme.pdf')
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.get(`${BASE}/index/no-such/documents`, () =>
+        HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+      )
+    )
+    const err = await createApiClient(BASE, () => null, () => null).getDocuments('no-such').catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(404)
+  })
+})
+
+// ------- uploadDocument -------
+
+const mockUploadResponse: UploadDocumentResponse = { message: 'Upload accepted' }
+
+describe('uploadDocument', () => {
+  it('sends POST to /index/{indexId}/documents', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json(mockUploadResponse, { status: 202 })
+      })
+    )
+    const file = new File(['content'], 'test.pdf', { type: 'application/pdf' })
+    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain('/index/my-index/documents')
+  })
+
+  it('sends multipart FormData with a file field', async () => {
+    let capturedFileField: FormDataEntryValue | null = null
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, async ({ request }) => {
+        const fd = await request.formData()
+        capturedFileField = fd.get('file')
+        return HttpResponse.json(mockUploadResponse, { status: 202 })
+      })
+    )
+    const file = new File(['pdf bytes'], 'report.pdf', { type: 'application/pdf' })
+    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    expect(capturedFileField).not.toBeNull()
+    expect((capturedFileField as unknown as File).size).toBeGreaterThan(0)
+  })
+
+  it('does not set Content-Type: application/json (lets browser set multipart boundary)', async () => {
+    let contentType: string | null = null
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, ({ request }) => {
+        contentType = request.headers.get('Content-Type')
+        return HttpResponse.json(mockUploadResponse, { status: 202 })
+      })
+    )
+    const file = new File(['data'], 'file.md', { type: 'text/markdown' })
+    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    expect(contentType).not.toBe('application/json')
+    expect(contentType).toContain('multipart/form-data')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json(mockUploadResponse, { status: 202 })
+      })
+    )
+    const file = new File(['x'], 'x.txt', { type: 'text/plain' })
+    await createApiClient(BASE, () => 'upload-tok', () => null).uploadDocument('my-index', file)
+    expect(authHeader).toBe('Bearer upload-tok')
+  })
+
+  it('parses 202 response into UploadDocumentResponse', async () => {
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, () =>
+        HttpResponse.json(mockUploadResponse, { status: 202 })
+      )
+    )
+    const file = new File(['x'], 'x.pdf', { type: 'application/pdf' })
+    const result = await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    expect(result).toEqual(mockUploadResponse)
+  })
+
+  it('throws ApiError with status 415 on unsupported media type', async () => {
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, () =>
+        HttpResponse.json({ detail: 'Unsupported media type' }, { status: 415 })
+      )
+    )
+    const file = new File(['x'], 'x.zip', { type: 'application/zip' })
+    const err = await createApiClient(BASE, () => null, () => null)
+      .uploadDocument('my-index', file)
+      .catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(415)
+  })
+
+  it('throws ApiError on other non-2xx', async () => {
+    server.use(
+      http.post(`${BASE}/index/my-index/documents`, () =>
+        HttpResponse.json({ detail: 'Server error' }, { status: 500 })
+      )
+    )
+    const file = new File(['x'], 'x.pdf', { type: 'application/pdf' })
+    const err = await createApiClient(BASE, () => null, () => null)
+      .uploadDocument('my-index', file)
+      .catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(500)
+  })
+})
+
+// ------- deleteDocument -------
+
+describe('deleteDocument', () => {
+  it('sends DELETE to /index/{indexId}/documents/{documentName}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.delete(`${BASE}/index/my-index/documents/readme.pdf`, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    await createApiClient(BASE, () => null, () => null).deleteDocument('my-index', 'readme.pdf')
+    expect(capturedMethod).toBe('DELETE')
+    expect(capturedUrl).toContain('/index/my-index/documents/readme.pdf')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.delete(`${BASE}/index/my-index/documents/readme.pdf`, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return new HttpResponse(null, { status: 204 })
+      })
+    )
+    await createApiClient(BASE, () => 'del-doc-tok', () => null).deleteDocument('my-index', 'readme.pdf')
+    expect(authHeader).toBe('Bearer del-doc-tok')
+  })
+
+  it('resolves to undefined on 204 No Content', async () => {
+    server.use(
+      http.delete(`${BASE}/index/my-index/documents/readme.pdf`, () =>
+        new HttpResponse(null, { status: 204 })
+      )
+    )
+    const result = await createApiClient(BASE, () => null, () => null).deleteDocument('my-index', 'readme.pdf')
+    expect(result).toBeUndefined()
+  })
+
+  it('throws ApiError with status 404 when document not found', async () => {
+    server.use(
+      http.delete(`${BASE}/index/my-index/documents/ghost.pdf`, () =>
+        HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+      )
+    )
+    const err = await createApiClient(BASE, () => null, () => null)
+      .deleteDocument('my-index', 'ghost.pdf')
+      .catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(404)
+  })
+
+  it('throws ApiError on other non-2xx', async () => {
+    server.use(
+      http.delete(`${BASE}/index/my-index/documents/readme.pdf`, () =>
+        HttpResponse.json({ detail: 'Error' }, { status: 500 })
+      )
+    )
+    const err = await createApiClient(BASE, () => null, () => null)
+      .deleteDocument('my-index', 'readme.pdf')
+      .catch(e => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(500)
   })
 })

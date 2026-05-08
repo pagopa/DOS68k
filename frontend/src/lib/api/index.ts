@@ -5,4 +5,5 @@ export type {
   SessionDTO, CreateSessionInput,
   QueryResponseDTO, CreateQueryInput, FileContext, HistoryEntry,
   CreateIndexResponse, HealthStatus,
+  DocumentInfo, UploadDocumentResponse,
 } from './types'

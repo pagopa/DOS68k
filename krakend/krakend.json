@@ -207,6 +207,60 @@
       ]
     },
     {
+      "endpoint": "/index/{indexId}/documents",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/{indexId}/documents",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "GET",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/index/{indexId}/documents",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/{indexId}/documents",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "POST",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
+      "endpoint": "/index/{indexId}/documents/{documentName}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "backend": [
+        {
+          "url_pattern": "/index/{indexId}/documents/{documentName}",
+          "encoding": "no-op",
+          "sd": "static",
+          "method": "DELETE",
+          "host": [
+            "http://chatbot-index-api:8000"
+          ],
+          "disable_host_sanitize": false
+        }
+      ]
+    },
+    {
       "endpoint": "/health/queue",
       "method": "GET",
       "output_encoding": "no-op",

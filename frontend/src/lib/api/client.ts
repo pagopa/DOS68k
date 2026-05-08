@@ -1,7 +1,7 @@
 import { ApiError } from './types'
 import type {
   SessionDTO, CreateSessionInput, QueryResponseDTO, CreateQueryInput,
-  CreateIndexResponse, HealthStatus,
+  CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse,
 } from './types'
 
 export type GetToken = () => string | null
@@ -74,6 +74,17 @@ export function createApiClient(baseUrl: string, getToken: GetToken, getUser: Ge
     },
     deleteIndex(indexId: string): Promise<void> {
       return req(`/index/${indexId}`, { method: 'DELETE' })
+    },
+    getDocuments(indexId: string): Promise<DocumentInfo[]> {
+      return req(`/index/${indexId}/documents`)
+    },
+    uploadDocument(indexId: string, file: File): Promise<UploadDocumentResponse> {
+      const formData = new FormData()
+      formData.append('file', file)
+      return req(`/index/${indexId}/documents`, { method: 'POST', body: formData })
+    },
+    deleteDocument(indexId: string, documentName: string): Promise<void> {
+      return req(`/index/${indexId}/documents/${encodeURIComponent(documentName)}`, { method: 'DELETE' })
     },
     getHealthQueue(): Promise<HealthStatus> {
       return req('/health/queue')

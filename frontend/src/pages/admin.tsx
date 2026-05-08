@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { TopBar } from '@/components/top-bar'
 import { HealthStrip } from '@/features/admin/health-strip'
 import { IndexesPanel } from '@/features/admin/indexes-panel'
-import { DocumentsPlaceholder } from '@/features/admin/documents-placeholder'
+import { DocumentsPanel } from '@/features/admin/documents-panel'
 
 export function AdminPage() {
   const [selectedIndex, setSelectedIndex] = useState<string | null>(null)
@@ -19,7 +19,7 @@ export function AdminPage() {
           />
         </aside>
         <main className="flex flex-1 flex-col overflow-hidden bg-white">
-          <DocumentsPlaceholder selectedIndex={selectedIndex} />
+          <DocumentsPanel selectedIndex={selectedIndex} />
         </main>
       </div>
     </div>
