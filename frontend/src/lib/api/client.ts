@@ -65,7 +65,7 @@ export function createApiClient(baseUrl: string, getToken: GetToken, getUser: Ge
       return req(`/queries/${sessionId}`)
     },
     createQuery(sessionId: string, input: CreateQueryInput): Promise<QueryResponseDTO> {
-      return req(`/queries/${sessionId}`, { method: 'POST', json: input, timeoutMs: 30_000 })
+      return req(`/queries/${sessionId}`, { method: 'POST', json: input })
     },
     getIndexes(): Promise<string[]> {
       return req('/index/all')

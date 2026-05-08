@@ -1,14 +1,18 @@
 # Stage 1: Build the React app
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable
+
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 WORKDIR /app
 
-COPY ./frontend/package.json ./frontend/package-lock.json* ./
-RUN npm install
-
 COPY ./frontend .
-RUN npm run build
-
+RUN pnpm install --ignore-scripts && pnpm rebuild esbuild && pnpm build
 
 # Stage 2: Nginx
 FROM nginx:1.25.4-alpine3.18
