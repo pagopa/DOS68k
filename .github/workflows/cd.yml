@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      # - 'auth/Dockerfile'
-      # - 'auth/src/**'
-      # - 'auth/pyproject.toml'
+      - 'auth/Dockerfile'
+      - 'auth/src/**'
+      - 'auth/pyproject.toml'
       - 'chatbot-api/Dockerfile'
       - 'chatbot-api/src/**'
       - 'chatbot-api/pyproject.toml'
@@ -55,6 +55,9 @@ jobs:
           filters: |
             frontend:
               - 'frontend/**'
+            auth:
+              - 'auth/**'
+              - 'dos-utility/**'
             chatbot-api:
               - 'chatbot-api/**'
               - 'dos-utility/**'
