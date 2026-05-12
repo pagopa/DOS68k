@@ -29,6 +29,10 @@ on:
       - 'dos-utility/src/**'
       - 'dos-utility/pyproject.toml'
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io
   REGISTRY_USERNAME: ${{ github.actor }}
