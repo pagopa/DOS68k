@@ -6,8 +6,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 
 RUN corepack enable
 
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=__API_BASE_URL__
 
 WORKDIR /app
 
@@ -26,5 +25,8 @@ COPY ./frontend/nginx.conf /etc/nginx/conf.d/default.conf
 # Copia build nella directory corretta
 COPY --from=build /app/dist /usr/share/nginx/html/
 
+COPY ./frontend/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
