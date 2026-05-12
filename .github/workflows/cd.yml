@@ -28,6 +28,9 @@ on:
       - 'masking/pyproject.toml'
       - 'dos-utility/src/**'
       - 'dos-utility/pyproject.toml'
+      - 'frontend/Dockerfile'
+      - 'frontend/src'
+      - 'frontend/pnpm-lock.yaml'
 
 permissions:
   contents: read
@@ -50,6 +53,8 @@ jobs:
         with:
         # Add remaining services once completed
           filters: |
+            frontend:
+              - 'frontend/**'
             chatbot-api:
               - 'chatbot-api/**'
               - 'dos-utility/**'
@@ -70,6 +75,7 @@ jobs:
           import os
 
           changes = {
+              'frontend': '${{ steps.changes.outputs.frontend }}' == 'true',
               'auth': '${{ steps.changes.outputs.auth }}' == 'true',
               'chatbot-api': '${{ steps.changes.outputs.chatbot-api }}' == 'true',
               'chatbot-evaluate-api': '${{ steps.changes.outputs.chatbot-evaluate-api }}' == 'true',
@@ -80,6 +86,7 @@ jobs:
           }
 
           dockerfiles = {
+              'frontend': 'frontend/Dockerfile',
               'auth': 'auth/Dockerfile',
               'chatbot-api': 'chatbot-api/Dockerfile',
               'chatbot-evaluate-api': 'chatbot-evaluate/api/Dockerfile',
