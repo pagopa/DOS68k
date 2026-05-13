@@ -16,10 +16,11 @@ export interface HistoryEntry {
   answer: string
 }
 
-export interface FileContext {
-  chunkId: number
+export interface Source {
+  chunkId: string
   content: string
   score: number | null
+  filename: string
 }
 
 export interface QueryResponseDTO {
@@ -29,7 +30,7 @@ export interface QueryResponseDTO {
   answer: string
   badAnswer: boolean
   topic: string[]
-  context: Record<string, FileContext[]>
+  context: Source[]
   createdAt: string
   expiresAt: string | null
 }

@@ -3,7 +3,7 @@ export type { ApiClient, GetToken, GetUser } from './client'
 export { ApiError } from './types'
 export type {
   SessionDTO, CreateSessionInput,
-  QueryResponseDTO, CreateQueryInput, FileContext, HistoryEntry,
+  QueryResponseDTO, CreateQueryInput, Source, HistoryEntry,
   CreateIndexResponse, HealthStatus,
   DocumentInfo, UploadDocumentResponse,
 } from './types'
