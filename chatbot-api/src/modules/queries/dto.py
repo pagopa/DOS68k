@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional, Dict
+from typing import Annotated, List, Optional
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -19,7 +19,7 @@ class CreateQueryDTO(BaseModel):
     ]
 
 
-class FileContext(BaseModel):
+class Source(BaseModel):
     model_config: ConfigDict = ConfigDict(
         serialize_by_alias=True, validate_by_name=True
     )
@@ -27,6 +27,7 @@ class FileContext(BaseModel):
     chunk_id: Annotated[int, Field(alias="chunkId")]
     content: str
     score: Optional[float]
+    filename: str
 
 
 class QueryResponseDTO(BaseModel):
@@ -40,6 +41,6 @@ class QueryResponseDTO(BaseModel):
     answer: str
     bad_answer: Annotated[bool, Field(alias="badAnswer")]
     topic: List[str]
-    context: Dict[str, List[FileContext]]
+    context: List[Source]
     created_at: Annotated[str, Field(alias="createdAt")]
     expires_at: Annotated[Optional[str], Field(alias="expiresAt")]

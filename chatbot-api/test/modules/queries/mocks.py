@@ -49,6 +49,7 @@ MOCK_QUERY_ITEM = {
     "answer": "A programming language",
     "badAnswer": False,
     "topic": ["programming"],
+    "context": [],
     "createdAt": "2024-01-01T00:00:00",
     "expiresAt": None,
 }
@@ -210,15 +211,14 @@ def get_query_service_get_queries_200_mock():
                     "answer": "The capital of France is Paris.",
                     "bad_answer": False,
                     "topic": ["geography", "capital cities"],
-                    "context": {
-                        "test.md": [
-                            {
-                                "chunk_id": 0,
-                                "content": "Test content",
-                                "score": 0.5,
-                            },
-                        ],
-                    },
+                    "context": [
+                        {
+                            "chunk_id": 0,
+                            "content": "Test content",
+                            "score": 0.5,
+                            "filename": "test.md",
+                        }
+                    ],
                     "created_at": "2024-06-01T12:00:00Z",
                     "expires_at": "2024-06-01T13:00:00Z",
                 }
@@ -255,15 +255,14 @@ def get_query_service_create_query_201_mock():
                 "answer": "The capital of France is Paris.",
                 "bad_answer": False,
                 "topic": ["geography", "capital cities"],
-                "context": {
-                    "test.md": [
-                        {
-                            "chunk_id": 0,
-                            "content": "Test content",
-                            "score": 0.5,
-                        },
-                    ],
-                },
+                "context": [
+                    {
+                        "chunk_id": 0,
+                        "content": "Test content",
+                        "score": 0.5,
+                        "filename": "test.md",
+                    }
+                ],
                 "created_at": "2024-06-01T12:00:00Z",
                 "expires_at": "2024-06-01T13:00:00Z",
             }

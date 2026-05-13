@@ -21,9 +21,7 @@ const mockQuery: QueryResponseDTO = {
   answer: 'DOS68K is a RAG chatbot platform.',
   badAnswer: false,
   topic: ['platform'],
-  context: {
-    'readme.md': [{ chunkId: 1, content: 'DOS68K is...', score: 0.92 }],
-  },
+  context: [{ chunkId: '1', content: 'DOS68K is...', score: 0.92, filename: 'readme.md' }],
   createdAt: '2024-01-15T10:05:00Z',
   expiresAt: null,
 }

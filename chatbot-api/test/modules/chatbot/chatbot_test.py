@@ -73,7 +73,7 @@ async def test_chat_generate_agent_run_exception(monkeypatch: pytest.MonkeyPatch
         == "Sorry, I could not process your request.\nPlease try rephrasing your question."
     )
     assert response["tags"] == []
-    assert response["context"] == {}
+    assert response["context"] == []
 
 
 @pytest.mark.asyncio
@@ -106,7 +106,7 @@ async def test_chat_generate_invalid_structured_response(
         == "Sorry, I could not process your request.\nPlease try rephrasing your question."
     )
     assert response["tags"] == []
-    assert response["context"] == {}
+    assert response["context"] == []
 
 
 @pytest.mark.asyncio
@@ -132,6 +132,11 @@ async def test_chat_generate(monkeypatch: pytest.MonkeyPatch):
 
     assert response["response"] == "Test answer"
     assert response["tags"] == []
-    assert response["context"] == {
-        "file1.pdf": [{"chunk_id": "1", "content": "some content", "score": 0.9}]
-    }
+    assert response["context"] == [
+        {
+            "chunk_id": "1",
+            "content": "some content",
+            "score": 0.9,
+            "filename": "file1.pdf",
+        }
+    ]
