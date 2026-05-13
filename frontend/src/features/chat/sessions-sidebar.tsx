@@ -129,16 +129,16 @@ export function SessionsSidebar() {
   }
 
   return (
-    <aside className="flex w-64 flex-shrink-0 flex-col border-r bg-gray-50">
+    <aside className="flex w-64 flex-shrink-0 flex-col border-r bg-secondary">
       <div className="border-b p-3">
         <NewSessionDialog onCreated={(id) => navigate(`/chat/${id}`)} />
       </div>
       <nav className="flex-1 overflow-y-auto p-2">
         {isLoading && (
-          <p className="px-2 py-4 text-sm text-gray-400">Loading…</p>
+          <p className="px-2 py-4 text-xs text-muted-foreground">Loading…</p>
         )}
         {!isLoading && sorted.length === 0 && (
-          <p className="px-2 py-4 text-sm text-gray-400">No sessions yet</p>
+          <p className="px-2 py-4 text-xs text-muted-foreground">No sessions yet</p>
         )}
         {sorted.map((session) => (
           <div
@@ -146,10 +146,10 @@ export function SessionsSidebar() {
             role="button"
             tabIndex={0}
             aria-current={session.id === activeId ? 'page' : undefined}
-            className={`group flex cursor-pointer items-center justify-between rounded-md px-2 py-2 text-sm transition-colors ${
+            className={`group flex cursor-pointer items-center justify-between rounded-md px-2 py-2 text-xs transition-colors ${
               session.id === activeId
-                ? 'bg-primary text-primary-foreground'
-                : 'text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground font-600'
+                : 'text-foreground/70 hover:bg-accent hover:text-foreground'
             }`}
             onClick={() => navigate(`/chat/${session.id}`)}
             onKeyDown={(e) => e.key === 'Enter' && navigate(`/chat/${session.id}`)}

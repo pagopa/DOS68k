@@ -27,24 +27,179 @@
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.004 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.004 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.004 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.21 0.006 285.885);
+  --radius: 0.625rem;
+
+  /* Warm off-white base */
+  --background:        oklch(0.975 0.006 80);
+  --foreground:        oklch(0.18 0.01 255);
+
+  /* Pure white surfaces */
+  --card:              oklch(1 0 0);
+  --card-foreground:   oklch(0.18 0.01 255);
+
+  --popover:           oklch(1 0 0);
+  --popover-foreground:oklch(0.18 0.01 255);
+
+  /* Deep indigo accent */
+  --primary:           oklch(0.40 0.16 265);
+  --primary-foreground:oklch(0.99 0 0);
+
+  /* Soft warm surface */
+  --secondary:         oklch(0.95 0.007 80);
+  --secondary-foreground: oklch(0.25 0.01 255);
+
+  --muted:             oklch(0.95 0.007 80);
+  --muted-foreground:  oklch(0.55 0.012 255);
+
+  --accent:            oklch(0.94 0.008 80);
+  --accent-foreground: oklch(0.18 0.01 255);
+
+  /* Status */
+  --destructive:       oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  /* Borders & inputs */
+  --border:            oklch(0.89 0.009 80);
+  --input:             oklch(1 0 0);
+  --ring:              oklch(0.40 0.16 265);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: oklch(0.40 0.16 265 / 0.15);
+    color: var(--foreground);
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+
+  .font-mono, code, pre, kbd {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Markdown prose for chat AI responses */
+@layer components {
+  .prose {
+    color: var(--foreground);
+    line-height: 1.7;
+    font-size: 0.875rem;
+  }
+  .prose p {
+    margin-bottom: 0.65rem;
+  }
+  .prose p:last-child {
+    margin-bottom: 0;
+  }
+  .prose strong {
+    color: var(--foreground);
+    font-weight: 600;
+  }
+  .prose em {
+    font-style: italic;
+  }
+  .prose code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    background: var(--secondary);
+    color: var(--primary);
+    padding: 0.1em 0.35em;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border);
+  }
+  .prose pre {
+    background: var(--secondary);
+    border: 1px solid var(--border);
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 0.75rem;
+  }
+  .prose pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.85em;
+    color: var(--foreground);
+  }
+  .prose ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+    margin-bottom: 0.65rem;
+  }
+  .prose ol {
+    list-style: decimal;
+    padding-left: 1.4rem;
+    margin-bottom: 0.65rem;
+  }
+  .prose li {
+    margin-bottom: 0.2rem;
+  }
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+  }
+  .prose h1:first-child, .prose h2:first-child, .prose h3:first-child {
+    margin-top: 0;
+  }
+  .prose blockquote {
+    border-left: 2px solid var(--primary);
+    padding-left: 0.875rem;
+    color: var(--muted-foreground);
+    margin-bottom: 0.65rem;
+  }
+  .prose a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .prose a:hover {
+    opacity: 0.80;
+  }
+  .prose hr {
+    border-color: var(--border);
+    margin: 1rem 0;
+  }
+  .prose table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.75rem;
+    font-size: 0.8em;
+  }
+  .prose th, .prose td {
+    border: 1px solid var(--border);
+    padding: 0.375rem 0.625rem;
+    text-align: left;
+  }
+  .prose th {
+    background: var(--secondary);
+    font-weight: 600;
+  }
 }
