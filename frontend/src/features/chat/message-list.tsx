@@ -17,7 +17,7 @@ interface MessageListProps {
 function QuestionBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+      <div className="max-w-[75%] rounded-lg rounded-tr-sm bg-primary px-4 py-2.5 text-sm font-500 text-primary-foreground leading-relaxed">
         {text}
       </div>
     </div>
@@ -27,7 +27,7 @@ function QuestionBubble({ text }: { text: string }) {
 function AnswerBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-start">
-      <div className="max-w-[75%] rounded-2xl rounded-tl-sm border bg-white px-4 py-2.5 text-sm prose prose-sm max-w-none">
+      <div className="max-w-[75%] rounded-lg rounded-tl-sm border border-border bg-card px-4 py-3 prose max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
       </div>
     </div>
@@ -37,10 +37,10 @@ function AnswerBubble({ text }: { text: string }) {
 function ThinkingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border bg-white px-4 py-3">
-        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]" />
-        <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" />
+      <div className="flex items-center gap-1.5 rounded-lg rounded-tl-sm border border-border bg-card px-4 py-3.5">
+        <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.3s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:-0.15s]" />
+        <span className="h-2 w-2 animate-bounce rounded-full bg-primary/40" />
       </div>
     </div>
   )

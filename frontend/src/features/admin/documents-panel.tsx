@@ -110,7 +110,7 @@ export function DocumentsPanel({ selectedIndex }: { selectedIndex: string | null
 
   if (!selectedIndex) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-gray-400">
+      <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
         Select an index to manage its documents
       </div>
     )
@@ -123,10 +123,10 @@ export function DocumentsPanel({ selectedIndex }: { selectedIndex: string | null
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-mono font-600 uppercase tracking-widest text-muted-foreground">
             Documents
           </p>
-          <p className="font-mono text-sm text-gray-700">{selectedIndex}</p>
+          <p className="font-mono text-sm text-foreground">{selectedIndex}</p>
         </div>
         <Button
           variant="outline"
@@ -148,19 +148,19 @@ export function DocumentsPanel({ selectedIndex }: { selectedIndex: string | null
       {/* Document list */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && (
-          <p className="px-4 py-6 text-sm text-gray-400">Loading…</p>
+          <p className="px-4 py-6 text-xs text-muted-foreground">Loading…</p>
         )}
 
         {!isLoading && allDocs.length === 0 && uploadingRows.length === 0 && (
-          <p className="px-4 py-6 text-sm text-gray-400">No documents yet — upload one below.</p>
+          <p className="px-4 py-6 text-xs text-muted-foreground">No documents yet — upload one below.</p>
         )}
 
         {allDocs.map((doc) => (
           <div
             key={doc.documentName}
-            className="group flex items-center justify-between border-b px-4 py-2.5 text-sm last:border-b-0"
+            className="group flex items-center justify-between border-b px-4 py-2.5 last:border-b-0 hover:bg-accent/50 transition-colors"
           >
-            <span className="truncate font-mono text-xs text-gray-700">{doc.documentName}</span>
+            <span className="truncate font-mono text-xs text-foreground/80">{doc.documentName}</span>
             <DeleteDocumentDialog
               documentName={doc.documentName}
               onConfirm={() => deleteDocument(doc.documentName)}
@@ -171,10 +171,10 @@ export function DocumentsPanel({ selectedIndex }: { selectedIndex: string | null
         {uploadingRows.map((row) => (
           <div
             key={row.id}
-            className="flex items-center gap-2 border-b px-4 py-2.5 text-sm last:border-b-0"
+            className="flex items-center gap-2 border-b px-4 py-2.5 last:border-b-0"
           >
-            <span className="truncate font-mono text-xs text-gray-400">{row.name}</span>
-            <span className="ml-auto shrink-0 text-xs text-gray-400 italic">uploading…</span>
+            <span className="truncate font-mono text-xs text-muted-foreground">{row.name}</span>
+            <span className="ml-auto shrink-0 text-xs text-primary/70 italic">uploading…</span>
           </div>
         ))}
       </div>
@@ -189,10 +189,10 @@ export function DocumentsPanel({ selectedIndex }: { selectedIndex: string | null
         )}
         <div
           {...getRootProps()}
-          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-sm transition-colors ${
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-xs transition-colors ${
             isDragActive
               ? 'border-primary bg-primary/5 text-primary'
-              : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500'
+              : 'border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground/60'
           }`}
         >
           <input {...getInputProps()} />

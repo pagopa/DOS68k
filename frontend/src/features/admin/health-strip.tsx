@@ -3,18 +3,17 @@ import { useHealthQueue, useHealthStorage, useHealthVdb } from './hooks'
 function HealthPill({ label, isHealthy }: { label: string; isHealthy: boolean | null }) {
   const color =
     isHealthy === null
-      ? 'bg-gray-200 text-gray-500'
+      ? 'bg-secondary text-muted-foreground border border-border'
       : isHealthy
-        ? 'bg-green-100 text-green-800'
-        : 'bg-red-100 text-red-700'
+        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+        : 'bg-red-50 text-red-700 border border-red-200'
+
+  const dotColor =
+    isHealthy === null ? 'bg-zinc-400' : isHealthy ? 'bg-emerald-500' : 'bg-red-500'
 
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${color}`}>
-      <span
-        className={`mr-1.5 h-1.5 w-1.5 rounded-full ${
-          isHealthy === null ? 'bg-gray-400' : isHealthy ? 'bg-green-500' : 'bg-red-500'
-        }`}
-      />
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>
+      <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${dotColor}`} />
       {label}
     </span>
   )
@@ -26,8 +25,8 @@ export function HealthStrip() {
   const vdb = useHealthVdb()
 
   return (
-    <div className="flex items-center gap-3 border-b bg-gray-50 px-4 py-2">
-      <span className="text-xs font-medium text-gray-500 mr-1">Health</span>
+    <div className="flex items-center gap-2 border-b bg-secondary px-4 py-2">
+      <span className="text-xs font-medium text-muted-foreground mr-1">Health</span>
       <HealthPill
         label="Queue"
         isHealthy={queue.isSuccess ? true : queue.isError ? false : null}

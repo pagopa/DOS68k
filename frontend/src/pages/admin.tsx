@@ -12,13 +12,13 @@ export function AdminPage() {
       <TopBar />
       <HealthStrip />
       <div className="flex flex-1 overflow-hidden">
-        <aside className="flex w-72 flex-shrink-0 flex-col border-r bg-gray-50 overflow-hidden">
+        <aside className="flex w-72 flex-shrink-0 flex-col border-r bg-secondary overflow-hidden">
           <IndexesPanel
             selectedIndex={selectedIndex}
             onSelectIndex={(id) => setSelectedIndex(id || null)}
           />
         </aside>
-        <main className="flex flex-1 flex-col overflow-hidden bg-white">
+        <main className="flex flex-1 flex-col overflow-hidden bg-background">
           <DocumentsPanel selectedIndex={selectedIndex} />
         </main>
       </div>
