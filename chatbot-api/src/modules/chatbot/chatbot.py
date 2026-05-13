@@ -45,9 +45,11 @@ class Chatbot:
             temperature=self.__settings.temperature_agent,
             max_tokens=self.__settings.max_tokens,
             api_key=self.__settings.model_api_key,
+            base_url=self.__settings.base_url,
+            request_timeout=self.__settings.request_timeout,
         )
         self.embed_model: BaseEmbedding = get_embed_model(
-            provider=self.__settings.provider,
+            embed_provider=self.__settings.embed_provider,
             model_id=self.__settings.embed_model_id,
             embed_batch_size=self.__settings.embed_batch_size,
             embed_dim=self.__settings.embed_dim,
@@ -55,6 +57,7 @@ class Chatbot:
             retries=self.__settings.embed_retries,
             retry_min_seconds=self.__settings.embed_retry_min_seconds,
             api_key=self.__settings.model_api_key,
+            embed_base_url=self.__settings.embed_base_url,
         )
         # Load all tools from YAML configs. Each tool wraps a vector index.
         tools_map: Dict[str, QueryEngineTool] = load_tools(

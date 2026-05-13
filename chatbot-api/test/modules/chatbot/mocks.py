@@ -1,17 +1,20 @@
-from typing import Self, Dict, Annotated
-from pydantic import Field
 from pathlib import Path
-from workflows import Context
-from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
-from llama_index.core.llms.llm import LLM
-from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.agent.workflow import ReActAgent, AgentOutput
-from llama_index.core.llms import ChatMessage
+from typing import Self, Dict, Annotated
 
-from src.modules.chatbot.env import ChatbotSettings
+from llama_index.core.agent.workflow import ReActAgent, AgentOutput
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.llms import ChatMessage
+from llama_index.core.llms.llm import LLM
+from llama_index.core.tools import QueryEngineTool
+from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.ollama import Ollama
+from pydantic import Field
+from workflows import Context
+
 from src.modules.chatbot.agent.settings import AgentYamlSettings
+from src.modules.chatbot.env import ChatbotSettings
 
 
 class GoogleGenAIMock(GoogleGenAI):
@@ -43,9 +46,33 @@ class GoogleGenAIEmbeddingMock(GoogleGenAIEmbedding):
         pass
 
 
+class OllamaAIMock(Ollama):
+    def __new__(cls, **kwargs):
+        instance = object.__new__(cls)
+        object.__setattr__(instance, "__pydantic_fields_set__", set())
+        object.__setattr__(instance, "__pydantic_extra__", None)
+        object.__setattr__(instance, "model", "ollama-llm")
+        object.__setattr__(instance, "is_function_calling_model", True)
+        return instance
+
+    def __init__(self: Self, **kwargs):
+        pass
+
+
+class OllamaAIEmbeddingMock(OllamaEmbedding):
+    def __new__(cls, **kwargs):
+        instance = object.__new__(cls)
+        object.__setattr__(instance, "__pydantic_fields_set__", set())
+        object.__setattr__(instance, "__pydantic_extra__", None)
+        return instance
+
+    def __init__(self: Self, **kwargs):
+        pass
+
 def get_chatbot_settings_mock() -> ChatbotSettings:
     class ChatbotSettingsMock(ChatbotSettings):
         provider: Annotated[str, Field(default="google")]
+        embed_provider: Annotated[str, Field(default="google")]
         model_id: Annotated[str, Field(default="model-id")]
         model_api_key: Annotated[str, Field(default="model-api-key")]
         embed_model_id: Annotated[str, Field(default="embed-model-id")]

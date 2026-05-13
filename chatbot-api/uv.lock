@@ -386,7 +386,9 @@ dependencies = [
     { name = "google-genai" },
     { name = "llama-index-core" },
     { name = "llama-index-embeddings-google-genai" },
+    { name = "llama-index-embeddings-ollama" },
     { name = "llama-index-llms-google-genai" },
+    { name = "llama-index-llms-ollama" },
     { name = "llama-index-utils-workflow" },
     { name = "nh3" },
     { name = "pydantic" },
@@ -414,7 +416,9 @@ requires-dist = [
     { name = "google-genai", specifier = ">=1.0.0" },
     { name = "llama-index-core", specifier = ">=0.12.0" },
     { name = "llama-index-embeddings-google-genai", specifier = ">=0.3.0" },
+    { name = "llama-index-embeddings-ollama", specifier = ">=0.9.0" },
     { name = "llama-index-llms-google-genai", specifier = ">=0.4.0" },
+    { name = "llama-index-llms-ollama", specifier = ">=0.10.1" },
     { name = "llama-index-utils-workflow", specifier = ">=0.3.0" },
     { name = "nh3", specifier = ">=0.3.3" },
     { name = "pydantic", specifier = ">=2.12.5" },
@@ -1437,6 +1441,20 @@ wheels = [
 ]
 
 [[package]]
+name = "llama-index-embeddings-ollama"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+    { name = "ollama" },
+    { name = "pytest-asyncio" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/cd/2cff1feac66368a4c60ea7afbdbb3f3fdd49ee8c279fc105457e726a3ad2/llama_index_embeddings_ollama-0.9.0.tar.gz", hash = "sha256:19d2d2a0e3f0934480eae31243ac5f1ce171319578b9c0adad25cf1b6c35659e", size = 6575, upload-time = "2026-03-12T20:21:18.81Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9a/36/53674403380483510a7f657c5d6f0bdac5b7f9ec5a1a8d06cdfdd6dc47f2/llama_index_embeddings_ollama-0.9.0-py3-none-any.whl", hash = "sha256:92e0ce481e60a9bcbddbe2c369d2f72c6fdd7158d03a34ab9b35d80869b673c3", size = 6250, upload-time = "2026-03-12T20:21:19.441Z" },
+]
+
+[[package]]
 name = "llama-index-instrumentation"
 version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1461,6 +1479,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4f/25/c0a4d3389402da00cd83c9b3af6221d348266c38fbb407bf63f64fcaa282/llama_index_llms_google_genai-0.8.7.tar.gz", hash = "sha256:7bca7d05a86a6b98f4420b78fac952c63c88660f3628e78b3833b402a50518a5", size = 13641, upload-time = "2026-02-06T12:09:48.489Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c9/06/b2ed7fd2e3a3c6e6ee7863f8f27533b2fa146ad8a5eec15485d0f2f7bbbf/llama_index_llms_google_genai-0.8.7-py3-none-any.whl", hash = "sha256:38ea6b175ae456c9f5d127fdce3a3875372b873f211877f938baa7ae53fd6b43", size = 14126, upload-time = "2026-02-06T12:09:49.283Z" },
+]
+
+[[package]]
+name = "llama-index-llms-ollama"
+version = "0.10.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "llama-index-core" },
+    { name = "ollama" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/17/8c/dcda55d685d1094bcffa3f4f2b30bb45ade5aa93694617272bf6c81d5822/llama_index_llms_ollama-0.10.1.tar.gz", hash = "sha256:470ed836dee43bc0171dc05c68c2daa3618a7c38166b8044d7f8360cd8cd8fa6", size = 9145, upload-time = "2026-03-20T18:14:39.603Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/87/ecb53ae8f4a79e9e8b2e2f9ef649840ab985c5a095438b2f53b72674b66f/llama_index_llms_ollama-0.10.1-py3-none-any.whl", hash = "sha256:8badbebba5a8b7b36912aa1399319652e2110c36ce58485b9965a1b8238b4bdb", size = 8801, upload-time = "2026-03-20T18:14:38.831Z" },
 ]
 
 [[package]]
@@ -1840,6 +1871,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/55/6e1a61ded7af8df04016d81b5b02daa59f2ea9252ee0397cb9f631efe9e5/numpy-2.4.2-cp314-cp314t-win32.whl", hash = "sha256:8c50dd1fc8826f5b26a5ee4d77ca55d88a895f4e4819c7ecc2a9f5905047a443", size = 6153937, upload-time = "2026-01-31T23:12:47.229Z" },
     { url = "https://files.pythonhosted.org/packages/45/aa/fa6118d1ed6d776b0983f3ceac9b1a5558e80df9365b1c3aa6d42bf9eee4/numpy-2.4.2-cp314-cp314t-win_amd64.whl", hash = "sha256:fcf92bee92742edd401ba41135185866f7026c502617f422eb432cfeca4fe236", size = 12631844, upload-time = "2026-01-31T23:12:48.997Z" },
     { url = "https://files.pythonhosted.org/packages/32/0a/2ec5deea6dcd158f254a7b372fb09cfba5719419c8d66343bab35237b3fb/numpy-2.4.2-cp314-cp314t-win_arm64.whl", hash = "sha256:1f92f53998a17265194018d1cc321b2e96e900ca52d54c7c77837b71b9465181", size = 10565379, upload-time = "2026-01-31T23:12:51.345Z" },
+]
+
+[[package]]
+name = "ollama"
+version = "0.6.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/72/5f12423b6b39ca8430fbe56f77fcf4ef60f63067c7c4a2e30e200ed9ec16/ollama-0.6.2.tar.gz", hash = "sha256:936d55daa684f474364c098611c933626f8d6c7d67065c5b7ae0c477b508b07f", size = 53145, upload-time = "2026-04-29T21:21:15.018Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/ab/d6722beeb2d10f7a3b9ff49375708904fde18f82b5609a0bc4aeb5996a4d/ollama-0.6.2-py3-none-any.whl", hash = "sha256:3ad7daab28e5a973445c36a73882a3ef698c2ebb00e21e308652741577509f7d", size = 15115, upload-time = "2026-04-29T21:21:13.794Z" },
 ]
 
 [[package]]
