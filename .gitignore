@@ -15,3 +15,5 @@ chatbot-index/evaluation*
 Makefile
 chatbot-api/evaluation*
 chatbot-index/worker/scripts*
+.DS_Store
+.idea
