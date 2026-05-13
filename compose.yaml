@@ -9,17 +9,19 @@
 # https://github.com/docker/awesome-compose
 services:
   api-gateway:
-    image: krakend@sha256:d254fc6c7bec580d046268e17985048caab6104d119b3e902fcb28c2886f9462
+    image: traefik:v3.2
     ports:
       - 8080:8080
     volumes:
-      - ./krakend:/etc/krakend/
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     depends_on:
       - auth
       - chatbot-api
       - chatbot-evaluate-api
       - chatbot-index-api
       - masking
+      - frontend
 
   auth:
     build:
@@ -116,6 +118,9 @@ services:
       VITE_API_BASE_URL: http://localhost:8080
     ports:
       - 80:80
+    depends_on:
+      - chatbot-api
+      - chatbot-index-api
 
   db:
     image: postgres:17@sha256:2a0d0fe14825b0939f78a8cad5cd4e6aa68bf94d0e5dd96e24b6d23af4315545

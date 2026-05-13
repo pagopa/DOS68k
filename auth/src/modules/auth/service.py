@@ -26,14 +26,19 @@ class AuthService:
         try:
             token: str = authorization.split(" ", 1)[1]
         except Exception:
-            token: str = "" # Set to empty string, so that we can make the call anyway. If the provider is local then everything is ok since there is a mock, otherwise an error will be raised
+            token: str = ""  # Set to empty string, so that we can make the call anyway. If the provider is local then everything is ok since there is a mock, otherwise an error will be raised
 
         try:
             payload: Dict[str, Any] = self.__auth.verify_jwt(token=token)
         except Exception:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user"
+            )
 
-        return {"status": "ok", "payload": payload}
+        return payload
 
-def get_auth_service(auth_interface: Annotated[AuthInterface, Depends(dependency=get_auth)]) -> AuthService:
+
+def get_auth_service(
+    auth_interface: Annotated[AuthInterface, Depends(dependency=get_auth)],
+) -> AuthService:
     return AuthService(auth_interface=auth_interface)

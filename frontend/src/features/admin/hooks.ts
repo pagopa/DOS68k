@@ -8,9 +8,9 @@ const INDEXES_KEY = ['indexes'] as const
 const documentsKey = (indexId: string) => ['documents', indexId] as const
 
 function useApiClient() {
-  const { getToken, getUser } = useAuth()
+  const { getToken } = useAuth()
   return useMemo(
-    () => createApiClient(import.meta.env.VITE_API_BASE_URL ?? '', getToken, getUser),
+    () => createApiClient(import.meta.env.VITE_API_BASE_URL ?? '', getToken),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )

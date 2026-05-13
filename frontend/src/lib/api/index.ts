@@ -1,5 +1,5 @@
 export { createApiClient } from './client'
-export type { ApiClient, GetToken, GetUser } from './client'
+export type { ApiClient, GetToken } from './client'
 export { ApiError } from './types'
 export type {
   SessionDTO, CreateSessionInput,
