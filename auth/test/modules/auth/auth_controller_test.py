@@ -21,9 +21,11 @@ async def test_jwt_check_200(app_test: FastAPI, client_test: AsyncClient):
 
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "ok"
-    assert "payload" in data
-    assert "sub" in data["payload"]
+    assert "sub" in data
+    assert "role" in data
+    # Forward-auth contract: gateway reads these from response headers
+    assert response.headers["X-User-Id"] == str(data["sub"])
+    assert response.headers["X-User-Role"] == str(data["role"])
 
 
 @pytest.mark.asyncio

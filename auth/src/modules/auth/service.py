@@ -33,7 +33,7 @@ class AuthService:
         except Exception:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized user")
 
-        return {"status": "ok", "payload": payload}
+        return payload
 
 def get_auth_service(auth_interface: Annotated[AuthInterface, Depends(dependency=get_auth)]) -> AuthService:
     return AuthService(auth_interface=auth_interface)
