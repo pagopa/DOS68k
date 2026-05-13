@@ -9,7 +9,7 @@
 # https://github.com/docker/awesome-compose
 services:
   api-gateway:
-    image: krakend
+    image: krakend@sha256:d254fc6c7bec580d046268e17985048caab6104d119b3e902fcb28c2886f9462
     ports:
       - 8080:8080
     volumes:
@@ -118,7 +118,7 @@ services:
       - 80:80
 
   db:
-    image: postgres:17
+    image: postgres:17@sha256:2a0d0fe14825b0939f78a8cad5cd4e6aa68bf94d0e5dd96e24b6d23af4315545
     restart: always
     shm_size: 128mb
     volumes:
@@ -134,7 +134,7 @@ services:
       retries: 10
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     volumes:
       - minio_data:/data
     ports:
@@ -145,7 +145,7 @@ services:
       - ./.env.storage
 
   redis-vdb:
-    image: redis/redis-stack:7.4.0-v8
+    image: redis/redis-stack:7.4.0-v8@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
     ports:
       - 6379:6379
       - 8001:8001
@@ -153,7 +153,7 @@ services:
       - redis_vdb_data:/data
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:latest@sha256:b3063c673f3973877c038eeecc392bad5011f072ee7892b56c9a8e204a3bdea9
     container_name: qdrantdb
     ports:
       - "6333:6333"
@@ -161,7 +161,7 @@ services:
       - ./qdrant_storage:/qdrant_storage
 
   redis-queue:
-    image: redis:8.4
+    image: redis:8.4@sha256:0cf7723388c29e8a936a9a1502f3fdfc8fec0688ffca8875d8e87940bec045eb
     ports:
       - 6380:6379
     volumes:
@@ -169,7 +169,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
 
   langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3.115
+    image: docker.io/langfuse/langfuse-worker:3.115@sha256:c9dc71559f880bc82d7087ca6515b66ddf904dbf209ea578ea5fa17cd64b6ab0
     ports:
       - 3030:3030
     env_file:
@@ -181,7 +181,7 @@ services:
       - clickhouse
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3.115
+    image: docker.io/langfuse/langfuse:3.115@sha256:48c51b585350a9de1e904df9410f5507afbfd94c079cf23efec1abf242c6f414
     ports:
       - 4001:3000
     env_file:
@@ -193,7 +193,7 @@ services:
         condition: service_healthy
 
   clickhouse:
-    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine
+    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine@sha256:68b9d9eb4cb949a03d1f90b76fd8d396a5999dd57ba1ee914ea36c77716ce937
     user: "101:101"
     environment:
       CLICKHOUSE_DB: default
@@ -207,10 +207,10 @@ services:
       - 9002:9000
 
   valkey:
-    image: valkey/valkey:8.1.4-alpine3.22
+    image: valkey/valkey:8.1.4-alpine3.22@sha256:e706d1213aaba6896c162bb6a3a9e1894e1a435f28f8f856d14fab2e10aa098b
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack@sha256:bcbf91685f1157de81a76de9dc7ad20741f6b7b896e0f61a24ac89c7fb0c4b4d
     ports:
       - "4566:4566"
     env_file:

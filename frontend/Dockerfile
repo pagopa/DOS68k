@@ -1,5 +1,5 @@
 # Stage 1: Build the React app
-FROM node:22-alpine AS build
+FROM node:22-alpine@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f AS build
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -14,7 +14,7 @@ COPY ./frontend .
 RUN pnpm install --ignore-scripts && pnpm rebuild esbuild && pnpm build
 
 # Stage 2: Nginx
-FROM nginx:1.25.4-alpine3.18
+FROM nginx:1.25.4-alpine3.18@sha256:31bad00311cb5eeb8a6648beadcf67277a175da89989f14727420a80e2e76742
 
 # Rimuove config di default
 RUN rm /etc/nginx/conf.d/default.conf
