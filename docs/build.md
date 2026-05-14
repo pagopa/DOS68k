@@ -12,29 +12,23 @@ First of all, make sure you have all the `.env` required files. For each service
 - **If a `.env.template` exists**: copy it to `.env` in the same folder and fill in the required values. Instructions for each variable are provided as comments inside the template.
 - **If no `.env.template` exists**: the service requires no environment configuration and no `.env` file needs to be created.
 
+Also make sure even external services (eg. localstack/langfuse/minio/ecc...) have their own .env file. Look at the `compose.yaml` and the `./.env.*.template` at the root folder of the project.
+
 ## 2. Specific service configurations
 
 For each service take a look at the respective `README.md` file, which could give you instructions on how to configure, if needed, the service before starting it.
 
 ## 3. Docker compose
+
 ### 3.1 Whole project
 
-At the root level of the repo there is the `compose.yaml` file, which contains all services that make up the project.<br>
-You can start the whole project with this simple command:
+> Make sure you didn't skip the [env](#1-env-files) setup.
+
+At the root level of the repo there are two docker compose files:
+- **compose.yaml:** build containers from source code.
+- **compose-remote.yaml:** start containers pulling public built images from ghcr.
 
 ```bash
 docker compose up -d --build
+# docker compose -f compose-remote.yaml up -d
 ```
-
-If you created all the .env required files this command will spin up all the containers.<br>
-
-### 3.2 Specific services
-
-You can also decide to start just single services. To do so you just need to indicate the compose name of that service, like this:
-
-```bash
-docker compose up -d --build <service-name> # where <service-name> is the service name within the compose.yaml
-```
-
-You can even look at the README.md of the specific service to see the right command.
-Some services has dependencies, so it could happen that, even though you specified a single service, you ended up having multiple services running.
