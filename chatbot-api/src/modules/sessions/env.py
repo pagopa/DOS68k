@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 
 class SessionSettings(BaseSettings):
     SESSIONS_TABLENAME: Annotated[str, Field(default="sessions")]
-    SESSION_EXPIRATION_DAYS: PositiveInt
+    SESSION_EXPIRATION_DAYS: Annotated[PositiveInt, Field(default=90)]
 
 
 @lru_cache
