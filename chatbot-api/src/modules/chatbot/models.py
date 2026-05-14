@@ -1,11 +1,12 @@
 from logging import Logger
 from typing import Literal, Optional, List, Any
 
-from dos_utility.utils.logger import get_logger
 from google.genai import types
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms.llm import LLM
 
+from dos_utility.types.models import Provider
+from dos_utility.utils.logger import get_logger
 from ..env import get_logging_settings, LogSettings
 
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
@@ -15,7 +16,7 @@ logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
 def get_llm(
-        provider: Literal["google", "ollama"],
+        provider: Provider,
         model_id: str,
         *,
         temperature: Optional[float] = None,
@@ -96,7 +97,7 @@ def get_llm(
 
 
 def get_embed_model(
-        embed_provider: Literal["google", "ollama"],
+        embed_provider: Provider,
         model_id: str,
         *,
         embed_batch_size: Optional[int] = None,

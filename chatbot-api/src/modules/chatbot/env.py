@@ -4,11 +4,11 @@ from typing import Annotated, Optional, Literal, Self
 
 from pydantic import Field, PositiveInt, PositiveFloat, NonNegativeFloat, model_validator
 from pydantic_settings import BaseSettings
-
+from dos_utility.types.models import Provider
 
 class ChatbotSettings(BaseSettings):
     # LLM / Embedding provider
-    provider: Literal["google", "ollama"]
+    provider: Provider
 
     # LLM settings
     max_tokens: Annotated[PositiveInt, Field(default=1024)]
@@ -20,7 +20,7 @@ class ChatbotSettings(BaseSettings):
     request_timeout: Annotated[float | None, Field(default=5.0)]
 
     # Embedding settings
-    embed_provider: Literal["google", "ollama"]
+    embed_provider: Provider
     embed_model_id: Annotated[
         str, Field(description="ID of the embedding model for the chosen provider")
     ]
