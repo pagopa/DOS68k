@@ -2,6 +2,7 @@
 
 Here a list of functionalities this package provide:
 
+- [SQL](#1-sql-db-connection)
 - [Auth interface](#2-auth-interface)
 - [Queue interface](#3-queue-interface)
 - [Storage interface](#4-storage-interface)
@@ -93,6 +94,7 @@ Here a code snippet for the import.
 ```python
 from dos_utility.auth import AuthInterface, get_auth
 from dos_utility.auth import EmptyTokenException, TokenExpiredException, InvalidTokenException, InvalidTokenKeyException
+from dos_utility.auth import get_user, get_admin_user, User, UserRole
 ```
 
 Example usage:
@@ -166,11 +168,11 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
-export SQS_ENDPOINT_URL=<endpoint> # With format http(s)://host (es: http://localstack)
+export SQS_ENDPOINT_URL=<endpoint> # Default: http://localhost. With format http(s)://host (es: http://localstack)
 export SQS_PORT=<port>             # Default: 4566
 export SQS_REGION=<region>         # Default: us-east-1
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Optional, shared via dos_utility.utils.aws (see §7.2)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Optional, shared via dos_utility.utils.aws (see §7.2)
 export SQS_QUEUE_NAME=<queue-name>
 export SQS_QUEUE_URL=<queue-url>
 ```
@@ -180,8 +182,11 @@ export SQS_QUEUE_URL=<queue-url>
 Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
-export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
-export REDIS_PORT=<port>
+# Shared Redis connection (see §7.3)
+export REDIS_HOST=<host> # Default: localhost. Format: <host>, without protocol (es: queue - as per the docker compose service name)
+export REDIS_PORT=<port> # Default: 6379
+
+# Queue-specific
 export REDIS_STREAM=<stream-name>  # Default: my-stream
 export REDIS_GROUP=<group-name>    # Default: my-group
 ```
@@ -235,11 +240,13 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#41-env-setup).
 
 ```bash
-export S3_ENDPOINT=<endpoint> # This is optional. If you are working with real AWS S3 then you can omit it, while if you are working with S3 local implementations (say LocalStack) then you have to specify the endpoint
+export S3_ENDPOINT=<endpoint> # Optional. If you are working with real AWS S3 then you can omit it, while if you are working with S3 local implementations (say LocalStack) then you have to specify the endpoint
 export S3_REGION=<region>
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Read by boto3's default credential chain (not by AWSCredentialsSettings for S3)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Read by boto3's default credential chain (not by AWSCredentialsSettings for S3)
 ```
+
+> The S3 provider does not pass credentials to `boto3` explicitly: it relies on boto3's standard resolution chain (env vars, `~/.aws/credentials`, instance role, etc.).
 
 #### 4.1.2 MinIO env
 
@@ -251,7 +258,7 @@ export MINIO_PORT=<port>
 export MINIO_ACCESS_KEY=<access-key>
 export MINIO_SECRET_KEY=<secret-key>
 export MINIO_REGION=<region>
-export MINIO_SECURE=<bool> # true/false. true if you want to use HTTPS protocol, false if you use HTTP
+export MINIO_SECURE=<bool> # Default: false. true if you want to use HTTPS protocol, false if you use HTTP
 ```
 
 ### 4.2 How to use it
@@ -313,7 +320,8 @@ export QDRANT_PORT=<port> # Default: 6333
 Add the following env variables to the `.env` file you created [here](#51-env-setup).
 
 ```bash
-export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
+# Shared Redis connection (see §7.3)
+export REDIS_HOST=<host> # Default: localhost. Format: <host>, without protocol (es: queue - as per the docker compose service name)
 export REDIS_PORT=<port> # Default: 6379
 ```
 
@@ -372,8 +380,8 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#61-env-setup).
 
 ```bash
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Optional, shared via dos_utility.utils.aws (see §7.2)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Optional, shared via dos_utility.utils.aws (see §7.2)
 export DYNAMODB_REGION=<region> # Optional, defaults to us-east-1
 export DYNAMODB_ENDPOINT_URL=<endpoint> # Optional. With format http(s)://host (e.g. http://localhost). Omit for real AWS DynamoDB
 export DYNAMODB_PORT=<port> # Optional. Port for the endpoint URL
@@ -415,10 +423,14 @@ Shared utility modules used across the package.
 A pre-configured logger factory that outputs to `stdout` with a standard format.
 
 ```python
+import logging
 from dos_utility.utils.logger import get_logger
 
-logger = get_logger(name=__name__)
+logger = get_logger(name=__name__)               # defaults to logging.INFO
 logger.info("Something happened")
+
+# Override the level if needed:
+debug_logger = get_logger(name=__name__, level=logging.DEBUG)
 ```
 
 ### 7.2 AWS credentials

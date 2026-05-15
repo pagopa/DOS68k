@@ -32,7 +32,8 @@ See [CONFIGURATION.md](./docs/CONFIGURATION.md) for all options.
 # Health check
 curl http://localhost:8000/health
 
-# Create a session and send a query
+# Create a session and send a query.
+# Both X-User-Id and X-User-Role are required when bypassing the API gateway.
 curl -X POST http://localhost:8000/sessions \
   -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
   -H "X-User-Role: user" \
@@ -89,6 +90,10 @@ chatbot-api:
   volumes:
     - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
 ```
+
+The example directory `scripts/tool_config/` contains demo tool configs
+(`software-dev.yaml`, `zephyr-corp.yaml`, `borgonero-fc.yaml`) paired with
+the sample dataset loaded by `scripts/populate_vector_db.py`.
 
 Or set `TOOLS_CONFIG_DIR=/path/to/tools` in `.env`. Each tool is a YAML file defining a vector index namespace. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the schema.
 
