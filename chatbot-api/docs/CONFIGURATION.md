@@ -20,7 +20,7 @@ All API endpoints (except health checks) require two headers:
 | `X-User-Id` | UUID of the authenticated user |
 | `X-User-Role` | User's role: `admin` or `user` |
 
-These headers are typically injected by the API gateway (Traefik, via forward-auth to the auth service) in production. For local testing, include them in each request. See [INTEGRATION.md](./INTEGRATION.md#authentication) for examples and the `dos-utility` docs for the auth contract.
+These headers are typically injected by the API gateway (Traefik, via forward-auth to the auth service) in production. For local testing, include them in each request.
 
 ## Quick Setup
 

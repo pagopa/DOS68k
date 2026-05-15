@@ -102,5 +102,4 @@ SQS queue URL, MinIO endpoint, Qdrant host, etc.), see the
 
 ## Next Steps
 
-- See [INTEGRATION.md](./INTEGRATION.md) for API usage examples
 - Refer to the [dos-utility documentation](../../../dos-utility/docs/features.md) for detailed provider specifications and troubleshooting

@@ -56,7 +56,6 @@ curl http://localhost:8003/health/vdb
 ## Documentation
 
 - **[Configuration Guide](./docs/CONFIGURATION.md)** — Detailed setup for each provider (Redis, SQS, MinIO, S3, Qdrant)
-- **[Integration Guide](./docs/INTEGRATION.md)** — API examples and usage patterns
 
 ## API Overview
 
@@ -81,8 +80,6 @@ supply them yourself.
 - `POST /index/{index_id}/documents` — Upload document
 - `GET /index/{index_id}/documents` — List documents
 - `DELETE /index/{index_id}/documents/{document_name}` — Delete document
-
-See the [Integration Guide](./docs/INTEGRATION.md) for detailed endpoint documentation and examples.
 
 ## Local Development
 

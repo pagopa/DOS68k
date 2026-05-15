@@ -48,7 +48,6 @@ Full API documentation is at `http://localhost:8000`.
 ## Documentation
 
 - **[CONFIGURATION.md](./docs/CONFIGURATION.md)** — Environment variables, provider selection, database setup, customization
-- **[INTEGRATION.md](./docs/INTEGRATION.md)** — Complete REST API reference with examples
 
 ---
 
