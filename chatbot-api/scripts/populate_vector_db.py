@@ -20,11 +20,14 @@ Run from the ``chatbot-api`` directory so its ``.venv`` is active.
     # Fully scripted — every flag pre-filled, no prompts:
     uv run python scripts/populate_vector_db.py --provider redis --topic all
 
+    # Ollama (uncomment the qdrant service in compose.yaml first)
+    uv run python scripts/populate_vector_db.py --provider qdrant --embed-provider ollama
+
 Flags & env vars
 ----------------
     --provider {redis,qdrant}        Vector DB to populate. Prompted if omitted.
     --topic {<topic>,all}            Topic to populate. Default: all.
-    --embed-provider {google}        Embedding source. Only google for now.
+    --embed-provider {google|ollama} Embedding source. Only google for now.
     --embed-dim INT                  Vector dim, must match EMBED_DIM. Default: 768.
     --host HOST                      Override REDIS_HOST / QDRANT_HOST.
                                      Defaults to localhost (matches compose).
@@ -49,7 +52,6 @@ from rich.panel import Panel
 from rich.table import Table
 
 console = Console()
-
 
 # ---------------------------------------------------------------------------
 # Topics
@@ -417,25 +419,38 @@ EMBED_PROVIDERS = ["google"]
 
 
 def get_embeddings(
-    texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
+        texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
 ) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
     from google import genai
     from google.genai import types as genai_types
 
-    client = genai.Client(api_key=api_key)
-    response = client.models.embed_content(
-        # Must match chatbot-api's EMBED_MODEL_ID, or the chatbot's query
-        # embeddings won't align with these document embeddings and retrieval
-        # over the seeded indexes will return irrelevant results.
-        model="gemini-embedding-001",
-        contents=texts,
-        config=genai_types.EmbedContentConfig(
-            output_dimensionality=embed_dim,
-            task_type="RETRIEVAL_DOCUMENT",
-        ),
-    )
-    return [list(e.values) for e in response.embeddings]
+        client = genai.Client(api_key=api_key)
+        response = client.models.embed_content(
+            model="gemini-embedding-001",
+            contents=texts,
+            config=genai_types.EmbedContentConfig(
+                output_dimensionality=embed_dim,
+                task_type="RETRIEVAL_DOCUMENT",
+            ),
+        )
+        return [list(e.values) for e in response.embeddings]
+    elif embed_provider == "ollama":
+        from llama_index.embeddings.ollama import OllamaEmbedding
+
+        params = {
+            'base_url': "http://localhost:11434",
+        }
+
+        embed_model: OllamaEmbedding = OllamaEmbedding(
+            model_name="qwen3-embedding",
+            **{k: v for k, v in params.items() if v is not None}
+        )
+
+        return [i[:768] for i in embed_model.get_text_embedding_batch(texts)]
+
+    # mock: random unit vectors
+    return [random_unit_vector(embed_dim) for _ in texts]
 
 
 # ---------------------------------------------------------------------------
@@ -444,12 +459,12 @@ def get_embeddings(
 
 
 async def populate(
-    topic: str,
-    docs: list[dict],
-    provider: str,
-    embed_dim: int,
-    embed_provider: str,
-    api_key: str | None,
+        topic: str,
+        docs: list[dict],
+        provider: str,
+        embed_dim: int,
+        embed_provider: str,
+        api_key: str | None,
 ) -> None:
     os.environ["VECTOR_DB_PROVIDER"] = provider
 
@@ -627,6 +642,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Override the DB port (sets REDIS_PORT or QDRANT_PORT env var).",
+    )
+    parser.add_argument(
+        "--embed-provider",
+        choices=["mock", "google", "ollama"],
+        default="mock",
+        help="Embedding provider (default: mock). Use 'google' for real semantic embeddings.",
     )
     parser.add_argument(
         "--google-api-key",
