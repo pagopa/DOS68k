@@ -26,7 +26,7 @@ export function MessageComposer({ value, onChange, onSubmit, isDisabled }: Messa
   }
 
   return (
-    <div className="border-t bg-white p-4">
+    <div className="border-t bg-card px-4 py-3 shadow-sm">
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -36,7 +36,7 @@ export function MessageComposer({ value, onChange, onSubmit, isDisabled }: Messa
           placeholder="Ask a question… (Enter to send, Shift+Enter for newline)"
           disabled={isDisabled}
           rows={1}
-          className="flex-1 resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex-1 resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
           style={{ minHeight: '2.5rem', maxHeight: '8rem', overflowY: 'auto' }}
         />
         <Button

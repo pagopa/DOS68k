@@ -81,7 +81,7 @@ class Chatbot:
 
     def __get_context(
         self: Self, tool_calls: List[ToolSelection]
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> List[Dict[str, Any]]:
         """Retrieve context for the answer, if any RAG tool has been called.
 
         Args:
@@ -89,41 +89,33 @@ class Chatbot:
 
         Returns:
             Dict[str, Dict[str, Any]]: for each file (saved in the vector db), it returns the retrieved chunk.
-                                        Example: {
-                                            "file1": [
-                                                {
-                                                    "chunk_id": 1,
-                                                    "content": "some content",
-                                                    "score": 0.9,
-                                                },
-                                            ],
-                                            ...
-                                        }
+                                        Example: [
+                                            {
+                                                "filename": "test.md",
+                                                "chunk_id": 1,
+                                                "content": "some content",
+                                                "score": 0.9,
+                                            },
+                                            ...,
+                                        ],
         """
-        context: Dict[str, List[Dict[str, Any]]] = {}
-
+        sources: List[Dict[str, Any]] = []
         for tool_call in tool_calls:
             nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
+
             for node in nodes:
-                filename: str = node.metadata.get("filename", "")
-                chunk_id: str = node.metadata.get("chunk_id", "")
-                score: Optional[float] = node.metadata.get("score", None)
-                content: str = node.text
-
-                # Create empty if not exists
-                if filename not in context.keys():
-                    context[filename] = []
-
-                # Add new chunk
-                context[filename].append(
+                sources.append(
                     {
-                        "chunk_id": chunk_id,
-                        "content": content,
-                        "score": score,
+                        "chunk_id": node.metadata.get("chunk_id", ""),
+                        "content": node.text,
+                        "score": node.score,
+                        "filename": node.metadata.get("filename", ""),
                     }
                 )
 
-        return context
+        sources.sort(key=lambda s: (s["score"] is None, -(s["score"] or 0)))
+
+        return sources
 
     def __get_response_json(self: Self, engine_response: AgentOutput) -> Dict[str, Any]:
         """Converts the agent's raw output into the API response dict.
@@ -149,7 +141,7 @@ class Chatbot:
             return {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "context": {},
+                "context": [],
             }
 
         logger.debug(
@@ -235,7 +227,7 @@ class Chatbot:
             response_json = {
                 "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
                 "tags": [],
-                "context": {},
+                "context": [],
             }
             logger.warning(f"Exception: {e}")
 

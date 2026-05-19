@@ -1,49 +1,37 @@
 import { useState } from 'react'
-import type { FileContext } from '@/lib/api'
+import type { Source } from '@/lib/api'
 
 interface SourcesProps {
-  context?: Record<string, FileContext[]>
+  context?: Source[]
 }
 
 export function Sources({ context }: SourcesProps) {
   const [open, setOpen] = useState(false)
 
-  if (!context || Object.keys(context).length === 0) return null
-
-  const totalChunks = Object.values(context).reduce((sum, chunks) => sum + chunks.length, 0)
-  const sortedDocs = Object.keys(context).sort()
+  if (!context || context.length === 0) return null
 
   return (
-    <div className="mt-1 pl-1">
+    <div className="mt-1.5 pl-1">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-label={`Sources (${totalChunks})`}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        aria-label={`Sources (${context.length})`}
+        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-mono"
       >
-        <span aria-hidden="true">{open ? '▾' : '▸'}</span>
-        <span>Sources ({totalChunks})</span>
+        <span aria-hidden="true" className="text-primary/60">{open ? '▾' : '▸'}</span>
+        <span>sources ({context.length})</span>
       </button>
 
       {open && (
-        <div className="mt-2 space-y-2 border-l pl-3">
-          {sortedDocs.map((docName) => (
-            <details key={docName} className="text-xs">
-              <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">
-                {docName}
+        <div className="mt-2 space-y-2 border-l border-primary/20 pl-3">
+          {context.map((source) => (
+            <details key={`${source.filename}#${source.chunkId}`} className="text-xs">
+              <summary className="cursor-pointer font-mono text-muted-foreground hover:text-foreground">
+                {source.filename} <span className="text-primary/60">{source.score !== null ? source.score.toFixed(3) : '—'}</span>
               </summary>
-              <ul className="mt-1 space-y-2 pl-2">
-                {context[docName].map((chunk) => (
-                  <li key={chunk.chunkId} className="border-l pl-2 py-0.5">
-                    <p className="text-xs text-foreground/80 break-words whitespace-pre-wrap">
-                      {chunk.content}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Score: {chunk.score !== null ? chunk.score.toFixed(3) : '—'}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+              <p className="mt-1 pl-2 text-xs text-foreground/60 break-words whitespace-pre-wrap leading-relaxed">
+                {source.content}
+              </p>
             </details>
           ))}
         </div>

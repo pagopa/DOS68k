@@ -5,13 +5,11 @@ import type {
 } from './types'
 
 export type GetToken = () => string | null
-export type GetUser = () => { id: string; role: string } | null
 
 async function doRequest<T>(
   baseUrl: string,
   path: string,
   getToken: GetToken,
-  getUser: GetUser,
   init: RequestInit & { json?: unknown; timeoutMs?: number } = {}
 ): Promise<T> {
   const { json, timeoutMs, ...rest } = init
@@ -20,12 +18,6 @@ async function doRequest<T>(
 
   const token = getToken()
   if (token) headers['Authorization'] = `Bearer ${token}`
-
-  const user = getUser()
-  if (user) {
-    headers['X-User-Id'] = user.id
-    headers['X-User-Role'] = user.role
-  }
 
   if (json !== undefined) {
     headers['Content-Type'] = 'application/json'
@@ -47,13 +39,13 @@ async function doRequest<T>(
   return res.json() as Promise<T>
 }
 
-export function createApiClient(baseUrl: string, getToken: GetToken, getUser: GetUser) {
+export function createApiClient(baseUrl: string, getToken: GetToken) {
   const req = <T>(path: string, init?: RequestInit & { json?: unknown }) =>
-    doRequest<T>(baseUrl, path, getToken, getUser, init)
+    doRequest<T>(baseUrl, path, getToken, init)
 
   return {
     getSessions(): Promise<SessionDTO[]> {
-      return req('/sessions')
+      return req('/sessions/all')
     },
     createSession(input: CreateSessionInput): Promise<SessionDTO> {
       return req('/sessions', { method: 'POST', json: input })

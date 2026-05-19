@@ -14,7 +14,7 @@ export function ChatPage() {
         {sessionId ? (
           <ChatView key={sessionId} sessionId={sessionId} />
         ) : (
-          <main className="flex flex-1 items-center justify-center text-gray-400">
+          <main className="flex flex-1 items-center justify-center text-muted-foreground text-sm">
             Select or create a session to start chatting
           </main>
         )}

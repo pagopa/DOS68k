@@ -13,26 +13,26 @@ export function TopBar() {
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <span className="font-semibold text-gray-900">DOS68K</span>
+    <header className="flex h-13 items-center justify-between border-b bg-card px-5 shadow-sm">
+      <div className="flex items-center gap-5">
+        <span className="text-sm font-700 tracking-wider text-foreground">DOS68K</span>
         {user?.role === 'user' && (
-          <Link to="/chat" className="text-sm text-gray-600 hover:text-gray-900">Chat</Link>
+          <Link to="/chat" className="text-xs font-500 text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
         )}
         {user?.role === 'admin' && (
           <>
-            <Link to="/chat" className="text-sm text-gray-600 hover:text-gray-900">Chat</Link>
-            <Link to="/admin" className="text-sm text-gray-600 hover:text-gray-900">Admin</Link>
+            <Link to="/chat" className="text-xs font-500 text-muted-foreground hover:text-foreground transition-colors">Chat</Link>
+            <Link to="/admin" className="text-xs font-500 text-muted-foreground hover:text-foreground transition-colors">Admin</Link>
           </>
         )}
       </div>
       <div className="flex items-center gap-3">
         {user && (
-          <Badge variant="secondary" className="capitalize">
+          <Badge variant="secondary" className="capitalize text-xs font-mono tracking-wide">
             {user.role}
           </Badge>
         )}
-        <Button variant="outline" size="sm" onClick={handleLogout}>
+        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs text-muted-foreground hover:text-foreground">
           Logout
         </Button>
       </div>

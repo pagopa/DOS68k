@@ -21,9 +21,7 @@ const mockQuery: QueryResponseDTO = {
   answer: 'DOS68K is a RAG chatbot platform.',
   badAnswer: false,
   topic: ['platform'],
-  context: {
-    'readme.md': [{ chunkId: 1, content: 'DOS68K is...', score: 0.92 }],
-  },
+  context: [{ chunkId: '1', content: 'DOS68K is...', score: 0.92, filename: 'readme.md' }],
   createdAt: '2024-01-15T10:05:00Z',
   expiresAt: null,
 }
@@ -37,64 +35,64 @@ afterAll(() => server.close())
 // ------- getSessions -------
 
 describe('getSessions', () => {
-  it('sends GET to /sessions', async () => {
+  it('sends GET to /sessions/all', async () => {
     let capturedMethod: string | undefined
     server.use(
-      http.get(`${BASE}/sessions`, ({ request }) => {
+      http.get(`${BASE}/sessions/all`, ({ request }) => {
         capturedMethod = request.method
         return HttpResponse.json([mockSession])
       })
     )
-    await createApiClient(BASE, () => null, () => null).getSessions()
+    await createApiClient(BASE, () => null).getSessions()
     expect(capturedMethod).toBe('GET')
   })
 
   it('sends Authorization header when token is present', async () => {
     let authHeader: string | null = null
     server.use(
-      http.get(`${BASE}/sessions`, ({ request }) => {
+      http.get(`${BASE}/sessions/all`, ({ request }) => {
         authHeader = request.headers.get('Authorization')
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => 'my-token', () => null).getSessions()
+    await createApiClient(BASE, () => 'my-token').getSessions()
     expect(authHeader).toBe('Bearer my-token')
   })
 
   it('omits Authorization header when token is null', async () => {
     let authHeader: string | null = 'present'
     server.use(
-      http.get(`${BASE}/sessions`, ({ request }) => {
+      http.get(`${BASE}/sessions/all`, ({ request }) => {
         authHeader = request.headers.get('Authorization')
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => null, () => null).getSessions()
+    await createApiClient(BASE, () => null).getSessions()
     expect(authHeader).toBeNull()
   })
 
   it('parses response JSON into SessionDTO[]', async () => {
     server.use(
-      http.get(`${BASE}/sessions`, () => HttpResponse.json([mockSession]))
+      http.get(`${BASE}/sessions/all`, () => HttpResponse.json([mockSession]))
     )
-    const sessions = await createApiClient(BASE, () => null, () => null).getSessions()
+    const sessions = await createApiClient(BASE, () => null).getSessions()
     expect(sessions).toEqual([mockSession])
   })
 
   it('throws ApiError with correct status on 4xx', async () => {
     server.use(
-      http.get(`${BASE}/sessions`, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+      http.get(`${BASE}/sessions/all`, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getSessions().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getSessions().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
   })
 
   it('throws ApiError with status 500 on 5xx (distinguishable from 4xx)', async () => {
     server.use(
-      http.get(`${BASE}/sessions`, () => HttpResponse.json({ detail: 'Internal error' }, { status: 500 }))
+      http.get(`${BASE}/sessions/all`, () => HttpResponse.json({ detail: 'Internal error' }, { status: 500 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getSessions().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getSessions().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(500)
     expect(err.status >= 500).toBe(true)
@@ -112,7 +110,7 @@ describe('createSession', () => {
         return HttpResponse.json(mockSession, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).createSession({ title: 'T', isTemporary: false })
+    await createApiClient(BASE, () => null).createSession({ title: 'T', isTemporary: false })
     expect(capturedMethod).toBe('POST')
   })
 
@@ -124,7 +122,7 @@ describe('createSession', () => {
         return HttpResponse.json(mockSession, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).createSession({ title: 'New', isTemporary: false })
+    await createApiClient(BASE, () => null).createSession({ title: 'New', isTemporary: false })
     expect(body).toEqual({ title: 'New', isTemporary: false })
     expect(body).not.toHaveProperty('is_temporary')
   })
@@ -137,7 +135,7 @@ describe('createSession', () => {
         return HttpResponse.json(mockSession, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => 'tok', () => null).createSession({ title: 'T', isTemporary: false })
+    await createApiClient(BASE, () => 'tok').createSession({ title: 'T', isTemporary: false })
     expect(authHeader).toBe('Bearer tok')
   })
 
@@ -145,7 +143,7 @@ describe('createSession', () => {
     server.use(
       http.post(`${BASE}/sessions`, () => HttpResponse.json(mockSession, { status: 201 }))
     )
-    const session = await createApiClient(BASE, () => null, () => null).createSession({ title: 'T', isTemporary: false })
+    const session = await createApiClient(BASE, () => null).createSession({ title: 'T', isTemporary: false })
     expect(session).toEqual(mockSession)
   })
 
@@ -153,7 +151,7 @@ describe('createSession', () => {
     server.use(
       http.post(`${BASE}/sessions`, () => HttpResponse.json({ detail: 'Bad request' }, { status: 400 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .createSession({ title: 'T', isTemporary: false })
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -174,7 +172,7 @@ describe('deleteSession', () => {
         return new HttpResponse(null, { status: 204 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).deleteSession('abc-uuid')
+    await createApiClient(BASE, () => null).deleteSession('abc-uuid')
     expect(capturedMethod).toBe('DELETE')
     expect(capturedUrl).toContain('/sessions/abc-uuid')
   })
@@ -187,7 +185,7 @@ describe('deleteSession', () => {
         return new HttpResponse(null, { status: 204 })
       })
     )
-    await createApiClient(BASE, () => 'del-tok', () => null).deleteSession('abc-uuid')
+    await createApiClient(BASE, () => 'del-tok').deleteSession('abc-uuid')
     expect(authHeader).toBe('Bearer del-tok')
   })
 
@@ -195,7 +193,7 @@ describe('deleteSession', () => {
     server.use(
       http.delete(`${BASE}/sessions/abc-uuid`, () => new HttpResponse(null, { status: 204 }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).deleteSession('abc-uuid')
+    const result = await createApiClient(BASE, () => null).deleteSession('abc-uuid')
     expect(result).toBeUndefined()
   })
 
@@ -203,7 +201,7 @@ describe('deleteSession', () => {
     server.use(
       http.delete(`${BASE}/sessions/abc-uuid`, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).deleteSession('abc-uuid').catch(e => e)
+    const err = await createApiClient(BASE, () => null).deleteSession('abc-uuid').catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
   })
@@ -222,7 +220,7 @@ describe('getQueries', () => {
         return HttpResponse.json([mockQuery])
       })
     )
-    await createApiClient(BASE, () => null, () => null).getQueries(SESSION_ID)
+    await createApiClient(BASE, () => null).getQueries(SESSION_ID)
     expect(capturedMethod).toBe('GET')
   })
 
@@ -234,7 +232,7 @@ describe('getQueries', () => {
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => 'q-token', () => null).getQueries(SESSION_ID)
+    await createApiClient(BASE, () => 'q-token').getQueries(SESSION_ID)
     expect(authHeader).toBe('Bearer q-token')
   })
 
@@ -246,7 +244,7 @@ describe('getQueries', () => {
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => null, () => null).getQueries(SESSION_ID)
+    await createApiClient(BASE, () => null).getQueries(SESSION_ID)
     expect(authHeader).toBeNull()
   })
 
@@ -254,7 +252,7 @@ describe('getQueries', () => {
     server.use(
       http.get(`${BASE}/queries/${SESSION_ID}`, () => HttpResponse.json([mockQuery]))
     )
-    const queries = await createApiClient(BASE, () => null, () => null).getQueries(SESSION_ID)
+    const queries = await createApiClient(BASE, () => null).getQueries(SESSION_ID)
     expect(queries).toEqual([mockQuery])
   })
 
@@ -264,7 +262,7 @@ describe('getQueries', () => {
         HttpResponse.json({ detail: 'Session not found' }, { status: 404 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null).getQueries(SESSION_ID).catch(e => e)
+    const err = await createApiClient(BASE, () => null).getQueries(SESSION_ID).catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
   })
@@ -275,7 +273,7 @@ describe('getQueries', () => {
         HttpResponse.json({ detail: 'Internal error' }, { status: 500 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null).getQueries(SESSION_ID).catch(e => e)
+    const err = await createApiClient(BASE, () => null).getQueries(SESSION_ID).catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(500)
   })
@@ -294,7 +292,7 @@ describe('createQuery', () => {
         return HttpResponse.json(mockQuery, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).createQuery(SESSION_ID, {
+    await createApiClient(BASE, () => null).createQuery(SESSION_ID, {
       question: 'What is DOS68K?',
       sessionHistory: [],
     })
@@ -309,7 +307,7 @@ describe('createQuery', () => {
         return HttpResponse.json(mockQuery, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).createQuery(SESSION_ID, {
+    await createApiClient(BASE, () => null).createQuery(SESSION_ID, {
       question: 'Follow-up?',
       sessionHistory: [{ question: 'What is DOS68K?', answer: 'A RAG platform.' }],
     })
@@ -326,7 +324,7 @@ describe('createQuery', () => {
       })
     )
     const history = [{ question: 'q1', answer: 'a1' }, { question: 'q2', answer: 'a2' }]
-    await createApiClient(BASE, () => null, () => null).createQuery(SESSION_ID, {
+    await createApiClient(BASE, () => null).createQuery(SESSION_ID, {
       question: 'q3',
       sessionHistory: history,
     })
@@ -341,7 +339,7 @@ describe('createQuery', () => {
         return HttpResponse.json(mockQuery, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => 'q-tok', () => null).createQuery(SESSION_ID, {
+    await createApiClient(BASE, () => 'q-tok').createQuery(SESSION_ID, {
       question: 'Q?',
       sessionHistory: [],
     })
@@ -352,7 +350,7 @@ describe('createQuery', () => {
     server.use(
       http.post(`${BASE}/queries/${SESSION_ID}`, () => HttpResponse.json(mockQuery, { status: 201 }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).createQuery(SESSION_ID, {
+    const result = await createApiClient(BASE, () => null).createQuery(SESSION_ID, {
       question: 'What is DOS68K?',
       sessionHistory: [],
     })
@@ -365,7 +363,7 @@ describe('createQuery', () => {
         HttpResponse.json({ detail: 'Session not found' }, { status: 404 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .createQuery(SESSION_ID, { question: 'Q?', sessionHistory: [] })
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -384,7 +382,7 @@ describe('getIndexes', () => {
         return HttpResponse.json(['idx-1', 'idx-2'])
       })
     )
-    await createApiClient(BASE, () => null, () => null).getIndexes()
+    await createApiClient(BASE, () => null).getIndexes()
     expect(capturedMethod).toBe('GET')
   })
 
@@ -396,7 +394,7 @@ describe('getIndexes', () => {
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => 'idx-token', () => null).getIndexes()
+    await createApiClient(BASE, () => 'idx-token').getIndexes()
     expect(authHeader).toBe('Bearer idx-token')
   })
 
@@ -404,7 +402,7 @@ describe('getIndexes', () => {
     server.use(
       http.get(`${BASE}/index/all`, () => HttpResponse.json(['idx-1', 'idx-2']))
     )
-    const result = await createApiClient(BASE, () => null, () => null).getIndexes()
+    const result = await createApiClient(BASE, () => null).getIndexes()
     expect(result).toEqual(['idx-1', 'idx-2'])
   })
 
@@ -412,7 +410,7 @@ describe('getIndexes', () => {
     server.use(
       http.get(`${BASE}/index/all`, () => HttpResponse.json({ detail: 'Forbidden' }, { status: 403 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getIndexes().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getIndexes().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(403)
   })
@@ -437,7 +435,7 @@ describe('createIndex', () => {
         return HttpResponse.json(mockCreateIndexResponse, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).createIndex('my-index')
+    await createApiClient(BASE, () => null).createIndex('my-index')
     expect(capturedMethod).toBe('POST')
     expect(capturedUrl).toContain('/index/my-index')
   })
@@ -450,7 +448,7 @@ describe('createIndex', () => {
         return HttpResponse.json(mockCreateIndexResponse, { status: 201 })
       })
     )
-    await createApiClient(BASE, () => 'admin-tok', () => null).createIndex('my-index')
+    await createApiClient(BASE, () => 'admin-tok').createIndex('my-index')
     expect(authHeader).toBe('Bearer admin-tok')
   })
 
@@ -458,7 +456,7 @@ describe('createIndex', () => {
     server.use(
       http.post(`${BASE}/index/my-index`, () => HttpResponse.json(mockCreateIndexResponse, { status: 201 }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).createIndex('my-index')
+    const result = await createApiClient(BASE, () => null).createIndex('my-index')
     expect(result).toEqual(mockCreateIndexResponse)
     expect(result).toHaveProperty('indexId', 'my-index')
     expect(result).toHaveProperty('userId')
@@ -469,7 +467,7 @@ describe('createIndex', () => {
     server.use(
       http.post(`${BASE}/index/dup`, () => HttpResponse.json({ detail: 'Index already exists' }, { status: 409 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).createIndex('dup').catch(e => e)
+    const err = await createApiClient(BASE, () => null).createIndex('dup').catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(409)
   })
@@ -478,7 +476,7 @@ describe('createIndex', () => {
     server.use(
       http.post(`${BASE}/index/fail`, () => HttpResponse.json({ detail: 'Error' }, { status: 500 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).createIndex('fail').catch(e => e)
+    const err = await createApiClient(BASE, () => null).createIndex('fail').catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(500)
   })
@@ -497,7 +495,7 @@ describe('deleteIndex', () => {
         return HttpResponse.json({ message: "Index 'my-index' deleted successfully" })
       })
     )
-    await createApiClient(BASE, () => null, () => null).deleteIndex('my-index')
+    await createApiClient(BASE, () => null).deleteIndex('my-index')
     expect(capturedMethod).toBe('DELETE')
     expect(capturedUrl).toContain('/index/my-index')
   })
@@ -510,7 +508,7 @@ describe('deleteIndex', () => {
         return HttpResponse.json({ message: 'deleted' })
       })
     )
-    await createApiClient(BASE, () => 'del-tok', () => null).deleteIndex('my-index')
+    await createApiClient(BASE, () => 'del-tok').deleteIndex('my-index')
     expect(authHeader).toBe('Bearer del-tok')
   })
 
@@ -518,7 +516,7 @@ describe('deleteIndex', () => {
     server.use(
       http.delete(`${BASE}/index/ghost`, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).deleteIndex('ghost').catch(e => e)
+    const err = await createApiClient(BASE, () => null).deleteIndex('ghost').catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
   })
@@ -537,7 +535,7 @@ describe('getHealthQueue', () => {
         return HttpResponse.json({ ...mockHealth, queue: 'connected' })
       })
     )
-    await createApiClient(BASE, () => null, () => null).getHealthQueue()
+    await createApiClient(BASE, () => null).getHealthQueue()
     expect(capturedMethod).toBe('GET')
   })
 
@@ -545,7 +543,7 @@ describe('getHealthQueue', () => {
     server.use(
       http.get(`${BASE}/health/queue`, () => HttpResponse.json({ ...mockHealth, queue: 'connected' }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).getHealthQueue()
+    const result = await createApiClient(BASE, () => null).getHealthQueue()
     expect(result).toMatchObject({ status: 'ok', queue: 'connected' })
   })
 
@@ -553,7 +551,7 @@ describe('getHealthQueue', () => {
     server.use(
       http.get(`${BASE}/health/queue`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getHealthQueue().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getHealthQueue().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(503)
   })
@@ -568,7 +566,7 @@ describe('getHealthStorage', () => {
         return HttpResponse.json({ ...mockHealth, storage: 'connected' })
       })
     )
-    await createApiClient(BASE, () => null, () => null).getHealthStorage()
+    await createApiClient(BASE, () => null).getHealthStorage()
     expect(capturedMethod).toBe('GET')
   })
 
@@ -576,7 +574,7 @@ describe('getHealthStorage', () => {
     server.use(
       http.get(`${BASE}/health/storage`, () => HttpResponse.json({ ...mockHealth, storage: 'connected' }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).getHealthStorage()
+    const result = await createApiClient(BASE, () => null).getHealthStorage()
     expect(result).toMatchObject({ status: 'ok', storage: 'connected' })
   })
 
@@ -584,7 +582,7 @@ describe('getHealthStorage', () => {
     server.use(
       http.get(`${BASE}/health/storage`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getHealthStorage().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getHealthStorage().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(503)
   })
@@ -599,7 +597,7 @@ describe('getHealthVdb', () => {
         return HttpResponse.json({ ...mockHealth, vector_db: 'connected' })
       })
     )
-    await createApiClient(BASE, () => null, () => null).getHealthVdb()
+    await createApiClient(BASE, () => null).getHealthVdb()
     expect(capturedMethod).toBe('GET')
   })
 
@@ -607,7 +605,7 @@ describe('getHealthVdb', () => {
     server.use(
       http.get(`${BASE}/health/vdb`, () => HttpResponse.json({ ...mockHealth, vector_db: 'connected' }))
     )
-    const result = await createApiClient(BASE, () => null, () => null).getHealthVdb()
+    const result = await createApiClient(BASE, () => null).getHealthVdb()
     expect(result).toMatchObject({ status: 'ok', vector_db: 'connected' })
   })
 
@@ -615,7 +613,7 @@ describe('getHealthVdb', () => {
     server.use(
       http.get(`${BASE}/health/vdb`, () => HttpResponse.json({ detail: 'error' }, { status: 503 }))
     )
-    const err = await createApiClient(BASE, () => null, () => null).getHealthVdb().catch(e => e)
+    const err = await createApiClient(BASE, () => null).getHealthVdb().catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(503)
   })
@@ -639,7 +637,7 @@ describe('getDocuments', () => {
         return HttpResponse.json(mockDocuments)
       })
     )
-    await createApiClient(BASE, () => null, () => null).getDocuments('my-index')
+    await createApiClient(BASE, () => null).getDocuments('my-index')
     expect(capturedMethod).toBe('GET')
     expect(capturedUrl).toContain('/index/my-index/documents')
   })
@@ -652,7 +650,7 @@ describe('getDocuments', () => {
         return HttpResponse.json([])
       })
     )
-    await createApiClient(BASE, () => 'doc-token', () => null).getDocuments('my-index')
+    await createApiClient(BASE, () => 'doc-token').getDocuments('my-index')
     expect(authHeader).toBe('Bearer doc-token')
   })
 
@@ -660,7 +658,7 @@ describe('getDocuments', () => {
     server.use(
       http.get(`${BASE}/index/my-index/documents`, () => HttpResponse.json(mockDocuments))
     )
-    const result = await createApiClient(BASE, () => null, () => null).getDocuments('my-index')
+    const result = await createApiClient(BASE, () => null).getDocuments('my-index')
     expect(result).toEqual(mockDocuments)
     expect(result[0]).toHaveProperty('documentName', 'readme.pdf')
   })
@@ -671,7 +669,7 @@ describe('getDocuments', () => {
         HttpResponse.json({ detail: 'Not found' }, { status: 404 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null).getDocuments('no-such').catch(e => e)
+    const err = await createApiClient(BASE, () => null).getDocuments('no-such').catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(404)
   })
@@ -693,7 +691,7 @@ describe('uploadDocument', () => {
       })
     )
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' })
-    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    await createApiClient(BASE, () => null).uploadDocument('my-index', file)
     expect(capturedMethod).toBe('POST')
     expect(capturedUrl).toContain('/index/my-index/documents')
   })
@@ -708,7 +706,7 @@ describe('uploadDocument', () => {
       })
     )
     const file = new File(['pdf bytes'], 'report.pdf', { type: 'application/pdf' })
-    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    await createApiClient(BASE, () => null).uploadDocument('my-index', file)
     expect(capturedFileField).not.toBeNull()
     expect((capturedFileField as unknown as File).size).toBeGreaterThan(0)
   })
@@ -722,7 +720,7 @@ describe('uploadDocument', () => {
       })
     )
     const file = new File(['data'], 'file.md', { type: 'text/markdown' })
-    await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    await createApiClient(BASE, () => null).uploadDocument('my-index', file)
     expect(contentType).not.toBe('application/json')
     expect(contentType).toContain('multipart/form-data')
   })
@@ -736,7 +734,7 @@ describe('uploadDocument', () => {
       })
     )
     const file = new File(['x'], 'x.txt', { type: 'text/plain' })
-    await createApiClient(BASE, () => 'upload-tok', () => null).uploadDocument('my-index', file)
+    await createApiClient(BASE, () => 'upload-tok').uploadDocument('my-index', file)
     expect(authHeader).toBe('Bearer upload-tok')
   })
 
@@ -747,7 +745,7 @@ describe('uploadDocument', () => {
       )
     )
     const file = new File(['x'], 'x.pdf', { type: 'application/pdf' })
-    const result = await createApiClient(BASE, () => null, () => null).uploadDocument('my-index', file)
+    const result = await createApiClient(BASE, () => null).uploadDocument('my-index', file)
     expect(result).toEqual(mockUploadResponse)
   })
 
@@ -758,7 +756,7 @@ describe('uploadDocument', () => {
       )
     )
     const file = new File(['x'], 'x.zip', { type: 'application/zip' })
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .uploadDocument('my-index', file)
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -772,7 +770,7 @@ describe('uploadDocument', () => {
       )
     )
     const file = new File(['x'], 'x.pdf', { type: 'application/pdf' })
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .uploadDocument('my-index', file)
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -793,7 +791,7 @@ describe('deleteDocument', () => {
         return new HttpResponse(null, { status: 204 })
       })
     )
-    await createApiClient(BASE, () => null, () => null).deleteDocument('my-index', 'readme.pdf')
+    await createApiClient(BASE, () => null).deleteDocument('my-index', 'readme.pdf')
     expect(capturedMethod).toBe('DELETE')
     expect(capturedUrl).toContain('/index/my-index/documents/readme.pdf')
   })
@@ -806,7 +804,7 @@ describe('deleteDocument', () => {
         return new HttpResponse(null, { status: 204 })
       })
     )
-    await createApiClient(BASE, () => 'del-doc-tok', () => null).deleteDocument('my-index', 'readme.pdf')
+    await createApiClient(BASE, () => 'del-doc-tok').deleteDocument('my-index', 'readme.pdf')
     expect(authHeader).toBe('Bearer del-doc-tok')
   })
 
@@ -816,7 +814,7 @@ describe('deleteDocument', () => {
         new HttpResponse(null, { status: 204 })
       )
     )
-    const result = await createApiClient(BASE, () => null, () => null).deleteDocument('my-index', 'readme.pdf')
+    const result = await createApiClient(BASE, () => null).deleteDocument('my-index', 'readme.pdf')
     expect(result).toBeUndefined()
   })
 
@@ -826,7 +824,7 @@ describe('deleteDocument', () => {
         HttpResponse.json({ detail: 'Not found' }, { status: 404 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .deleteDocument('my-index', 'ghost.pdf')
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -839,7 +837,7 @@ describe('deleteDocument', () => {
         HttpResponse.json({ detail: 'Error' }, { status: 500 })
       )
     )
-    const err = await createApiClient(BASE, () => null, () => null)
+    const err = await createApiClient(BASE, () => null)
       .deleteDocument('my-index', 'readme.pdf')
       .catch(e => e)
     expect(err).toBeInstanceOf(ApiError)

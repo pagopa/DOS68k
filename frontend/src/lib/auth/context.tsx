@@ -11,7 +11,6 @@ interface AuthContextValue {
   login: (role: Role) => void
   logout: () => void
   getToken: () => string | null
-  getUser: () => AuthUser | null
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
@@ -33,10 +32,9 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const getToken = useCallback(() => provider.getToken(), [])
-  const getUser = useCallback(() => provider.getUser(), [])
 
   return (
-    <AuthContext value={{ user, isAuthenticated, login, logout, getToken, getUser }}>
+    <AuthContext value={{ user, isAuthenticated, login, logout, getToken }}>
       {children}
     </AuthContext>
   )

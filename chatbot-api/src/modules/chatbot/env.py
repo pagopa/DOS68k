@@ -18,7 +18,7 @@ class ChatbotSettings(BaseSettings):
 
     # Embedding settings
     embed_model_id: Annotated[
-        str, Field(default="ID of the embedding model for the chose provider")
+        str, Field(description="ID of the embedding model for the chosen provider")
     ]
     embed_batch_size: Annotated[PositiveInt, Field(default=100)]
     embed_dim: Annotated[PositiveInt, Field(default=768)]

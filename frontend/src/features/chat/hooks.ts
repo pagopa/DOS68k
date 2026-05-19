@@ -9,10 +9,10 @@ const SESSIONS_KEY = ['sessions'] as const
 const queriesKey = (sessionId: string) => ['queries', sessionId] as const
 
 function useApiClient() {
-  const { getToken, getUser } = useAuth()
+  const { getToken } = useAuth()
   return useMemo(
-    () => createApiClient(import.meta.env.VITE_API_BASE_URL ?? '', getToken, getUser),
-    // getToken and getUser are stable useCallback refs from AuthContextProvider
+    () => createApiClient(import.meta.env.VITE_API_BASE_URL ?? '', getToken),
+    // getToken is a stable useCallback ref from AuthContextProvider
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )

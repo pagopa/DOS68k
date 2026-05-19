@@ -1,0 +1,146 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'auth/Dockerfile'
+      - 'auth/src/**'
+      - 'auth/pyproject.toml'
+      - 'chatbot-api/Dockerfile'
+      - 'chatbot-api/src/**'
+      - 'chatbot-api/pyproject.toml'
+      # - 'chatbot-evaluate/api/Dockerfile'
+      # - 'chatbot-evaluate/api/src/**'
+      # - 'chatbot-evaluate/api/pyproject.toml'
+      # - 'chatbot-evaluate/worker/Dockerfile'
+      # - 'chatbot-evaluate/worker/src/**'
+      # - 'chatbot-evaluate/worker/pyproject.toml'
+      - 'chatbot-index/api/Dockerfile'
+      - 'chatbot-index/api/src/**'
+      - 'chatbot-index/api/pyproject.toml'
+      - 'chatbot-index/worker/Dockerfile'
+      - 'chatbot-index/worker/src/**'
+      - 'chatbot-index/worker/pyproject.toml'
+      - 'masking/Dockerfile'
+      - 'masking/src/**'
+      - 'masking/pyproject.toml'
+      - 'dos-utility/src/**'
+      - 'dos-utility/pyproject.toml'
+      - 'frontend/Dockerfile'
+      - 'frontend/src'
+      - 'frontend/pnpm-lock.yaml'
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  REGISTRY_USERNAME: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: changes
+        with:
+        # Add remaining services once completed
+          filters: |
+            frontend:
+              - 'frontend/**'
+            auth:
+              - 'auth/**'
+              - 'dos-utility/**'
+            chatbot-api:
+              - 'chatbot-api/**'
+              - 'dos-utility/**'
+            chatbot-index-api:
+              - 'chatbot-index/api/**'
+              - 'dos-utility/**'
+            chatbot-index-worker:
+              - 'chatbot-index/worker/**'
+              - 'dos-utility/**'
+            masking:
+              - 'masking/**'
+              - 'dos-utility/**'
+
+      - id: set-matrix
+        run: |
+          python3 << 'PYTHON_EOF'
+          import json
+          import os
+
+          changes = {
+              'frontend': '${{ steps.changes.outputs.frontend }}' == 'true',
+              'auth': '${{ steps.changes.outputs.auth }}' == 'true',
+              'chatbot-api': '${{ steps.changes.outputs.chatbot-api }}' == 'true',
+              'chatbot-evaluate-api': '${{ steps.changes.outputs.chatbot-evaluate-api }}' == 'true',
+              'chatbot-evaluate-worker': '${{ steps.changes.outputs.chatbot-evaluate-worker }}' == 'true',
+              'chatbot-index-api': '${{ steps.changes.outputs.chatbot-index-api }}' == 'true',
+              'chatbot-index-worker': '${{ steps.changes.outputs.chatbot-index-worker }}' == 'true',
+              'masking': '${{ steps.changes.outputs.masking }}' == 'true',
+          }
+
+          dockerfiles = {
+              'frontend': 'frontend/Dockerfile',
+              'auth': 'auth/Dockerfile',
+              'chatbot-api': 'chatbot-api/Dockerfile',
+              'chatbot-evaluate-api': 'chatbot-evaluate/api/Dockerfile',
+              'chatbot-evaluate-worker': 'chatbot-evaluate/worker/Dockerfile',
+              'chatbot-index-api': 'chatbot-index/api/Dockerfile',
+              'chatbot-index-worker': 'chatbot-index/worker/Dockerfile',
+              'masking': 'masking/Dockerfile',
+          }
+
+          matrix = [
+              {'service': service, 'dockerfile': dockerfiles[service]}
+              for service in changes if changes[service]
+          ]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'matrix={json.dumps(matrix)}\n')
+          PYTHON_EOF
+
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.matrix != '[]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+
+      - uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          tags: |
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

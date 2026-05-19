@@ -1,5 +1,6 @@
 import nh3
 
+from decimal import Decimal
 from logging import Logger
 from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
@@ -77,7 +78,7 @@ class QueryService:
                 "question": query["question"],
                 "answer": query["answer"],
                 "topic": query["topic"],
-                "context": {},  # contexts are not persisted, only returned live on creation. It will be saved in the monitoring service
+                "context": query["context"],
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
             }
@@ -129,12 +130,23 @@ class QueryService:
             question_masked = await self.__mask_pii(text=question_cleaned)
             answer_masked = await self.__mask_pii(text=answer)
 
+        context = [
+            {
+                **chunk,
+                "score": Decimal(str(chunk["score"]))
+                if chunk["score"] is not None
+                else None,
+            }
+            for chunk in response_json["context"]
+        ]
+
         item: Dict[str, Any] = await self.query_repository.create_query(
             session_id=session_id,
             query_data={
                 "question": question_masked,
                 "answer": answer_masked,
                 "expiresAt": session["expiresAt"],
+                "context": context,
                 "topic": [],
             },
         )
@@ -149,7 +161,7 @@ class QueryService:
             "question": item["question"],
             "answer": item["answer"],
             "topic": item["topic"],
-            "context": response_json["context"],
+            "context": item["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
         }

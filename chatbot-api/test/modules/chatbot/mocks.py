@@ -79,8 +79,9 @@ def get_agent_yaml_settings_mock(file: Path) -> AgentYamlSettings:
 
 def get_agent_mock(**kwargs) -> ReActAgent:
     class NodeMock:
-        metadata = {"filename": "file1.pdf", "chunk_id": "1", "score": 0.9}
+        metadata = {"filename": "file1.pdf", "chunk_id": "1"}
         text = "some content"
+        score = 0.9
 
     class RawOutputMock:
         source_nodes = [NodeMock()]
