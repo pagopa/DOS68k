@@ -18,6 +18,9 @@ Usage (run from the chatbot-api directory so its .venv is active):
     # Qdrant (uncomment the qdrant service in compose.yaml first)
     uv run python ../scripts/populate_vector_db.py --provider qdrant
 
+    # Ollama (uncomment the qdrant service in compose.yaml first)
+    uv run python ../scripts/populate_vector_db.py --provider qdrant --embed-provider ollama
+
     # Populate a specific topic only
     uv run python ../scripts/populate_vector_db.py --provider redis --topic zephyr-corp
 
@@ -40,7 +43,6 @@ import asyncio
 import math
 import os
 import random
-
 
 # ---------------------------------------------------------------------------
 # Topics
@@ -412,7 +414,7 @@ def random_unit_vector(dim: int) -> list[float]:
 
 
 def get_embeddings(
-    texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
+        texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
 ) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
     if embed_provider == "google":
@@ -429,6 +431,19 @@ def get_embeddings(
             ),
         )
         return [list(e.values) for e in response.embeddings]
+    elif embed_provider == "ollama":
+        from llama_index.embeddings.ollama import OllamaEmbedding
+
+        params = {
+            'base_url': "http://localhost:11434",
+        }
+
+        embed_model: OllamaEmbedding = OllamaEmbedding(
+            model_name="qwen3-embedding",
+            **{k: v for k, v in params.items() if v is not None}
+        )
+
+        return [i[:768] for i in embed_model.get_text_embedding_batch(texts)]
 
     # mock: random unit vectors
     return [random_unit_vector(embed_dim) for _ in texts]
@@ -440,12 +455,12 @@ def get_embeddings(
 
 
 async def populate(
-    topic: str,
-    docs: list[dict],
-    provider: str,
-    embed_dim: int,
-    embed_provider: str,
-    api_key: str | None,
+        topic: str,
+        docs: list[dict],
+        provider: str,
+        embed_dim: int,
+        embed_provider: str,
+        api_key: str | None,
 ) -> None:
     os.environ["VECTOR_DB_PROVIDER"] = provider
 
@@ -566,7 +581,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--embed-provider",
-        choices=["mock", "google"],
+        choices=["mock", "google", "ollama"],
         default="mock",
         help="Embedding provider (default: mock). Use 'google' for real semantic embeddings.",
     )
