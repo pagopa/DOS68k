@@ -56,13 +56,16 @@ curl http://localhost:8003/health/vdb
 ## Documentation
 
 - **[Configuration Guide](./docs/CONFIGURATION.md)** — Detailed setup for each provider (Redis, SQS, MinIO, S3, Qdrant)
-- **[Integration Guide](./docs/INTEGRATION.md)** — API examples and usage patterns
 
 ## API Overview
 
 All endpoints require two headers (except `/health` endpoints):
-- `X-User-Id: <uuid>` — Unique user identifier
-- `X-User-Role: admin` — User role (currently only `admin` is supported)
+- `X-User-Id: <uuid>` — must be a valid UUID
+- `X-User-Role: admin` — only `admin` is accepted; any other value is rejected with `403`
+
+In production these headers are injected by the API gateway (Traefik
+forward-auth via the auth service). For local development you must
+supply them yourself.
 
 **Health checks (no auth required):**
 - `GET /health` — Service status
@@ -77,8 +80,6 @@ All endpoints require two headers (except `/health` endpoints):
 - `POST /index/{index_id}/documents` — Upload document
 - `GET /index/{index_id}/documents` — List documents
 - `DELETE /index/{index_id}/documents/{document_name}` — Delete document
-
-See the [Integration Guide](./docs/INTEGRATION.md) for detailed endpoint documentation and examples.
 
 ## Local Development
 
@@ -115,15 +116,19 @@ See the [Configuration Guide](./docs/CONFIGURATION.md) for complete provider-spe
 
 ## API Documentation
 
-Index and Document endpoints require the header:
+Index and Document endpoints require both headers:
 
 ```
 X-User-Id: <uuid>
+X-User-Role: admin
 ```
 
 Health endpoints do not require authentication.
 
 ### Health
+
+All `/health/*` endpoints always return HTTP 200; an unhealthy backend
+is signalled by `"<component>": "NOT connected"` in the JSON body.
 
 - `GET /health` — Service status
   - Response: `{ "status": "ok", "service": "Chatbot Index API" }`
@@ -139,13 +144,13 @@ Health endpoints do not require authentication.
 - `POST /index/{index_id}` — Create a new index
   - Response `201`:
     ```json
-    { "indexId": "string", "userId": "<uuid>", "createdAt": "YYYY-MM-DDTHH:MM:SS" }
+    { "indexId": "string", "userId": "<uuid>", "createdAt": "YYYY-MM-DD HH:MM:SS" }
     ```
-  - Response `409`: Index already exists
+  - Response `409`: `{ "detail": "Index already exists" }`
 
 - `DELETE /index/{index_id}` — Delete an index and all its documents
   - Response `200`: `{ "message": "Index '<index_id>' deleted successfully" }`
-  - Response `404`: Index not found
+  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
 
 - `GET /index/all` — List all indexes
   - Response `200`: `["index-name-1", "index-name-2"]`
@@ -156,18 +161,22 @@ Health endpoints do not require authentication.
   - Request: multipart form with a `file` field. Accepted formats: `.pdf`, `.md`, `.txt`
   - Response `202`:
     ```json
-    { "indexId": "string", "documentName": "string", "message": "string" }
+    {
+      "indexId": "<index_id>",
+      "documentName": "<filename>",
+      "message": "Document '<filename>' uploaded successfully"
+    }
     ```
-  - Response `404`: Index not found
-  - Response `415`: Unsupported file type
+  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
+  - Response `415`: `{ "detail": "Unsupported file type '<ext>'. Allowed types: .md, .pdf, .txt" }`
 
 - `GET /index/{index_id}/documents` — List documents in an index
   - Response `200`: `[{ "documentName": "string" }]`
-  - Response `404`: Index not found
+  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
 
 - `DELETE /index/{index_id}/documents/{document_name}` — Delete a document from an index
   - Response `200`: `{ "message": "Document '<document_name>' deleted from index '<index_id>'" }`
-  - Response `404`: Index or document not found
+  - Response `404`: `{ "detail": "Document '<document_name>' not found in index '<index_id>'" }` or `{ "detail": "Index '<index_id>' does not exist" }`
 
 ---
 

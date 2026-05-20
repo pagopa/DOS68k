@@ -2,12 +2,14 @@
 
 Here a list of functionalities this package provide:
 
+- [SQL](#1-sql-db-connection)
 - [Auth interface](#2-auth-interface)
 - [Queue interface](#3-queue-interface)
 - [Storage interface](#4-storage-interface)
 - [VectorDB interface](#5-vector-db-interface)
 - [NoSQL DB interface](#6-nosql-db-interface)
 - [Utilities](#7-utilities)
+- [Tracing interface](#8-tracing-interface)
 
 ## 1. SQL DB connection
 
@@ -93,6 +95,7 @@ Here a code snippet for the import.
 ```python
 from dos_utility.auth import AuthInterface, get_auth
 from dos_utility.auth import EmptyTokenException, TokenExpiredException, InvalidTokenException, InvalidTokenKeyException
+from dos_utility.auth import get_user, get_admin_user, User, UserRole
 ```
 
 Example usage:
@@ -166,11 +169,11 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
-export SQS_ENDPOINT_URL=<endpoint> # With format http(s)://host (es: http://localstack)
+export SQS_ENDPOINT_URL=<endpoint> # Default: http://localhost. With format http(s)://host (es: http://localstack)
 export SQS_PORT=<port>             # Default: 4566
 export SQS_REGION=<region>         # Default: us-east-1
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Optional, shared via dos_utility.utils.aws (see §7.2)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Optional, shared via dos_utility.utils.aws (see §7.2)
 export SQS_QUEUE_NAME=<queue-name>
 export SQS_QUEUE_URL=<queue-url>
 ```
@@ -180,8 +183,11 @@ export SQS_QUEUE_URL=<queue-url>
 Add the following env variables to the `.env` file you created [here](#31-env-setup).
 
 ```bash
-export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
-export REDIS_PORT=<port>
+# Shared Redis connection (see §7.3)
+export REDIS_HOST=<host> # Default: localhost. Format: <host>, without protocol (es: queue - as per the docker compose service name)
+export REDIS_PORT=<port> # Default: 6379
+
+# Queue-specific
 export REDIS_STREAM=<stream-name>  # Default: my-stream
 export REDIS_GROUP=<group-name>    # Default: my-group
 ```
@@ -235,11 +241,13 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#41-env-setup).
 
 ```bash
-export S3_ENDPOINT=<endpoint> # This is optional. If you are working with real AWS S3 then you can omit it, while if you are working with S3 local implementations (say LocalStack) then you have to specify the endpoint
+export S3_ENDPOINT=<endpoint> # Optional. If you are working with real AWS S3 then you can omit it, while if you are working with S3 local implementations (say LocalStack) then you have to specify the endpoint
 export S3_REGION=<region>
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Read by boto3's default credential chain (not by AWSCredentialsSettings for S3)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Read by boto3's default credential chain (not by AWSCredentialsSettings for S3)
 ```
+
+> The S3 provider does not pass credentials to `boto3` explicitly: it relies on boto3's standard resolution chain (env vars, `~/.aws/credentials`, instance role, etc.).
 
 #### 4.1.2 MinIO env
 
@@ -251,7 +259,7 @@ export MINIO_PORT=<port>
 export MINIO_ACCESS_KEY=<access-key>
 export MINIO_SECRET_KEY=<secret-key>
 export MINIO_REGION=<region>
-export MINIO_SECURE=<bool> # true/false. true if you want to use HTTPS protocol, false if you use HTTP
+export MINIO_SECURE=<bool> # Default: false. true if you want to use HTTPS protocol, false if you use HTTP
 ```
 
 ### 4.2 How to use it
@@ -313,7 +321,8 @@ export QDRANT_PORT=<port> # Default: 6333
 Add the following env variables to the `.env` file you created [here](#51-env-setup).
 
 ```bash
-export REDIS_HOST=<host> # with format <host>, without protocol (es: queue - as per the name in the docker compose)
+# Shared Redis connection (see §7.3)
+export REDIS_HOST=<host> # Default: localhost. Format: <host>, without protocol (es: queue - as per the docker compose service name)
 export REDIS_PORT=<port> # Default: 6379
 ```
 
@@ -372,8 +381,8 @@ Once you decided the provider, you have to set other env variables which are spe
 Add the following env variables to the `.env` file you created [here](#61-env-setup).
 
 ```bash
-export AWS_ACCESS_KEY_ID=<access-key-id>
-export AWS_SECRET_ACCESS_KEY=<secret-access-key>
+export AWS_ACCESS_KEY_ID=<access-key-id>      # Optional, shared via dos_utility.utils.aws (see §7.2)
+export AWS_SECRET_ACCESS_KEY=<secret-access-key> # Optional, shared via dos_utility.utils.aws (see §7.2)
 export DYNAMODB_REGION=<region> # Optional, defaults to us-east-1
 export DYNAMODB_ENDPOINT_URL=<endpoint> # Optional. With format http(s)://host (e.g. http://localhost). Omit for real AWS DynamoDB
 export DYNAMODB_PORT=<port> # Optional. Port for the endpoint URL
@@ -415,10 +424,14 @@ Shared utility modules used across the package.
 A pre-configured logger factory that outputs to `stdout` with a standard format.
 
 ```python
+import logging
 from dos_utility.utils.logger import get_logger
 
-logger = get_logger(name=__name__)
+logger = get_logger(name=__name__)               # defaults to logging.INFO
 logger.info("Something happened")
+
+# Override the level if needed:
+debug_logger = get_logger(name=__name__, level=logging.DEBUG)
 ```
 
 ### 7.2 AWS credentials
@@ -435,6 +448,91 @@ Required env variables:
 export AWS_ACCESS_KEY_ID=<access-key-id>
 export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 ```
+
+## 8. Tracing interface
+
+An adaptive layer for distributed tracing and LLM observability. Every query is wrapped in a **Trace** that carries the prompt, answer, session, and user metadata, with nested **Spans** for sub-steps (e.g. LLM generation). Currently supported providers:
+
+- `noop` — no-op, default for local dev and tests (no external calls)
+- `langfuse` — ships traces to a [Langfuse](https://langfuse.com) instance
+
+### 8.1 Env setup
+
+Select the provider:
+
+```bash
+export TRACING_PROVIDER=<provider>   # noop (default) | langfuse
+```
+
+#### 8.1.1 NOOP env
+
+No additional variables required. `NOOP` is the default when `TRACING_PROVIDER` is unset.
+
+#### 8.1.2 Langfuse env
+
+```bash
+export TRACING_PROVIDER=langfuse
+export LANGFUSE_PUBLIC_KEY=<public-key>
+export LANGFUSE_SECRET_KEY=<secret-key>
+export LANGFUSE_HOST=https://cloud.langfuse.com  # or your self-hosted URL
+export LANGFUSE_FLUSH_AT=15                       # optional, batch size
+export LANGFUSE_FLUSH_INTERVAL_S=0.5              # optional, flush interval seconds
+```
+
+### 8.2 How to use it
+
+```python
+from dos_utility.tracing import TracingInterface, TraceHandle, get_tracer
+
+tracer: TracingInterface = get_tracer()   # lru-cached singleton
+```
+
+Open the tracer once on application startup (e.g. FastAPI lifespan) and keep it open until shutdown:
+
+```python
+async with tracer:
+    # inside a request handler:
+    async with tracer.trace(
+        name="query",
+        session_id=str(session_id),
+        user_id=str(user.id),
+        input=question,
+    ) as handle:
+        answer = await chatbot.chat_generate(..., trace=handle)
+        handle.set_output(answer)
+        await handle.add_span(name="llm_generation", input=question, output=answer)
+
+    # attach an evaluation score to a completed trace:
+    await tracer.score(handle.id, name="faithfulness", value=0.91)
+
+# drain in-process buffer on graceful shutdown:
+await tracer.flush()
+```
+
+The interface contract requires that **implementations never block the calling task on network I/O** — telemetry is buffered in-process and shipped in the background.
+
+`TraceHandle` exposes:
+
+| Method | Description |
+|--------|-------------|
+| `handle.id` | Unique trace ID assigned by the provider |
+| `handle.set_output(str)` | Set the final answer on the trace |
+| `handle.set_metadata(dict)` | Attach arbitrary key/value metadata |
+| `handle.add_span(name, input, output, metadata)` | Record a nested span |
+
+### 8.3 Implement new provider
+
+- Create a class that extends `TracingInterface` (`src/dos_utility/tracing/interface.py`). Place it under `src/dos_utility/tracing/<provider>/implementation.py`.
+- Add provider-specific settings to `src/dos_utility/tracing/<provider>/env.py`.
+- Add the provider name to `TracingProvider` in `src/dos_utility/tracing/env.py`.
+- Wire the new branch in `get_tracer()` (`src/dos_utility/tracing/__init__.py`).
+- Add the SDK as an optional dependency (`[project.optional-dependencies]` in `pyproject.toml`).
+- Write parametrized tests under `test/tracing/` (mock the SDK at the boundary, same pattern as the Langfuse tests).
+- Update this doc.
+
+### 8.4 Update the interface
+
+If the `TracingInterface` needs new methods, add them as `@abstractmethod`, update all provider implementations (`NOOP` and `LANGFUSE`), and update tests. Check every service that injects `get_tracer()` for compatibility.
 
 ### 7.3 Redis connection pool
 

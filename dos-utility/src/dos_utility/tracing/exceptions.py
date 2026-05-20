@@ -1,0 +1,2 @@
+class TracingError(Exception):
+    pass
