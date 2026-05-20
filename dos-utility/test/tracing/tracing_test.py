@@ -105,7 +105,9 @@ async def test_noop_tracer_set_output_and_metadata_do_not_raise(
         ) as handle:
             handle.set_output("some answer")
             handle.set_metadata({"key": "val"})
-            await handle.add_span(name="llm_generation", input="q", output="a")
+            async with handle.start_span(name="llm_generation", input="q") as span:
+                span.set_output("a")
+                span.set_metadata({"k": "v"})
 
     get_tracer.cache_clear()
 
@@ -160,10 +162,14 @@ class _FakeLangfuse:
         self.init_kwargs = kwargs
         self.start_observation_calls = []
         self.set_trace_io_calls = []
+        self.update_current_trace_calls = []
         self.create_score_calls = []
         self.flush_calls = []
         self._healthy = True
         self._trace_id = "fake-trace-id"
+
+    def update_current_trace(self, **kwargs):
+        self.update_current_trace_calls.append(kwargs)
 
     @contextmanager
     def start_as_current_observation(
@@ -299,7 +305,8 @@ async def test_langfuse_tracer_span_reaches_sdk(monkeypatch: pytest.MonkeyPatch)
     tracer = get_tracer()
     async with tracer:
         async with tracer.trace(name="test") as handle:
-            await handle.add_span(name="llm_generation", input="q", output="a")
+            async with handle.start_span(name="llm_generation", input="q") as span:
+                span.set_output("a")
 
     assert any(
         c.get("name") == "llm_generation" for c in fake_lf.start_observation_calls
@@ -421,6 +428,123 @@ async def test_langfuse_tracer_is_healthy_true(monkeypatch: pytest.MonkeyPatch):
     tracer = get_tracer()
     async with tracer:
         assert await tracer.is_healthy() is True
+
+    get_tracer.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_langfuse_tracer_trace_is_non_fatal_when_sdk_raises(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """SDK exceptions during trace open must not propagate to the caller."""
+    get_tracing_settings.cache_clear()
+    get_tracer.cache_clear()
+
+    import dos_utility.tracing.langfuse.implementation as langfuse_impl
+
+    class _BoomLangfuse(_FakeLangfuse):
+        @contextmanager
+        def start_as_current_observation(self, **kwargs):
+            raise RuntimeError("backend down")
+            yield  # noqa: unreachable
+
+    fake_lf = _BoomLangfuse()
+    monkeypatch.setattr(
+        tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
+    )
+    monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
+
+    tracer = get_tracer()
+    body_ran = False
+    async with tracer:
+        async with tracer.trace(name="test") as handle:
+            body_ran = True
+            handle.set_output("answer")
+
+    assert body_ran is True
+
+    get_tracer.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_langfuse_span_is_non_fatal_when_sdk_raises(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """SDK exceptions inside start_span must not propagate; body still runs."""
+    get_tracing_settings.cache_clear()
+    get_tracer.cache_clear()
+
+    import dos_utility.tracing.langfuse.implementation as langfuse_impl
+
+    call_count = {"n": 0}
+
+    class _SpanBoomLangfuse(_FakeLangfuse):
+        @contextmanager
+        def start_as_current_observation(self, **kwargs):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                # Trace open succeeds
+                yield self
+            else:
+                # Span open raises
+                raise RuntimeError("span backend down")
+                yield  # noqa: unreachable
+
+    fake_lf = _SpanBoomLangfuse()
+    monkeypatch.setattr(
+        tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
+    )
+    monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
+
+    tracer = get_tracer()
+    span_body_ran = False
+    async with tracer:
+        async with tracer.trace(name="test") as handle:
+            async with handle.start_span(name="step", input="x") as span:
+                span_body_ran = True
+                span.set_output("y")
+                span.set_metadata({"k": "v"})
+
+    assert span_body_ran is True
+
+    get_tracer.cache_clear()
+
+
+@pytest.mark.asyncio
+async def test_langfuse_set_metadata_shallow_merges_across_calls(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Successive set_metadata calls shallow-merge; initial tracer.trace metadata
+    is the first layer."""
+    get_tracing_settings.cache_clear()
+    get_tracer.cache_clear()
+
+    import dos_utility.tracing.langfuse.implementation as langfuse_impl
+
+    fake_lf = _FakeLangfuse()
+    monkeypatch.setattr(
+        tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
+    )
+    monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
+
+    tracer = get_tracer()
+    async with tracer:
+        async with tracer.trace(name="t", metadata={"a": 1, "b": 2}) as handle:
+            handle.set_metadata({"b": 3, "c": 4})
+
+    # Final metadata applied to the trace must be the shallow-merge of all layers.
+    assert fake_lf.update_current_trace_calls, "update_current_trace was never called"
+    merged = fake_lf.update_current_trace_calls[-1].get("metadata")
+    assert merged == {"a": 1, "b": 3, "c": 4}
 
     get_tracer.cache_clear()
 

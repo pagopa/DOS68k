@@ -8,7 +8,6 @@ from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.agent.workflow import AgentOutput, ReActAgent
 from dos_utility.utils.logger import get_logger
-from dos_utility.tracing.interface import TraceHandle
 
 from .models import get_llm, get_embed_model
 from .tool.loader import load_tools
@@ -20,6 +19,11 @@ from ..env import get_logging_settings, LogSettings
 
 log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
+
+
+FALLBACK_RESPONSE: str = (
+    "Sorry, I could not process your request.\nPlease try rephrasing your question."
+)
 
 
 class Chatbot:
@@ -140,7 +144,7 @@ class Chatbot:
             )
             # Structured output parsing failed — return a safe fallback.
             return {
-                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
             }
@@ -194,15 +198,12 @@ class Chatbot:
         self: Self,
         query_str: str,
         messages: Optional[List[Dict[str, str]]] = None,
-        trace: Optional[TraceHandle] = None,
     ) -> Dict[str, Any]:
         """Generates a response to the user's query.
 
         Args:
             query_str: The user's query string.
             messages: Chat history. Each dict has "question" and "answer" keys.
-            trace: Optional TraceHandle for recording spans. When provided, a
-                span is recorded for the LLM generation step.
 
         Returns:
             Dict with keys: response, tags, references, contexts.
@@ -227,16 +228,9 @@ class Chatbot:
             response_json: Dict[str, Any] = self.__get_response_json(
                 engine_response=engine_response
             )
-
-            if trace is not None:
-                await trace.add_span(
-                    name="llm_generation",
-                    input=query_str,
-                    output=response_json.get("response"),
-                )
         except Exception as e:
             response_json = {
-                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
             }

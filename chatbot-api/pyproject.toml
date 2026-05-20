@@ -13,10 +13,6 @@ dependencies = [
     # LlamaIndex core + workflow
     "llama-index-core>=0.12.0",
     "llama-index-utils-workflow>=0.3.0",
-    # OpenTelemetry tracing
-    "opentelemetry-sdk>=1.30.0",
-    # OpenInference instrumentation for LlamaIndex
-    "openinference-instrumentation-llama-index>=3.0.0",
     # LLM provider — uncomment the one you are using:
     "llama-index-llms-google-genai>=0.4.0",
     # "llama-index-llms-openai>=0.4.0",

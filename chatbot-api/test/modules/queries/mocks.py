@@ -8,7 +8,7 @@ from dos_utility.database.nosql import (
     QueryResult,
     ScanResult,
 )
-from dos_utility.tracing.interface import TracingInterface, TraceHandle
+from dos_utility.tracing.interface import TracingInterface, TraceHandle, SpanHandle
 from dos_utility.tracing.models import TraceId
 
 # ---------------------------------------------------------------------------
@@ -249,6 +249,7 @@ def get_query_service_create_query_201_mock():
             self: Self,
             session_id: str,
             user_id: str,
+            user_role: str,
             session_history: Optional[List[Dict[str, str]]],
             question: str,
         ) -> Dict[str, Any]:
@@ -280,6 +281,7 @@ def get_query_service_create_query_404_mock():
             self: Self,
             session_id: str,
             user_id: str,
+            user_role: str,
             question: str,
             session_history: Optional[List[Dict[str, str]]],
         ) -> Dict[str, Any]:
@@ -293,14 +295,18 @@ def get_query_service_create_query_404_mock():
 class MockChatbot:
     """Mock for Chatbot used in QueryService tests."""
 
+    def __init__(self, response: str = "Simulated answer") -> None:
+        self.chat_generate_call_count = 0
+        self._response = response
+
     async def chat_generate(
         self: Self,
         query_str: str,
         messages: Optional[List[Dict[str, Any]]] = None,
-        trace: Optional[TraceHandle] = None,
     ) -> Dict[str, Any]:
+        self.chat_generate_call_count += 1
         return {
-            "response": "Simulated answer",
+            "response": self._response,
             "context": {},
         }
 
@@ -308,14 +314,7 @@ class MockChatbot:
 MOCK_TRACE_ID = "mock-trace-id-1234"
 
 
-class _MockTraceHandle(TraceHandle):
-    @property
-    def id(self) -> TraceId:
-        return MOCK_TRACE_ID
-
-    async def add_span(self, name: str, input=None, output=None, metadata=None) -> None:
-        pass
-
+class _MockSpanHandle(SpanHandle):
     def set_output(self, output: str) -> None:
         pass
 
@@ -323,11 +322,47 @@ class _MockTraceHandle(TraceHandle):
         pass
 
 
+class _MockTraceHandle(TraceHandle):
+    def __init__(
+        self,
+        trace_id: Optional[str] = MOCK_TRACE_ID,
+        span_names: Optional[List[str]] = None,
+        metadata_calls: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        self._trace_id = trace_id
+        self.span_names: List[str] = span_names if span_names is not None else []
+        self.metadata_calls: List[Dict[str, Any]] = (
+            metadata_calls if metadata_calls is not None else []
+        )
+
+    @property
+    def id(self) -> TraceId:
+        return self._trace_id
+
+    def start_span(self, name: str, input=None, metadata=None):
+        names = self.span_names
+
+        @asynccontextmanager
+        async def _ctx():
+            names.append(name)
+            yield _MockSpanHandle()
+
+        return _ctx()
+
+    def set_output(self, output: str) -> None:
+        pass
+
+    def set_metadata(self, metadata: Dict[str, Any]) -> None:
+        self.metadata_calls.append(dict(metadata))
+
+
 class MockTracer(TracingInterface):
     """Recording mock tracer for service tests."""
 
     def __init__(self) -> None:
         self.trace_call_count = 0
+        self.span_names: List[str] = []
+        self.metadata_calls: List[Dict[str, Any]] = []
 
     async def __aenter__(self: Self) -> Self:
         return self
@@ -352,7 +387,10 @@ class MockTracer(TracingInterface):
         @asynccontextmanager
         async def _ctx():
             tracer.trace_call_count += 1
-            yield _MockTraceHandle()
+            yield _MockTraceHandle(
+                span_names=tracer.span_names,
+                metadata_calls=tracer.metadata_calls,
+            )
 
         return _ctx()
 
@@ -366,7 +404,12 @@ class MockTracer(TracingInterface):
 
 
 class MockTracerThatRaises(TracingInterface):
-    """Tracer that raises inside trace() to verify the service is resilient."""
+    """Non-fatal tracer whose SDK calls fail: trace opens, body runs, id is None.
+
+    Models the contractual behaviour of a real provider when the backend is
+    unreachable — every operation is swallowed-and-logged internally and the
+    request path proceeds normally.
+    """
 
     async def __aenter__(self: Self) -> Self:
         return self
@@ -388,8 +431,7 @@ class MockTracerThatRaises(TracingInterface):
     ):
         @asynccontextmanager
         async def _ctx():
-            raise RuntimeError("Tracing backend unavailable")
-            yield  # noqa: unreachable
+            yield _MockTraceHandle(trace_id=None)
 
         return _ctx()
 

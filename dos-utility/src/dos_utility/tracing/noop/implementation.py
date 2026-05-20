@@ -2,8 +2,16 @@ from contextlib import asynccontextmanager
 from typing import Self, Optional, Dict, Any, List
 from uuid import uuid4
 
-from dos_utility.tracing.interface import TracingInterface, TraceHandle
+from dos_utility.tracing.interface import TracingInterface, TraceHandle, SpanHandle
 from dos_utility.tracing.models import TraceId
+
+
+class _NoopSpanHandle(SpanHandle):
+    def set_output(self, output: str) -> None:
+        pass
+
+    def set_metadata(self, metadata: Dict[str, Any]) -> None:
+        pass
 
 
 class _NoopTraceHandle(TraceHandle):
@@ -14,14 +22,17 @@ class _NoopTraceHandle(TraceHandle):
     def id(self) -> TraceId:
         return self._id
 
-    async def add_span(
+    def start_span(
         self,
         name: str,
         input: Optional[str] = None,
-        output: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        pass
+    ):
+        @asynccontextmanager
+        async def _ctx():
+            yield _NoopSpanHandle()
+
+        return _ctx()
 
     def set_output(self, output: str) -> None:
         pass

@@ -18,6 +18,9 @@ from ..env import (
 )
 from ..utils import format_expiration_dt
 from ..chatbot import Chatbot, get_chatbot
+from ..chatbot.chatbot import FALLBACK_RESPONSE
+from ..chatbot.config_hash import get_agent_config_hash, get_tool_config_hash
+from ..chatbot.version import CHATBOT_API_VERSION
 
 
 class QueryService:
@@ -93,6 +96,7 @@ class QueryService:
         self: Self,
         session_id: str,
         user_id: str,
+        user_role: str,
         question: str,
         session_history: Optional[List[Dict[str, str]]],
     ) -> Dict[str, Any]:
@@ -105,56 +109,70 @@ class QueryService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
 
-        question_cleaned: str = nh3.clean(html=question)
-        self.logger.debug("Sanitized question: %r", question_cleaned)
-
-        if session_history is None:
-            session_history = await self.query_repository.get_queries(
-                session_id=session_id
+        tracing_trace_id: Optional[str] = None
+        masking_enabled: bool = self.masking_settings.mask_pii is True
+        async with self.tracer.trace(
+            name="query",
+            session_id=str(session_id),
+            user_id=str(user_id),
+            input=question,
+        ) as trace_handle:
+            trace_handle.set_metadata(
+                {
+                    "masking.enabled": masking_enabled,
+                    "user.role": user_role,
+                    "chatbot_api.version": CHATBOT_API_VERSION,
+                    "agent.config_hash": get_agent_config_hash(),
+                    "tool.config_hash": get_tool_config_hash(),
+                }
             )
 
-        tracing_trace_id: Optional[str] = None
-        try:
-            async with self.tracer.trace(
-                name="query",
-                session_id=str(session_id),
-                user_id=str(user_id),
-                input=question_cleaned,
-            ) as trace_handle:
-                self.logger.debug("Generating answer with AI agent...")
-                response_json: Dict[str, Any] = await self.chatbot.chat_generate(
-                    query_str=question_cleaned,
-                    messages=session_history,
-                    trace=trace_handle,
-                )
-                answer: str = response_json["response"]
+            async with trace_handle.start_span(
+                name="sanitize_input", input=question
+            ) as span:
+                question_cleaned: str = nh3.clean(html=question)
+                span.set_output(question_cleaned)
+            self.logger.debug("Sanitized question: %r", question_cleaned)
 
-                question_masked: str = question_cleaned
-                answer_masked: str = answer
+            async with trace_handle.start_span(name="load_history"):
+                if session_history is None:
+                    session_history = await self.query_repository.get_queries(
+                        session_id=session_id
+                    )
 
-                if self.masking_settings.mask_pii is True:
-                    question_masked = await self.__mask_pii(text=question_cleaned)
-                    answer_masked = await self.__mask_pii(text=answer)
-
-                trace_handle.set_output(answer_masked)
-                tracing_trace_id = trace_handle.id
-        except HTTPException:
-            raise
-        except Exception as exc:
-            self.logger.warning("Tracing error (non-fatal): %s", exc)
-            self.logger.debug("Generating answer with AI agent (no trace)...")
-            response_json = await self.chatbot.chat_generate(
+            self.logger.debug("Generating answer with AI agent...")
+            response_json: Dict[str, Any] = await self.chatbot.chat_generate(
                 query_str=question_cleaned,
                 messages=session_history,
             )
-            answer = response_json["response"]
+            answer: str = response_json["response"]
+            trace_handle.set_metadata(
+                {"response.fallback": answer == FALLBACK_RESPONSE}
+            )
 
-            question_masked = question_cleaned
-            answer_masked = answer
+            question_masked: str = question_cleaned
+            answer_masked: str = answer
 
-            if self.masking_settings.mask_pii is True:
-                question_masked = await self.__mask_pii(text=question_cleaned)
-                answer_masked = await self.__mask_pii(text=answer)
+            if masking_enabled:
+                async with trace_handle.start_span(
+                    name="mask_pii_input", input=question_cleaned
+                ) as span:
+                    question_masked = await self.__mask_pii(text=question_cleaned)
+                    span.set_output(question_masked)
+                async with trace_handle.start_span(
+                    name="mask_pii_output", input=answer
+                ) as span:
+                    answer_masked = await self.__mask_pii(text=answer)
+                    span.set_output(answer_masked)
+                trace_handle.set_metadata(
+                    {
+                        "masking.input_changed": question_masked != question_cleaned,
+                        "masking.output_changed": answer_masked != answer,
+                    }
+                )
+
+            trace_handle.set_output(answer_masked)
+            tracing_trace_id = trace_handle.id
 
         context = [
             {
