@@ -162,14 +162,14 @@ class _FakeLangfuse:
         self.init_kwargs = kwargs
         self.start_observation_calls = []
         self.set_trace_io_calls = []
-        self.update_current_trace_calls = []
+        self.update_current_span_calls = []
         self.create_score_calls = []
         self.flush_calls = []
         self._healthy = True
         self._trace_id = "fake-trace-id"
 
-    def update_current_trace(self, **kwargs):
-        self.update_current_trace_calls.append(kwargs)
+    def update_current_span(self, **kwargs):
+        self.update_current_span_calls.append(kwargs)
 
     @contextmanager
     def start_as_current_observation(
@@ -542,8 +542,8 @@ async def test_langfuse_set_metadata_shallow_merges_across_calls(
             handle.set_metadata({"b": 3, "c": 4})
 
     # Final metadata applied to the trace must be the shallow-merge of all layers.
-    assert fake_lf.update_current_trace_calls, "update_current_trace was never called"
-    merged = fake_lf.update_current_trace_calls[-1].get("metadata")
+    assert fake_lf.update_current_span_calls, "update_current_span was never called"
+    merged = fake_lf.update_current_span_calls[-1].get("metadata")
     assert merged == {"a": 1, "b": 3, "c": 4}
 
     get_tracer.cache_clear()

@@ -199,10 +199,10 @@ class LangfuseTracingProvider(TracingInterface):
                         logger.warning("Trace finalize failed (non-fatal): %s", exc)
                 if handle._metadata:
                     try:
-                        client.update_current_trace(metadata=handle._metadata)
+                        client.update_current_span(metadata=handle._metadata)
                     except Exception as exc:
                         logger.warning(
-                            "Trace.update_current_trace failed (non-fatal): %s", exc
+                            "Trace.update_current_span failed (non-fatal): %s", exc
                         )
                 if obs_cm is not None:
                     try:
