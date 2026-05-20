@@ -4,10 +4,11 @@ This guide covers all configuration options for the chatbot-api service. Environ
 
 ## Overview
 
-The chatbot-api requires configuration for three main areas:
+The chatbot-api requires configuration for four main areas:
 - **Database & Storage** — where to persist sessions and queries
 - **Vector DB & Retrieval** — where to store and retrieve document embeddings
 - **LLM & Embedding Models** — which AI models to use for generation and embeddings
+- **Tracing** — LLM observability backend (optional, default is no-op)
 
 All providers are swappable and can be configured via environment variables. Start with the [Quick Setup](#quick-setup) section, then dive into provider-specific details.
 
@@ -315,6 +316,50 @@ FRONTEND_URL=http://localhost  # Frontend origin for CORS (include protocol and 
 ```
 
 Only requests from this origin will be allowed. Use the exact URL including protocol (`http://` or `https://`) and port.
+
+## Tracing (Optional)
+
+Each query can be shipped as a **Trace** to an observability backend, carrying the prompt, answer, session and user metadata, and a nested span for the LLM generation step. The feature is opt-in and safe to leave disabled.
+
+### Selecting a Provider
+
+```bash
+TRACING_PROVIDER=noop      # Default — no external calls, safe for local dev and tests
+# TRACING_PROVIDER=langfuse  # Ship traces to a Langfuse instance
+```
+
+### Langfuse
+
+[Langfuse](https://langfuse.com) is an open-source LLM observability platform. Use it to inspect traces, score responses, and monitor latency.
+
+```bash
+TRACING_PROVIDER=langfuse
+LANGFUSE_PUBLIC_KEY=your-public-key   # From Langfuse project settings
+LANGFUSE_SECRET_KEY=your-secret-key   # From Langfuse project settings
+LANGFUSE_HOST=https://cloud.langfuse.com  # Or your self-hosted URL
+```
+
+After enabling, each successful query appears in Langfuse with:
+- Prompt and answer as input/output
+- Session ID and user ID as metadata
+- An `llm_generation` span for the LLM step
+
+The tracer never blocks the request path — telemetry is buffered in-process and shipped in the background. If the tracing backend is unreachable, the request succeeds and `tracingTraceId` is `null` in the response.
+
+### Trace ID in the Response
+
+When tracing is active, `POST /queries/{session_id}` returns a `tracingTraceId` field:
+
+```json
+{
+  "answer": "...",
+  "tracingTraceId": "abc123"
+}
+```
+
+Use this ID to look up the trace in your observability backend.
+
+For full provider documentation and advanced settings (`LANGFUSE_FLUSH_AT`, `LANGFUSE_FLUSH_INTERVAL_S`), see [`dos-utility` tracing configuration](../../dos-utility/docs/features.md#8-tracing-interface).
 
 ## Runtime Health Checks
 

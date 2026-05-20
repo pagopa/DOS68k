@@ -9,6 +9,7 @@ Here a list of functionalities this package provide:
 - [VectorDB interface](#5-vector-db-interface)
 - [NoSQL DB interface](#6-nosql-db-interface)
 - [Utilities](#7-utilities)
+- [Tracing interface](#8-tracing-interface)
 
 ## 1. SQL DB connection
 
@@ -447,6 +448,91 @@ Required env variables:
 export AWS_ACCESS_KEY_ID=<access-key-id>
 export AWS_SECRET_ACCESS_KEY=<secret-access-key>
 ```
+
+## 8. Tracing interface
+
+An adaptive layer for distributed tracing and LLM observability. Every query is wrapped in a **Trace** that carries the prompt, answer, session, and user metadata, with nested **Spans** for sub-steps (e.g. LLM generation). Currently supported providers:
+
+- `noop` — no-op, default for local dev and tests (no external calls)
+- `langfuse` — ships traces to a [Langfuse](https://langfuse.com) instance
+
+### 8.1 Env setup
+
+Select the provider:
+
+```bash
+export TRACING_PROVIDER=<provider>   # noop (default) | langfuse
+```
+
+#### 8.1.1 NOOP env
+
+No additional variables required. `NOOP` is the default when `TRACING_PROVIDER` is unset.
+
+#### 8.1.2 Langfuse env
+
+```bash
+export TRACING_PROVIDER=langfuse
+export LANGFUSE_PUBLIC_KEY=<public-key>
+export LANGFUSE_SECRET_KEY=<secret-key>
+export LANGFUSE_HOST=https://cloud.langfuse.com  # or your self-hosted URL
+export LANGFUSE_FLUSH_AT=15                       # optional, batch size
+export LANGFUSE_FLUSH_INTERVAL_S=0.5              # optional, flush interval seconds
+```
+
+### 8.2 How to use it
+
+```python
+from dos_utility.tracing import TracingInterface, TraceHandle, get_tracer
+
+tracer: TracingInterface = get_tracer()   # lru-cached singleton
+```
+
+Open the tracer once on application startup (e.g. FastAPI lifespan) and keep it open until shutdown:
+
+```python
+async with tracer:
+    # inside a request handler:
+    async with tracer.trace(
+        name="query",
+        session_id=str(session_id),
+        user_id=str(user.id),
+        input=question,
+    ) as handle:
+        answer = await chatbot.chat_generate(..., trace=handle)
+        handle.set_output(answer)
+        await handle.add_span(name="llm_generation", input=question, output=answer)
+
+    # attach an evaluation score to a completed trace:
+    await tracer.score(handle.id, name="faithfulness", value=0.91)
+
+# drain in-process buffer on graceful shutdown:
+await tracer.flush()
+```
+
+The interface contract requires that **implementations never block the calling task on network I/O** — telemetry is buffered in-process and shipped in the background.
+
+`TraceHandle` exposes:
+
+| Method | Description |
+|--------|-------------|
+| `handle.id` | Unique trace ID assigned by the provider |
+| `handle.set_output(str)` | Set the final answer on the trace |
+| `handle.set_metadata(dict)` | Attach arbitrary key/value metadata |
+| `handle.add_span(name, input, output, metadata)` | Record a nested span |
+
+### 8.3 Implement new provider
+
+- Create a class that extends `TracingInterface` (`src/dos_utility/tracing/interface.py`). Place it under `src/dos_utility/tracing/<provider>/implementation.py`.
+- Add provider-specific settings to `src/dos_utility/tracing/<provider>/env.py`.
+- Add the provider name to `TracingProvider` in `src/dos_utility/tracing/env.py`.
+- Wire the new branch in `get_tracer()` (`src/dos_utility/tracing/__init__.py`).
+- Add the SDK as an optional dependency (`[project.optional-dependencies]` in `pyproject.toml`).
+- Write parametrized tests under `test/tracing/` (mock the SDK at the boundary, same pattern as the Langfuse tests).
+- Update this doc.
+
+### 8.4 Update the interface
+
+If the `TracingInterface` needs new methods, add them as `@abstractmethod`, update all provider implementations (`NOOP` and `LANGFUSE`), and update tests. Check every service that injects `get_tracer()` for compatibility.
 
 ### 7.3 Redis connection pool
 

@@ -28,6 +28,28 @@ _Avoid_: Citations, references, context (overloaded with LLM prompt context)
 Two roles enforced server-side by `get_admin_user` / `get_user`. Admins manage **Indexes** and **Documents**; both roles can chat.
 _Avoid_: Owner, tenant, member
 
+### Observability
+
+**Trace**:
+The full execution record of one **Query**: prompt, retrieved context, tool calls, generation, latency, token usage. One Trace per Query, produced by `chatbot-api`, shipped to the configured Tracing Provider.
+_Avoid_: log, event, metric (a Span is a part of a Trace — see below)
+
+**Span**:
+A timed sub-step within a **Trace** — has a name, start/end timestamps, optional input/output, and metadata. Two sources: *outer spans* recorded manually by `chatbot-api` around steps it owns (input sanitisation, PII masking, history load); *inner spans* auto-captured inside the LlamaIndex ReAct loop (retrieval, individual tool calls, LLM generation, embedding).
+_Avoid_: step, phase, event (Span is the canonical term; an event has no duration, a Span does)
+
+**Score**:
+A named numeric measurement attached to a **Trace** — e.g. Ragas `faithfulness`, `answer_relevancy`. Produced by `chatbot-evaluate-worker`. Multiple Scores per Trace are expected.
+_Avoid_: metric, KPI, rating (these are ambiguous — Score is the canonical term)
+
+**Tracing Trace ID**:
+The provider-agnostic identifier that links a **Query** row to its **Trace** in the configured Tracing Provider. Stored as `tracingTraceId` on the `queries` row. Used by `chatbot-evaluate-worker` to attach **Scores** to the right Trace.
+_Avoid_: langfuse_id, observation_id, telemetry_id
+
+**Tracing Provider**:
+A `dos-utility` provider implementing `TracingInterface` (e.g. `LANGFUSE`). Selected at runtime via `TRACING_PROVIDER`. Implementations must not block the request path on network I/O, and must not surface tracing failures to the caller — every interface method swallows its own exceptions and logs them. A tracing fault degrades observability, never the request.
+_Avoid_: monitoring backend, observability vendor (these are fine in prose, but `Tracing Provider` is the code-level term)
+
 ## Relationships
 
 - An **Admin user** owns zero or more **Indexes**
