@@ -114,7 +114,7 @@ class EvaluationService:
             fields_to_update={"isEvaluated": True},
         )
 
-        msg: bytes = json.dumps({"queryId": query_id_str}).encode("utf-8")
+        msg: bytes = json.dumps({"sessionId": query["sessionId"], "messageId": query_id_str}).encode("utf-8")
         msg_id: str = await self.queue.enqueue(msg=msg)
 
         self.logger.info(
@@ -153,12 +153,13 @@ class EvaluationService:
             selected += random.sample(fillable, min(remaining_slots, len(fillable)))
 
         query_ids = [item.get("id") for item in selected]
-        msg: bytes = json.dumps({"queryIds": query_ids}).encode("utf-8")
-        msg_id: str = await self.queue.enqueue(msg=msg)
 
-        self.logger.info(
-            f"Message enqueued with id: {msg_id} for {len(query_ids)} queries"
-        )
+        for item in selected:
+            msg: bytes = json.dumps({"sessionId": session_id_str, "messageId": item.get("id")}).encode("utf-8")
+            msg_id: str = await self.queue.enqueue(msg=msg)
+            self.logger.info(
+                f"Message enqueued with id: {msg_id} for query_id: {item.get('id')}"
+            )
 
         self.logger.info(f"Marked {len(selected)} queries as evaluated")
 
@@ -173,15 +174,10 @@ class EvaluationService:
             for qid in query_ids
         ]
 
-        msg_id: str = await self.queue.enqueue(
-            msg=json.dumps(evaluations).encode("utf-8")
-        )
-        self.logger.info(f"Message enqueued with id: {msg_id}")
-
         for item in selected:
             await self.nosql.update_item(
                 table_name=self.settings.QUERY_TABLENAME,
-                key={"sessionId": session_id, "id": item.get("id")},
+                key={"sessionId": session_id_str, "id": item.get("id")},
                 fields_to_update={"isEvaluated": True},
             )
 
