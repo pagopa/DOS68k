@@ -1,4 +1,6 @@
+from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Self
+
 from fastapi import HTTPException, status
 from dos_utility.database.nosql import (
     NoSQLInterface,
@@ -6,6 +8,8 @@ from dos_utility.database.nosql import (
     QueryResult,
     ScanResult,
 )
+from dos_utility.tracing.interface import TracingInterface, TraceHandle
+from dos_utility.tracing.models import TraceId
 
 # ---------------------------------------------------------------------------
 # Shared imports used by test modules
@@ -293,11 +297,109 @@ class MockChatbot:
         self: Self,
         query_str: str,
         messages: Optional[List[Dict[str, Any]]] = None,
+        trace: Optional[TraceHandle] = None,
     ) -> Dict[str, Any]:
         return {
             "response": "Simulated answer",
             "context": {},
         }
+
+
+MOCK_TRACE_ID = "mock-trace-id-1234"
+
+
+class _MockTraceHandle(TraceHandle):
+    @property
+    def id(self) -> TraceId:
+        return MOCK_TRACE_ID
+
+    async def add_span(self, name: str, input=None, output=None, metadata=None) -> None:
+        pass
+
+    def set_output(self, output: str) -> None:
+        pass
+
+    def set_metadata(self, metadata: Dict[str, Any]) -> None:
+        pass
+
+
+class MockTracer(TracingInterface):
+    """Recording mock tracer for service tests."""
+
+    def __init__(self) -> None:
+        self.trace_call_count = 0
+
+    async def __aenter__(self: Self) -> Self:
+        return self
+
+    async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
+        pass
+
+    async def is_healthy(self: Self) -> bool:
+        return True
+
+    def trace(
+        self: Self,
+        name: str,
+        session_id=None,
+        user_id=None,
+        input=None,
+        metadata=None,
+        tags=None,
+    ):
+        tracer = self
+
+        @asynccontextmanager
+        async def _ctx():
+            tracer.trace_call_count += 1
+            yield _MockTraceHandle()
+
+        return _ctx()
+
+    async def score(
+        self: Self, trace_id: TraceId, name: str, value: float, comment=None
+    ) -> None:
+        pass
+
+    async def flush(self: Self, timeout=None) -> None:
+        pass
+
+
+class MockTracerThatRaises(TracingInterface):
+    """Tracer that raises inside trace() to verify the service is resilient."""
+
+    async def __aenter__(self: Self) -> Self:
+        return self
+
+    async def __aexit__(self: Self, exc_type, exc_val, exc_tb) -> None:
+        pass
+
+    async def is_healthy(self: Self) -> bool:
+        return False
+
+    def trace(
+        self: Self,
+        name: str,
+        session_id=None,
+        user_id=None,
+        input=None,
+        metadata=None,
+        tags=None,
+    ):
+        @asynccontextmanager
+        async def _ctx():
+            raise RuntimeError("Tracing backend unavailable")
+            yield  # noqa: unreachable
+
+        return _ctx()
+
+    async def score(
+        self: Self, trace_id: TraceId, name: str, value: float, comment=None
+    ) -> None:
+        pass
+
+    async def flush(self: Self, timeout=None) -> None:
+        pass
 
 
 class MockMaskingResponse: ...

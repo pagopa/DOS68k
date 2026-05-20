@@ -6,6 +6,7 @@ from typing import List, Self, Annotated, Dict, Any, Optional
 from fastapi import Depends, HTTPException, status
 from httpx import AsyncClient, Response, Timeout
 from dos_utility.utils.logger import get_logger
+from dos_utility.tracing import TracingInterface, get_tracer
 
 from .repository import QueryRepository, get_query_repository
 from ..sessions.repository import get_session_repository, SessionRepository
@@ -25,10 +26,12 @@ class QueryService:
         query_repository: QueryRepository,
         session_repository: SessionRepository,
         chatbot: Chatbot,
+        tracer: TracingInterface,
     ):
         self.query_repository: QueryRepository = query_repository
         self.session_repository: SessionRepository = session_repository
         self.chatbot: Chatbot = chatbot
+        self.tracer: TracingInterface = tracer
         self.masking_settings: MaskingSettings = get_masking_settings()
         self.__log_settings: LogSettings = get_logging_settings()
         self.logger: Logger = get_logger(
@@ -57,7 +60,6 @@ class QueryService:
     async def get_queries(
         self: Self, session_id: str, user_id: str
     ) -> List[Dict[str, Any]]:
-        # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(
             session_id=session_id, user_id=user_id
         )
@@ -82,6 +84,7 @@ class QueryService:
                 "context": query["context"],
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
+                "tracing_trace_id": query.get("tracingTraceId"),
             }
             for query in queries
         ]
@@ -93,43 +96,65 @@ class QueryService:
         question: str,
         session_history: Optional[List[Dict[str, str]]],
     ) -> Dict[str, Any]:
-        # Check whether the session exists and belongs to the user
         session: Optional[Dict[str, Any]] = await self.session_repository.get_session(
             session_id=session_id, user_id=user_id
         )
 
         if session is None:
-            # Create a new session for the user if it doesn't exist, or
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
 
-        question_cleaned: str = nh3.clean(
-            html=question
-        )  # Sanitize from HTML tags and scripts
+        question_cleaned: str = nh3.clean(html=question)
         self.logger.debug("Sanitized question: %r", question_cleaned)
 
-        # Get session history
         if session_history is None:
             session_history = await self.query_repository.get_queries(
                 session_id=session_id
             )
 
-        # Generate answer from AI Agent
-        self.logger.debug("Generating answer with AI agent...")
-        response_json: Dict[str, Any] = await self.chatbot.chat_generate(
-            query_str=question_cleaned,
-            messages=session_history,
-        )
-        answer: str = response_json["response"]
+        tracing_trace_id: Optional[str] = None
+        try:
+            async with self.tracer.trace(
+                name="query",
+                session_id=str(session_id),
+                user_id=str(user_id),
+                input=question_cleaned,
+            ) as trace_handle:
+                self.logger.debug("Generating answer with AI agent...")
+                response_json: Dict[str, Any] = await self.chatbot.chat_generate(
+                    query_str=question_cleaned,
+                    messages=session_history,
+                    trace=trace_handle,
+                )
+                answer: str = response_json["response"]
 
-        # Call masking service to mask PII in question/answer before store it
-        question_masked: str = question_cleaned
-        answer_masked: str = answer
+                question_masked: str = question_cleaned
+                answer_masked: str = answer
 
-        if self.masking_settings.mask_pii is True:
-            question_masked = await self.__mask_pii(text=question_cleaned)
-            answer_masked = await self.__mask_pii(text=answer)
+                if self.masking_settings.mask_pii is True:
+                    question_masked = await self.__mask_pii(text=question_cleaned)
+                    answer_masked = await self.__mask_pii(text=answer)
+
+                trace_handle.set_output(answer_masked)
+                tracing_trace_id = trace_handle.id
+        except HTTPException:
+            raise
+        except Exception as exc:
+            self.logger.warning("Tracing error (non-fatal): %s", exc)
+            self.logger.debug("Generating answer with AI agent (no trace)...")
+            response_json = await self.chatbot.chat_generate(
+                query_str=question_cleaned,
+                messages=session_history,
+            )
+            answer = response_json["response"]
+
+            question_masked = question_cleaned
+            answer_masked = answer
+
+            if self.masking_settings.mask_pii is True:
+                question_masked = await self.__mask_pii(text=question_cleaned)
+                answer_masked = await self.__mask_pii(text=answer)
 
         context = [
             {
@@ -149,6 +174,7 @@ class QueryService:
                 "expiresAt": session["expiresAt"],
                 "context": context,
                 "topic": [],
+                "tracingTraceId": tracing_trace_id,
             },
         )
 
@@ -166,6 +192,7 @@ class QueryService:
             "context": item["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
+            "tracing_trace_id": item.get("tracingTraceId"),
         }
 
 
@@ -177,9 +204,11 @@ def get_query_service(
         SessionRepository, Depends(dependency=get_session_repository)
     ],
     chatbot: Annotated[Chatbot, Depends(dependency=get_chatbot)],
+    tracer: Annotated[TracingInterface, Depends(dependency=get_tracer)],
 ) -> QueryService:
     return QueryService(
         query_repository=query_repository,
         session_repository=session_repository,
         chatbot=chatbot,
+        tracer=tracer,
     )

@@ -12,10 +12,13 @@ from test.modules.queries.mocks import (
     MockSessionRepositoryFound,
     MockSessionRepositoryNotFound,
     MockChatbot,
+    MockTracer,
+    MockTracerThatRaises,
     MockMaskingResponse200,
     MockMaskingErrorResponse500,
     MOCK_SESSION_ID,
     MOCK_QUERY_ID,
+    MOCK_TRACE_ID,
     get_mock_async_client,
 )
 
@@ -39,6 +42,7 @@ async def test_get_queries_returns_list():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
     result = await service.get_queries(session_id=MOCK_SESSION_ID, user_id="user-123")
 
@@ -56,6 +60,7 @@ async def test_get_queries_session_not_found():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryNotFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
 
     with pytest.raises(HTTPException) as exc_info:
@@ -71,6 +76,7 @@ async def test_get_queries_empty_when_no_queries():
         query_repository=MockQueryRepositoryEmpty(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
     result = await service.get_queries(session_id=MOCK_SESSION_ID, user_id="user-123")
 
@@ -88,6 +94,7 @@ async def test_create_query_success():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
     result = await service.create_query(
         session_id=MOCK_SESSION_ID,
@@ -110,6 +117,7 @@ async def test_create_query_sanitizes_html():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
     result = await service.create_query(
         session_id=MOCK_SESSION_ID,
@@ -129,6 +137,7 @@ async def test_create_query_session_not_found():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryNotFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
 
     with pytest.raises(HTTPException) as exc_info:
@@ -164,6 +173,7 @@ async def test_create_query_masks_question_and_answer_when_pii_enabled(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
     result = await service.create_query(
         session_id=MOCK_SESSION_ID,
@@ -192,6 +202,7 @@ async def test_create_query_raises_500_when_masking_service_fails(
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
 
     with pytest.raises(HTTPException) as exc_info:
@@ -216,6 +227,78 @@ def test_get_query_service_returns_instance():
         query_repository=MockQueryRepository(),
         session_repository=MockSessionRepositoryFound(),
         chatbot=MockChatbot(),
+        tracer=MockTracer(),
     )
 
     assert isinstance(service, QueryService)
+
+
+# ---------------------------------------------------------------------------
+# create_query — tracing
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_query_calls_tracer_once():
+    tracer = MockTracer()
+    service = QueryService(
+        query_repository=MockQueryRepository(),
+        session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
+        tracer=tracer,
+    )
+    await service.create_query(
+        session_id=MOCK_SESSION_ID,
+        user_id="user-123",
+        question="What is Python?",
+        session_history=None,
+    )
+
+    assert tracer.trace_call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_create_query_persists_tracing_trace_id():
+    captured_query_data = {}
+
+    class CapturingQueryRepository(MockQueryRepository):
+        async def create_query(self, session_id: str, query_data):
+            captured_query_data.update(query_data)
+            return await super().create_query(
+                session_id=session_id, query_data=query_data
+            )
+
+    service = QueryService(
+        query_repository=CapturingQueryRepository(),
+        session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
+        tracer=MockTracer(),
+    )
+    result = await service.create_query(
+        session_id=MOCK_SESSION_ID,
+        user_id="user-123",
+        question="What is Python?",
+        session_history=None,
+    )
+
+    assert captured_query_data.get("tracingTraceId") == MOCK_TRACE_ID
+    assert result["tracing_trace_id"] == MOCK_TRACE_ID
+
+
+@pytest.mark.asyncio
+async def test_create_query_succeeds_when_tracer_raises():
+    service = QueryService(
+        query_repository=MockQueryRepository(),
+        session_repository=MockSessionRepositoryFound(),
+        chatbot=MockChatbot(),
+        tracer=MockTracerThatRaises(),
+    )
+    result = await service.create_query(
+        session_id=MOCK_SESSION_ID,
+        user_id="user-123",
+        question="What is Python?",
+        session_history=None,
+    )
+
+    assert "answer" in result
+    assert result.get("tracing_trace_id") is None
