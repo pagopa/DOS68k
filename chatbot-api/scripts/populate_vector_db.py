@@ -1,45 +1,53 @@
 #!/usr/bin/env python3
-"""Populate the vector database with sample documents for end-to-end testing.
+"""Populate the vector database with sample documents for quick chatbot testing.
 
-Inserts documents for one or more named topics into the configured vector store
-(Redis or Qdrant) so that the chatbot-api agent can retrieve context and produce
-responses even when using the 'mock' LLM provider.
+What it does
+------------
+Inserts a small set of curated documents — grouped into topics like
+``software-dev``, ``zephyr-corp``, ``borgonero-fc`` — into the configured
+vector store (Redis or Qdrant). Each topic becomes one index that the
+chatbot-api agent can later query via a RAG tool. Embeddings are produced
+by Google GenAI (``gemini-embedding-001``) — a Google API key is required.
 
-Embeddings are random unit vectors of the configured dimension. They are not
-semantically meaningful, but they let you verify that the full pipeline —
-VectorDBInterface → LlamaIndex VectorStoreIndex → ReActAgent — runs without
-errors before wiring up a real embedding model.
+Quick start
+-----------
+Run from the ``chatbot-api`` directory so its ``.venv`` is active.
 
-Usage (run from the chatbot-api directory so its .venv is active):
+    # Interactive wizard (recommended) — prompts for everything:
+    uv run python scripts/populate_vector_db.py
 
-    # Redis (redis-vdb from compose.yaml, default port 6379)
-    uv run python ../scripts/populate_vector_db.py --provider redis
+    # Fully scripted — every flag pre-filled, no prompts:
+    uv run python scripts/populate_vector_db.py --provider redis --topic all
 
-    # Qdrant (uncomment the qdrant service in compose.yaml first)
-    uv run python ../scripts/populate_vector_db.py --provider qdrant
+Flags & env vars
+----------------
+    --provider {redis,qdrant}        Vector DB to populate. Prompted if omitted.
+    --topic {<topic>,all}            Topic to populate. Default: all.
+    --embed-provider {google}        Embedding source. Only google for now.
+    --embed-dim INT                  Vector dim, must match EMBED_DIM. Default: 768.
+    --host HOST                      Override REDIS_HOST / QDRANT_HOST.
+                                     Defaults to localhost (matches compose).
+    --port PORT                      Override REDIS_PORT / QDRANT_PORT.
+                                     Defaults to 6379 (redis) / 6333 (qdrant).
+    --google-api-key KEY             Required. Falls back to GOOGLE_API_KEY env var.
 
-    # Populate a specific topic only
-    uv run python ../scripts/populate_vector_db.py --provider redis --topic zephyr-corp
-
-    # Custom host/port
-    uv run python ../scripts/populate_vector_db.py --provider redis \\
-        --host localhost --port 6379
-
-Environment variables (alternative to --host / --port):
-
-    Redis:  REDIS_HOST, REDIS_PORT
-    Qdrant: QDRANT_HOST, QDRANT_PORT
-
-After running this script, add a YAML config file in
-chatbot-api/src/modules/chatbot/config/ for each index you populated.
-See config/template.yaml for the schema.
+After running, add a YAML config file in
+``chatbot-api/src/modules/chatbot/tool/config/`` (or the directory pointed
+to by ``TOOLS_CONFIG_DIR``) for each index you populated. See
+``src/modules/chatbot/tool/config/template.yaml`` for the schema.
 """
 
 import argparse
 import asyncio
-import math
 import os
-import random
+import sys
+
+import questionary
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+console = Console()
 
 
 # ---------------------------------------------------------------------------
@@ -398,40 +406,32 @@ TOPICS: dict[str, list[dict]] = {
     ],
 }
 
+PROVIDERS = ["redis", "qdrant"]
+EMBED_PROVIDERS = ["google"]
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
-def random_unit_vector(dim: int) -> list[float]:
-    """Returns a random unit vector of the given dimension."""
-    vec = [random.gauss(0, 1) for _ in range(dim)]
-    magnitude = math.sqrt(sum(x * x for x in vec))
-    return [x / magnitude for x in vec]
-
-
 def get_embeddings(
     texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
 ) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
-    if embed_provider == "google":
-        from google import genai
-        from google.genai import types as genai_types
+    from google import genai
+    from google.genai import types as genai_types
 
-        client = genai.Client(api_key=api_key)
-        response = client.models.embed_content(
-            model="gemini-embedding-001",
-            contents=texts,
-            config=genai_types.EmbedContentConfig(
-                output_dimensionality=embed_dim,
-                task_type="RETRIEVAL_DOCUMENT",
-            ),
-        )
-        return [list(e.values) for e in response.embeddings]
-
-    # mock: random unit vectors
-    return [random_unit_vector(embed_dim) for _ in texts]
+    client = genai.Client(api_key=api_key)
+    response = client.models.embed_content(
+        model="gemini-embedding-001",
+        contents=texts,
+        config=genai_types.EmbedContentConfig(
+            output_dimensionality=embed_dim,
+            task_type="RETRIEVAL_DOCUMENT",
+        ),
+    )
+    return [list(e.values) for e in response.embeddings]
 
 
 # ---------------------------------------------------------------------------
@@ -454,68 +454,127 @@ async def populate(
 
     index_name = topic
 
-    print(f"\n→ DB provider   : {provider}")
-    print(f"→ Embed provider: {embed_provider}")
-    print(f"→ Topic / Index : {index_name}")
-    print(f"→ Embed dim     : {embed_dim}")
-    print(f"→ Documents     : {len(docs)}\n")
+    console.rule(f"[bold cyan]Topic: {index_name}")
+    console.print(
+        f"[dim]{len(docs)} documents · embed_dim={embed_dim} · "
+        f"db={provider} · embeddings={embed_provider}[/dim]"
+    )
 
-    # ------------------------------------------------------------------ #
-    # Generate embeddings before opening the DB connection
-    # ------------------------------------------------------------------ #
-    print("[ 1/4 ] Generating embeddings...")
-    texts = [doc["content"] for doc in docs]
-    embeddings = get_embeddings(texts, embed_provider, api_key, embed_dim)
-    print(f"        Done ({len(embeddings)} vectors, dim={len(embeddings[0])}).\n")
+    with console.status("[bold]Generating embeddings...", spinner="dots"):
+        texts = [doc["content"] for doc in docs]
+        embeddings = get_embeddings(texts, embed_provider, api_key, embed_dim)
+    console.print(
+        f"[green]✓[/] Generated {len(embeddings)} vectors (dim={len(embeddings[0])})"
+    )
 
     async with get_vector_db_ctx() as vdb:
-        # ------------------------------------------------------------------ #
-        # 2. Create index
-        # ------------------------------------------------------------------ #
-        print("[ 2/4 ] Creating index...")
-        await vdb.create_index(index_name=index_name, vector_dim=embed_dim)
-        print("        Done.\n")
+        with console.status("[bold]Creating index...", spinner="dots"):
+            await vdb.create_index(index_name=index_name, vector_dim=embed_dim)
+        console.print(f"[green]✓[/] Index [bold]{index_name}[/] created")
 
-        # ------------------------------------------------------------------ #
-        # 3. Insert documents
-        # ------------------------------------------------------------------ #
-        print("[ 3/4 ] Inserting documents...")
-        data = [
-            ObjectData(
-                filename=doc["filename"],
-                chunk_id=doc["chunk_id"],
-                content=doc["content"],
-                vector=embeddings[i],
-            )
-            for i, doc in enumerate(docs)
-        ]
-        ids = await vdb.put_objects(index_name=index_name, data=data)
-        print(f"        Inserted {len(ids)} documents.\n")
-
-        # ------------------------------------------------------------------ #
-        # 4. Verify with a semantic search
-        # ------------------------------------------------------------------ #
-        print("[ 4/4 ] Verifying with semantic search (top 3)...")
-        query_text = docs[0]["content"][:80]
-        query_embedding = get_embeddings(
-            [query_text], embed_provider, api_key, embed_dim
-        )[0]
-        results = await vdb.semantic_search(
-            index_name=index_name,
-            embedding_query=query_embedding,
-            max_results=3,
-            score_threshold=0.0,
-        )
-        if results:
-            print(f'        Query: "{query_text[:60]}..."')
-            for r in results:
-                print(
-                    f"        [{r.score:.3f}] {r.filename}:{r.chunk_id} — {r.content[:70]}..."
+        with console.status("[bold]Inserting documents...", spinner="dots"):
+            data = [
+                ObjectData(
+                    filename=doc["filename"],
+                    chunk_id=doc["chunk_id"],
+                    content=doc["content"],
+                    vector=embeddings[i],
                 )
-        else:
-            print("        No results returned — check your connection settings.")
+                for i, doc in enumerate(docs)
+            ]
+            ids = await vdb.put_objects(index_name=index_name, data=data)
+        console.print(f"[green]✓[/] Inserted {len(ids)} documents")
 
-    print(f"\n✓ Population complete for topic '{index_name}'.\n")
+        with console.status("[bold]Verifying with semantic search...", spinner="dots"):
+            query_text = docs[0]["content"][:80]
+            query_embedding = get_embeddings(
+                [query_text], embed_provider, api_key, embed_dim
+            )[0]
+            results = await vdb.semantic_search(
+                index_name=index_name,
+                embedding_query=query_embedding,
+                max_results=3,
+                score_threshold=0.0,
+            )
+        console.print("[green]✓[/] Semantic search returned top 3:\n")
+
+        if results:
+            table = Table(show_header=True, header_style="bold magenta", box=None)
+            table.add_column("Score", justify="right", style="cyan", width=7)
+            table.add_column("Source", style="yellow")
+            table.add_column("Preview", style="dim", overflow="fold")
+            for r in results:
+                preview = r.content[:80].replace("\n", " ") + "…"
+                table.add_row(f"{r.score:.3f}", f"{r.filename}:{r.chunk_id}", preview)
+            console.print(table)
+        else:
+            console.print(
+                "[yellow]No results returned — check your connection settings.[/]"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Wizard
+# ---------------------------------------------------------------------------
+
+
+def is_tty() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def run_wizard(args: argparse.Namespace) -> argparse.Namespace:
+    """Prompt for any missing values. Caller guarantees we're on a TTY."""
+    if args.provider is None:
+        args.provider = questionary.select(
+            "Which vector DB do you want to populate?",
+            choices=PROVIDERS,
+        ).ask()
+        if args.provider is None:
+            raise KeyboardInterrupt
+
+    if args.topic is None:
+        args.topic = questionary.select(
+            "Which topic should be populated?",
+            choices=[*TOPICS.keys(), "all"],
+            default="all",
+        ).ask()
+        if args.topic is None:
+            raise KeyboardInterrupt
+
+    if args.embed_provider is None:
+        args.embed_provider = questionary.select(
+            "Which embedding provider?",
+            choices=EMBED_PROVIDERS,
+            default="google",
+        ).ask()
+        if args.embed_provider is None:
+            raise KeyboardInterrupt
+
+    if not args.google_api_key:
+        args.google_api_key = questionary.password(
+            "Google API key (input hidden):",
+        ).ask()
+        if not args.google_api_key:
+            raise KeyboardInterrupt
+
+    return args
+
+
+def show_summary(args: argparse.Namespace) -> None:
+    host = args.host or os.environ.get(
+        "REDIS_HOST" if args.provider == "redis" else "QDRANT_HOST", "<default>"
+    )
+    port = args.port or os.environ.get(
+        "REDIS_PORT" if args.provider == "redis" else "QDRANT_PORT", "<default>"
+    )
+    body = (
+        f"[bold]Provider[/]        {args.provider}\n"
+        f"[bold]Topic[/]           {args.topic}\n"
+        f"[bold]Embed provider[/]  {args.embed_provider}\n"
+        f"[bold]Embed dim[/]       {args.embed_dim}\n"
+        f"[bold]Target[/]          {host}:{port}"
+    )
+    console.print(Panel(body, title="Run configuration", border_style="cyan"))
 
 
 # ---------------------------------------------------------------------------
@@ -523,35 +582,36 @@ async def populate(
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
-    topic_choices = list(TOPICS.keys()) + ["all"]
-
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Populate the vector DB with sample documents for testing.",
+        description="Populate the vector DB with sample documents for chatbot testing. "
+        "Run with no flags to launch the interactive wizard.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     parser.add_argument(
         "--provider",
-        choices=["redis", "qdrant"],
-        required=True,
-        help="Vector DB provider to populate.",
+        choices=PROVIDERS,
+        default=None,
+        help="Vector DB provider. Prompted if omitted on a TTY.",
     )
     parser.add_argument(
         "--topic",
-        choices=topic_choices,
-        default="all",
-        help=(
-            "Topic (index) to populate. "
-            f"Choices: {', '.join(topic_choices)}. "
-            "Default: all."
-        ),
+        choices=[*TOPICS.keys(), "all"],
+        default=None,
+        help="Topic (index) to populate. Default: all.",
+    )
+    parser.add_argument(
+        "--embed-provider",
+        choices=EMBED_PROVIDERS,
+        default=None,
+        help="Embedding provider. Only 'google' is supported for now. Prompted if omitted.",
     )
     parser.add_argument(
         "--embed-dim",
         type=int,
         default=768,
-        help="Embedding vector dimension, must match chatbot-api EMBED_DIM setting (default: 768).",
+        help="Embedding vector dimension — must match chatbot-api EMBED_DIM (default: 768).",
     )
     parser.add_argument(
         "--host",
@@ -565,36 +625,52 @@ def main() -> None:
         help="Override the DB port (sets REDIS_PORT or QDRANT_PORT env var).",
     )
     parser.add_argument(
-        "--embed-provider",
-        choices=["mock", "google"],
-        default="mock",
-        help="Embedding provider (default: mock). Use 'google' for real semantic embeddings.",
-    )
-    parser.add_argument(
         "--google-api-key",
         default=os.environ.get("GOOGLE_API_KEY"),
-        help="Google API key (required when --embed-provider=google). Falls back to GOOGLE_API_KEY env var.",
+        help="Google API key. Falls back to GOOGLE_API_KEY env var.",
     )
+    return parser
 
+
+def main() -> None:
+    parser = build_parser()
     args = parser.parse_args()
 
-    if args.embed_provider == "google" and not args.google_api_key:
-        parser.error(
-            "--google-api-key (or GOOGLE_API_KEY env var) is required when --embed-provider=google"
+    interactive = is_tty()
+
+    if interactive:
+        try:
+            args = run_wizard(args)
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Aborted.[/]")
+            sys.exit(130)
+    else:
+        if args.provider is None:
+            parser.error("--provider is required when not running interactively")
+        if args.topic is None:
+            args.topic = "all"
+        if args.embed_provider is None:
+            args.embed_provider = "google"
+
+    if not args.google_api_key:
+        parser.error("--google-api-key (or GOOGLE_API_KEY env var) is required")
+
+    if args.host:
+        os.environ["REDIS_HOST" if args.provider == "redis" else "QDRANT_HOST"] = (
+            args.host
+        )
+    if args.port:
+        os.environ["REDIS_PORT" if args.provider == "redis" else "QDRANT_PORT"] = str(
+            args.port
         )
 
-    # Apply host/port overrides before settings are loaded
-    if args.host:
-        if args.provider == "redis":
-            os.environ["REDIS_HOST"] = args.host
-        else:
-            os.environ["QDRANT_HOST"] = args.host
+    show_summary(args)
 
-    if args.port:
-        if args.provider == "redis":
-            os.environ["REDIS_PORT"] = str(args.port)
-        else:
-            os.environ["QDRANT_PORT"] = str(args.port)
+    if interactive:
+        proceed = questionary.confirm("Proceed?", default=True).ask()
+        if not proceed:
+            console.print("[yellow]Aborted.[/]")
+            return
 
     selected: dict[str, list[dict]] = (
         TOPICS if args.topic == "all" else {args.topic: TOPICS[args.topic]}
@@ -612,13 +688,18 @@ def main() -> None:
             )
 
         populated = list(selected.keys())
-        print("=" * 60)
-        print(f"All done. Populated {len(populated)} index(es): {', '.join(populated)}")
-        print()
-        print("Next steps:")
-        print("  Add a YAML config file in chatbot-api/src/modules/chatbot/config/")
-        print(
-            "  for each index you populated. See config/template.yaml for the schema."
+        console.rule("[bold green]Done")
+        console.print(
+            f"[green]✓[/] Populated {len(populated)} index(es): "
+            f"[bold]{', '.join(populated)}[/]\n"
+        )
+        console.print("[bold]Next steps[/]")
+        console.print(
+            "  Add a YAML config file in "
+            "[cyan]chatbot-api/src/modules/chatbot/tool/config/[/]"
+        )
+        console.print(
+            "  for each index you populated. See [cyan]template.yaml[/] for the schema."
         )
 
     asyncio.run(run_all())

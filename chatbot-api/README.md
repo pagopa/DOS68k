@@ -90,9 +90,7 @@ chatbot-api:
     - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
 ```
 
-The example directory `scripts/tool_config/` contains demo tool configs
-(`software-dev.yaml`, `zephyr-corp.yaml`, `borgonero-fc.yaml`) paired with
-the sample dataset loaded by `scripts/populate_vector_db.py`.
+The example directory `scripts/tool_config/` contains demo tool configs (`software-dev.yaml`, `zephyr-corp.yaml`, `borgonero-fc.yaml`) paired with the sample dataset loaded by `scripts/populate_vector_db.py`. See [Populate Vector DB](#populate-vector-db-for-testing).
 
 Or set `TOOLS_CONFIG_DIR=/path/to/tools` in `.env`. Each tool is a YAML file defining a vector index namespace. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the schema.
 
@@ -110,18 +108,20 @@ Or set `AGENT_CONFIG_PATH=/path/to/agent.yaml` in `.env`. The file must contain 
 
 ---
 
-## Populate Vector DB (For Testing)
+## Populate Vector DB
 
-The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds sample documents into the vector database:
+The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds sample documents into the vector database.
+
+> ! **test purposes only**
 
 ```bash
+# Remember to start a vector db service before running the script
+docker compose up -d --build <vector-db-service> # Es qdrant/redis-vdb
+
 cd chatbot-api
 
-uv run python scripts/populate_vector_db.py \
-  --provider redis \
-  --topic software-dev \
-  --embed-provider google \
-  --google-api-key YOUR_KEY
+uv sync --dev
+# Run --help to see the docs on how to use and which default values it has
+# uv run python scripts/populate_vector_db.py --help
+uv run python scripts/populate_vector_db.py
 ```
-
-Available topics: `software-dev`, `zephyr-corp`, `borgonero-fc`, `all`.
