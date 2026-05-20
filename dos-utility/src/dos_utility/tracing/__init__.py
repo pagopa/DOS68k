@@ -30,5 +30,3 @@ def get_tracer() -> TracingInterface:
         from .langfuse.implementation import LangfuseTracingProvider
 
         return LangfuseTracingProvider()
-
-    raise ValueError(f"Unsupported tracing provider: {settings.TRACING_PROVIDER}")

@@ -1,5 +1,7 @@
 from enum import StrEnum
 from functools import lru_cache
+from typing import Annotated
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -9,7 +11,7 @@ class TracingProvider(StrEnum):
 
 
 class TracingSettings(BaseSettings):
-    TRACING_PROVIDER: TracingProvider = TracingProvider.NOOP
+    TRACING_PROVIDER: Annotated[TracingProvider, Field(default=TracingProvider.NOOP)]
 
 
 @lru_cache()
