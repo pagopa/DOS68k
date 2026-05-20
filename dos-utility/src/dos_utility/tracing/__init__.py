@@ -26,4 +26,9 @@ def get_tracer() -> TracingInterface:
     if settings.TRACING_PROVIDER is TracingProvider.NOOP:
         return NoopTracer()
 
+    if settings.TRACING_PROVIDER is TracingProvider.LANGFUSE:
+        from .langfuse.implementation import LangfuseTracingProvider
+
+        return LangfuseTracingProvider()
+
     raise ValueError(f"Unsupported tracing provider: {settings.TRACING_PROVIDER}")

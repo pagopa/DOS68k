@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "dos-utility",
+    "dos-utility[tracing]",
     "fastapi[standard]>=0.128.0",
     "nh3>=0.3.3",
     "pydantic>=2.12.5",

@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from dos_utility.tracing.env import TracingProvider
 
 
@@ -9,3 +9,7 @@ class TracingSettingsMock:
 
 def get_tracing_settings_noop_mock() -> TracingSettingsMock:
     return TracingSettingsMock(TRACING_PROVIDER=TracingProvider.NOOP)
+
+
+def get_tracing_settings_langfuse_mock() -> TracingSettingsMock:
+    return TracingSettingsMock(TRACING_PROVIDER=TracingProvider.LANGFUSE)
