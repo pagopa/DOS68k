@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import Self, Optional, Dict, Any, List
 
-from langfuse import Langfuse
+from langfuse import Langfuse, propagate_attributes
 
 from dos_utility.tracing.interface import TracingInterface, TraceHandle
 from dos_utility.tracing.models import TraceId
@@ -9,14 +9,13 @@ from .env import get_langfuse_settings
 
 
 class _LangfuseTraceHandle(TraceHandle):
-    def __init__(self, trace_obj) -> None:
-        self._trace_obj = trace_obj
+    def __init__(self, client: Langfuse) -> None:
+        self._client = client
         self._output: Optional[str] = None
-        self._metadata: Optional[Dict[str, Any]] = None
 
     @property
     def id(self) -> TraceId:
-        return self._trace_obj.id
+        return self._client.get_current_trace_id()
 
     async def add_span(
         self,
@@ -25,13 +24,16 @@ class _LangfuseTraceHandle(TraceHandle):
         output: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self._trace_obj.span(name=name, input=input, output=output, metadata=metadata)
+        with self._client.start_as_current_observation(
+            name=name, input=input, output=output, metadata=metadata
+        ):
+            pass
 
     def set_output(self, output: str) -> None:
         self._output = output
 
     def set_metadata(self, metadata: Dict[str, Any]) -> None:
-        self._metadata = metadata
+        pass
 
 
 class LangfuseTracingProvider(TracingInterface):
@@ -72,25 +74,22 @@ class LangfuseTracingProvider(TracingInterface):
     ):
         @asynccontextmanager
         async def _ctx():
-            trace_obj = self._client.trace(
-                name=name,
-                session_id=session_id,
+            with propagate_attributes(
                 user_id=user_id,
-                input=input,
-                metadata=metadata,
+                session_id=session_id,
                 tags=tags,
-            )
-            handle = _LangfuseTraceHandle(trace_obj)
-            try:
-                yield handle
-            finally:
-                update_kwargs = {}
-                if handle._output is not None:
-                    update_kwargs["output"] = handle._output
-                if handle._metadata is not None:
-                    update_kwargs["metadata"] = handle._metadata
-                if update_kwargs:
-                    trace_obj.update(**update_kwargs)
+            ):
+                with self._client.start_as_current_observation(
+                    name=name,
+                    input=input,
+                    metadata=metadata,
+                ):
+                    handle = _LangfuseTraceHandle(self._client)
+                    try:
+                        yield handle
+                    finally:
+                        if handle._output is not None:
+                            self._client.set_current_trace_io(output=handle._output)
 
         return _ctx()
 
@@ -101,7 +100,9 @@ class LangfuseTracingProvider(TracingInterface):
         value: float,
         comment: Optional[str] = None,
     ) -> None:
-        self._client.score(trace_id=trace_id, name=name, value=value, comment=comment)
+        self._client.create_score(
+            trace_id=trace_id, name=name, value=value, comment=comment
+        )
 
     async def flush(self: Self, timeout: Optional[float] = None) -> None:
         self._client.flush()

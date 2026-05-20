@@ -144,38 +144,44 @@ async def test_noop_tracer_flush_does_not_raise(monkeypatch: pytest.MonkeyPatch)
 
 
 # ---------------------------------------------------------------------------
-# Langfuse provider — shared fake
+# Langfuse provider — shared fakes
 # ---------------------------------------------------------------------------
 
+from contextlib import contextmanager
 
-class _FakeLangfuseTrace:
-    def __init__(self):
-        self.id = "fake-trace-id"
-        self.update_calls = []
-        self.span_calls = []
 
-    def update(self, **kwargs):
-        self.update_calls.append(kwargs)
-
-    def span(self, **kwargs):
-        self.span_calls.append(kwargs)
+@contextmanager
+def _fake_propagate_attributes(**kwargs):
+    yield
 
 
 class _FakeLangfuse:
     def __init__(self, **kwargs):
         self.init_kwargs = kwargs
-        self.traces = []
-        self.score_calls = []
+        self.start_observation_calls = []
+        self.set_trace_io_calls = []
+        self.create_score_calls = []
         self.flush_calls = []
         self._healthy = True
+        self._trace_id = "fake-trace-id"
 
-    def trace(self, **kwargs) -> _FakeLangfuseTrace:
-        t = _FakeLangfuseTrace()
-        self.traces.append(t)
-        return t
+    @contextmanager
+    def start_as_current_observation(
+        self, *, name, input=None, output=None, metadata=None, **kwargs
+    ):
+        self.start_observation_calls.append(
+            {"name": name, "input": input, "output": output, "metadata": metadata}
+        )
+        yield self
 
-    def score(self, **kwargs):
-        self.score_calls.append(kwargs)
+    def get_current_trace_id(self) -> str:
+        return self._trace_id
+
+    def set_current_trace_io(self, *, input=None, output=None):
+        self.set_trace_io_calls.append({"input": input, "output": output})
+
+    def create_score(self, **kwargs):
+        self.create_score_calls.append(kwargs)
 
     def flush(self):
         self.flush_calls.append(True)
@@ -204,6 +210,9 @@ async def test_langfuse_tracer_returns_tracing_interface(
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", _FakeLangfuse)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
@@ -230,6 +239,9 @@ async def test_langfuse_tracer_trace_returns_non_empty_id(
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", _FakeLangfuse)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
@@ -254,15 +266,16 @@ async def test_langfuse_tracer_output_reaches_sdk(monkeypatch: pytest.MonkeyPatc
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
         async with tracer.trace(name="test") as handle:
             handle.set_output("answer")
 
-    assert len(fake_lf.traces) == 1
-    trace_obj = fake_lf.traces[0]
-    assert any(c.get("output") == "answer" for c in trace_obj.update_calls)
+    assert any(c.get("output") == "answer" for c in fake_lf.set_trace_io_calls)
 
     get_tracer.cache_clear()
 
@@ -279,14 +292,18 @@ async def test_langfuse_tracer_span_reaches_sdk(monkeypatch: pytest.MonkeyPatch)
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
         async with tracer.trace(name="test") as handle:
             await handle.add_span(name="llm_generation", input="q", output="a")
 
-    trace_obj = fake_lf.traces[0]
-    assert any(c.get("name") == "llm_generation" for c in trace_obj.span_calls)
+    assert any(
+        c.get("name") == "llm_generation" for c in fake_lf.start_observation_calls
+    )
 
     get_tracer.cache_clear()
 
@@ -305,6 +322,9 @@ async def test_langfuse_tracer_exception_in_body_still_closes_trace(
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
@@ -313,9 +333,7 @@ async def test_langfuse_tracer_exception_in_body_still_closes_trace(
                 handle.set_output("partial")
                 raise ValueError("boom")
 
-    # trace context exited; trace_obj.update was still called
-    trace_obj = fake_lf.traces[0]
-    assert any(c.get("output") == "partial" for c in trace_obj.update_calls)
+    assert any(c.get("output") == "partial" for c in fake_lf.set_trace_io_calls)
 
     get_tracer.cache_clear()
 
@@ -337,13 +355,16 @@ async def test_langfuse_tracer_score_calls_sdk(monkeypatch: pytest.MonkeyPatch):
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
         await tracer.score(trace_id="tid", name="faithfulness", value=0.9)
 
-    assert len(fake_lf.score_calls) == 1
-    call = fake_lf.score_calls[0]
+    assert len(fake_lf.create_score_calls) == 1
+    call = fake_lf.create_score_calls[0]
     assert call["trace_id"] == "tid"
     assert call["name"] == "faithfulness"
     assert call["value"] == 0.9
@@ -363,6 +384,9 @@ async def test_langfuse_tracer_flush_calls_sdk(monkeypatch: pytest.MonkeyPatch):
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
@@ -390,6 +414,9 @@ async def test_langfuse_tracer_is_healthy_true(monkeypatch: pytest.MonkeyPatch):
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
@@ -411,6 +438,9 @@ async def test_langfuse_tracer_is_healthy_false(monkeypatch: pytest.MonkeyPatch)
         tracing, "get_tracing_settings", get_tracing_settings_langfuse_mock
     )
     monkeypatch.setattr(langfuse_impl, "Langfuse", lambda **kw: fake_lf)
+    monkeypatch.setattr(
+        langfuse_impl, "propagate_attributes", _fake_propagate_attributes
+    )
 
     tracer = get_tracer()
     async with tracer:
