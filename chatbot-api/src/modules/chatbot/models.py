@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Literal, Optional, List, Any
+from typing import Optional, List, Any
 
 from google.genai import types
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -7,6 +7,7 @@ from llama_index.core.llms.llm import LLM
 
 from dos_utility.types.models import Provider
 from dos_utility.utils.logger import get_logger
+from .utils.TruncatedOllamaEmbedding import TruncatedOllamaEmbedding
 from ..env import get_logging_settings, LogSettings
 
 DEFAULT_OLLAMA_URL = "http://localhost:11434"
@@ -87,7 +88,9 @@ def get_llm(
     elif provider == "ollama":
         from llama_index.llms.ollama import Ollama
 
+        # params['json_mode'] = True
         params['base_url'] = base_url or DEFAULT_OLLAMA_URL
+        params['request_timeout'] = params['request_timeout'] or 600
 
         llm: Ollama = Ollama(model=model_id, **{k: v for k, v in params.items() if v is not None})
 
@@ -133,9 +136,6 @@ def get_embed_model(
     if embed_provider == "google":
         from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
-        http_kwargs = {"base_url": embed_base_url} if embed_base_url else {}
-        http_options = types.HttpOptions(**http_kwargs)
-
         if embed_base_url:
             params['http_options'] = types.HttpOptions(base_url=embed_base_url)
 
@@ -159,8 +159,9 @@ def get_embed_model(
 
         params['base_url'] = embed_base_url or DEFAULT_OLLAMA_URL
 
-        embed_model: OllamaEmbedding = OllamaEmbedding(model_name=model_id,
-                                                       **{k: v for k, v in params.items() if v is not None})
+        embed_model: OllamaEmbedding = TruncatedOllamaEmbedding(model_name=model_id,
+                                                                max_dim=embed_dim,
+                                                                **{k: v for k, v in params.items() if v is not None})
 
         logger.debug(
             "Embedding model loaded - provider=ollama, model_id=%s",
