@@ -79,13 +79,20 @@ class EvaluationService:
 
         return updated_item
 
-    async def evaluate(self: Self, query_id: UUID) -> dict:
+    async def evaluate(self: Self, query_id: UUID, session_id: UUID) -> dict:
         self.logger.info(f"Evaluating query_id: {query_id}")
 
         query_id_str: str = str(query_id)
+        session_id_str: str = str(session_id)
+        self.logger.info(f"retrieving query {query_id_str} from session {session_id_str}")
         query_result: QueryResult = await self.nosql.query(
             table_name=self.settings.QUERY_TABLENAME,
             key_conditions=[
+                KeyCondition(
+                    field="sessionId",
+                    operator=ConditionOperator.EQ,
+                    value=session_id_str,
+                ),
                 KeyCondition(
                     field="id",
                     operator=ConditionOperator.EQ,
@@ -94,13 +101,17 @@ class EvaluationService:
             ],
         )
 
-        if query_result is None or len(query_result.items):
+        self.logger.info(f"my results: {query_result.items}")
+        self.logger.info(f"my results size: {len(query_result.items)}")
+        items = query_result.items
+
+        if query_result is None or len(items) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Query {query_id_str} not found",
             )
 
-        query: Dict[str, Any] = query_result.items[0]
+        query: Dict[str, Any] = items[0]
 
         if query.get("isEvaluated", True):
             raise HTTPException(
@@ -114,14 +125,14 @@ class EvaluationService:
             fields_to_update={"isEvaluated": True},
         )
 
-        msg: bytes = json.dumps({"queryId": query_id_str}).encode("utf-8")
+        msg: bytes = json.dumps({"messageId": query_id_str, "sessionId": session_id_str}).encode("utf-8")
         msg_id: str = await self.queue.enqueue(msg=msg)
 
         self.logger.info(
             f"Message enqueued with id: {msg_id} for query_id: {query_id_str}"
         )
 
-        return {"query_id": query_id, "status": "queued"}
+        return {"query_id": str(query_id), "status": "queued"}
 
     async def evaluate_all(self: Self, session_id: UUID) -> dict:
         self.logger.info(f"Evaluating all queries for session_id: {session_id}")
