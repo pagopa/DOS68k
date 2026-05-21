@@ -28,6 +28,13 @@ dependencies = [
     "redis[hiredis]>=5.0.4",
 ]
 
+[project.optional-dependencies]
+tracing = [
+    "langfuse>=2.0.0",
+    "opentelemetry-sdk>=1.30.0",
+    "openinference-instrumentation-llama-index>=3.0.0",
+]
+
 [project.scripts]
 dos-utility = "dos_utility:main"
 

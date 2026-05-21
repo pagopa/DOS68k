@@ -2,7 +2,11 @@
 
 ## Overview
 
-This service provides authentication and authorization functionality using an adaptive authentication layer that supports multiple JWT providers (AWS Cognito, Keycloak, or local development mode).
+This service is the authentication verifier for DOS68K. It exposes a single protected endpoint (`/protected/jwt-check`) used as the API Gateway forward-auth target: the gateway calls it with the client's `Authorization` header on every protected request, the service verifies the JWT via a pluggable provider, and returns `X-User-Id` / `X-User-Role` response headers that the gateway then injects into the downstream request.
+
+> As for now, **it's NOT an IdP**. It only verifies the token against the chosen IdP.
+
+[Supported JWT providers](../dos-utility/docs/features.md#2-auth-interface).
 
 ## Prerequisites
 
@@ -67,9 +71,3 @@ The service will be available at `http://localhost:8000`.
 ## Configuration
 
 Configure the authentication provider by setting the `AUTH_PROVIDER` environment variable. See [README.AUTH_PROVIDERS.md](README.AUTH_PROVIDERS.md) for detailed configuration options.
-
-## API Endpoints
-
-- **GET /health** - Health check endpoint
-- **GET /protected/jwt-check** - JWT token verification endpoint
-- **GET /** - OpenAPI documentation (Swagger UI)

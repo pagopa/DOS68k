@@ -43,3 +43,6 @@ class QueryResponseDTO(BaseModel):
     context: List[Source]
     created_at: Annotated[str, Field(alias="createdAt")]
     expires_at: Annotated[Optional[str], Field(alias="expiresAt")]
+    tracing_trace_id: Annotated[
+        Optional[str], Field(alias="tracingTraceId", default=None)
+    ]
