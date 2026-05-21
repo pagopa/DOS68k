@@ -58,7 +58,7 @@ async def post_evaluate_all(
 
 
 @router.post(
-    path="/{query_id}",
+    path="/{session_id}/{query_id}",
     response_model=EvaluationResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
@@ -69,7 +69,9 @@ async def post_evaluate_all(
     summary="Evaluate a specific query",
 )
 async def post_evaluate(
+    session_id: UUID,
     query_id: UUID,
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
 ) -> EvaluationResponse:
-    return await service.evaluate(query_id=str(query_id))
+    return await service.evaluate(session_id = session_id, 
+                                  query_id=query_id)
