@@ -4,10 +4,11 @@ This guide covers all configuration options for the chatbot-api service. Environ
 
 ## Overview
 
-The chatbot-api requires configuration for three main areas:
+The chatbot-api requires configuration for four main areas:
 - **Database & Storage** — where to persist sessions and queries
 - **Vector DB & Retrieval** — where to store and retrieve document embeddings
 - **LLM & Embedding Models** — which AI models to use for generation and embeddings
+- **Tracing** — LLM observability backend (optional, default is no-op)
 
 All providers are swappable and can be configured via environment variables. Start with the [Quick Setup](#quick-setup) section, then dive into provider-specific details.
 
@@ -20,7 +21,7 @@ All API endpoints (except health checks) require two headers:
 | `X-User-Id` | UUID of the authenticated user |
 | `X-User-Role` | User's role: `admin` or `user` |
 
-These headers are typically injected by the API gateway (KrakenD) in production. For local testing, include them in each request. See [INTEGRATION.md](./INTEGRATION.md#authentication) for examples.
+These headers are typically injected by the API gateway (Traefik, via forward-auth to the auth service) in production. For local testing, include them in each request.
 
 ## Quick Setup
 
@@ -31,7 +32,7 @@ Copy `.env.template` to `.env` and fill in these essential variables:
 FRONTEND_URL=http://localhost
 
 # NoSQL Database (sessions and queries storage)
-NOSQL_PROVIDER=dynamodb  # or: none (for testing only)
+NOSQL_PROVIDER=dynamodb
 DYNAMODB_ENDPOINT_URL=http://localstack
 DYNAMODB_PORT=4566
 DYNAMODB_REGION=us-east-1
@@ -43,8 +44,8 @@ VECTOR_DB_PROVIDER=redis  # or: qdrant
 REDIS_HOST=redis-vdb
 REDIS_PORT=6379
 
-# LLM Provider
-PROVIDER=google  # or: mock (for testing without API keys)
+# LLM Provider (only "google" is fully wired end-to-end)
+PROVIDER=google
 MODEL_ID=gemini-2.0-flash
 MODEL_API_KEY=your-api-key
 
@@ -53,7 +54,7 @@ EMBED_MODEL_ID=text-embedding-004
 EMBED_DIM=768
 
 # Database tables
-SESSION_TABLENAME=sessions
+SESSIONS_TABLENAME=sessions
 QUERY_TABLENAME=queries
 ```
 
@@ -97,12 +98,14 @@ Temporary sessions (`isTemporary: true`) automatically expire after this period.
 
 #### Other Backends
 
-For documentation on alternative NoSQL providers, see [`dos-utility` database configuration](../../dos-utility/docs/features.md#6-nosql-db-interface).
+For documentation on alternative NoSQL providers and the full set of
+backend-specific environment variables, see
+[`dos-utility` database configuration](../../dos-utility/docs/features.md#6-nosql-db-interface).
 
 ### Table Names
 
 ```bash
-SESSION_TABLENAME=sessions   # Override default table name for sessions
+SESSIONS_TABLENAME=sessions  # Override default table name for sessions
 QUERY_TABLENAME=queries      # Override default table name for queries
 ```
 
@@ -136,20 +139,25 @@ QDRANT_PORT=6333             # Port number
 
 ### Other Backends
 
-For documentation on alternative vector DB providers, see [`dos-utility` vector DB configuration](../../dos-utility/docs/features.md#5-vector-db-interface).
+For documentation on alternative vector DB providers and the full set of
+backend-specific environment variables, see
+[`dos-utility` vector DB configuration](../../dos-utility/docs/features.md#5-vector-db-interface).
 
 ## LLM & Embedding Configuration
 
-The chatbot-api uses pluggable LLM and embedding providers. By default, it uses Google GenAI (Gemini).
+The chatbot-api currently supports a single fully wired LLM/embedding
+provider: **Google GenAI (Gemini)**. The `PROVIDER` setting accepts only
+`google`. Other providers (OpenAI, Azure OpenAI, Bedrock) appear as
+commented dependencies in `pyproject.toml` but require code changes in
+`src/modules/chatbot/models.py` and `src/modules/chatbot/env.py` to be
+enabled — they are not selectable purely via configuration.
 
-### Selecting a Provider
-
-#### Google GenAI (Default)
+### Google GenAI
 
 ```bash
 PROVIDER=google
 MODEL_ID=gemini-2.0-flash      # Check Google's available models
-MODEL_API_KEY=your-api-key      # Get from https://aistudio.google.com
+MODEL_API_KEY=your-api-key     # Get from https://aistudio.google.com
 MAX_TOKENS=1024                # Max output tokens per response
 
 EMBED_MODEL_ID=text-embedding-004
@@ -160,40 +168,17 @@ EMBED_RETRIES=3                # Retry attempts on API errors
 EMBED_RETRY_MIN_SECONDS=1.0    # Min wait between retries
 ```
 
-#### Mock Provider (Testing)
+### Adding a New Provider
 
-For local testing without API keys:
+To wire up an additional provider:
 
-```bash
-PROVIDER=mock
-
-# No MODEL_ID, MODEL_API_KEY, or embedding keys needed
-# Returns deterministic placeholder responses
-```
-
-### Swapping Providers
-
-To use OpenAI, Azure OpenAI, or Bedrock:
-
-1. **Uncomment the dependency** in `pyproject.toml`:
-   ```toml
-   # llama-index-llms-openai>=0.4.0
-   # llama-index-embeddings-openai>=0.3.0
-   ```
-
-2. **Set the provider** in `.env`:
-   ```bash
-   PROVIDER=openai
-   MODEL_ID=gpt-4o
-   MODEL_API_KEY=sk-...
-   ```
-
-3. **Rebuild the container** (if running in Docker):
-   ```bash
-   docker compose up -d --build chatbot-api
-   ```
-
-See `src/modules/chatbot/models.py` for the complete list of supported providers and their configuration.
+1. Uncomment the matching dependency in `pyproject.toml`
+   (e.g. `llama-index-llms-openai`, `llama-index-embeddings-openai`).
+2. Add a branch for the new provider in `get_llm` / `get_embed_model`
+   in `src/modules/chatbot/models.py`.
+3. Widen the `Literal["google"]` type on `provider` in
+   `src/modules/chatbot/env.py`.
+4. Rebuild the container: `docker compose up -d --build chatbot-api`.
 
 ### Embedding Model Dimension
 
@@ -211,10 +196,13 @@ If documents were indexed with dimension 768 but you configure `EMBED_DIM=1536`,
 
 ```bash
 SIMILARITY_TOPK=5              # Number of top chunks to retrieve per query
-USE_ASYNC=true                 # Run retrieval asynchronously
 ```
 
-Increasing `SIMILARITY_TOPK` provides more context but uses more tokens and may degrade answer quality if irrelevant chunks are included.
+Increasing `SIMILARITY_TOPK` provides more context but uses more tokens
+and may degrade answer quality if irrelevant chunks are included.
+
+Async query execution is enabled unconditionally in the tool loader
+(`use_async=True`); there is no environment variable to disable it.
 
 ## Agent Configuration
 
@@ -234,12 +222,16 @@ Set to `0.0` for consistent, fact-based responses. Increase toward `1.0` for mor
 TOOLS_CONFIG_DIR=/app/custom-tools  # Path to YAML tool configs
 ```
 
-If not set, defaults to built-in configs in `src/modules/chatbot/tool/config/`. Tools must be YAML files defining:
-- Tool name and description
-- Vector index name (must exist in vector DB)
-- Retrieval settings
+If not set, defaults to the built-in directory at `src/modules/chatbot/tool/config/`
+(which ships with only a `template.yaml`). Each YAML file declares one tool with:
+- `name` — unique tool name exposed to the agent
+- `description` — tells the agent when to use the tool
+- `index_id` — vector DB index/namespace to query (must exist)
+- `similarity_top_k` (optional) — per-tool override of `SIMILARITY_TOPK`
+- `qa_prompt` (optional) — overrides the default LlamaIndex QA prompt
+- `refine_prompt` (optional) — overrides the default refine prompt
 
-See [`src/modules/chatbot/tool/config/template.yaml`](../src/modules/chatbot/tool/config/template.yaml) for the schema.
+See [`src/modules/chatbot/tool/config/template.yaml`](../src/modules/chatbot/tool/config/template.yaml) for the full schema and inline documentation.
 
 #### Agent System Prompt
 
@@ -247,13 +239,16 @@ See [`src/modules/chatbot/tool/config/template.yaml`](../src/modules/chatbot/too
 AGENT_CONFIG_PATH=/app/my-agent.yaml
 ```
 
-If not set, uses the default `src/modules/chatbot/agent/agent.yaml`. The YAML file must contain:
+If not set, uses the default `src/modules/chatbot/agent/agent.yaml`. The YAML file may contain:
 - `name` — Agent name
 - `description` — Agent description
 - `system_prompt` — System instructions
-- `system_header` — Reasoning header format
+- `system_header` — Reasoning header format (used by the ReAct loop)
 
-See the [default agent.yaml](../src/modules/chatbot/agent/agent.yaml) for reference.
+All four fields are technically optional at the Pydantic-settings level
+(they default to `None`), but a usable agent needs at minimum a
+`system_prompt` and a `system_header`. See the
+[default agent.yaml](../src/modules/chatbot/agent/agent.yaml) for reference.
 
 ## Session Management
 
@@ -322,6 +317,50 @@ FRONTEND_URL=http://localhost  # Frontend origin for CORS (include protocol and 
 
 Only requests from this origin will be allowed. Use the exact URL including protocol (`http://` or `https://`) and port.
 
+## Tracing (Optional)
+
+Each query can be shipped as a **Trace** to an observability backend, carrying the prompt, answer, session and user metadata, and a nested span for the LLM generation step. The feature is opt-in and safe to leave disabled.
+
+### Selecting a Provider
+
+```bash
+TRACING_PROVIDER=noop      # Default — no external calls, safe for local dev and tests
+# TRACING_PROVIDER=langfuse  # Ship traces to a Langfuse instance
+```
+
+### Langfuse
+
+[Langfuse](https://langfuse.com) is an open-source LLM observability platform. Use it to inspect traces, score responses, and monitor latency.
+
+```bash
+TRACING_PROVIDER=langfuse
+LANGFUSE_PUBLIC_KEY=your-public-key   # From Langfuse project settings
+LANGFUSE_SECRET_KEY=your-secret-key   # From Langfuse project settings
+LANGFUSE_HOST=https://cloud.langfuse.com  # Or your self-hosted URL
+```
+
+After enabling, each successful query appears in Langfuse with:
+- Prompt and answer as input/output
+- Session ID and user ID as metadata
+- An `llm_generation` span for the LLM step
+
+The tracer never blocks the request path — telemetry is buffered in-process and shipped in the background. If the tracing backend is unreachable, the request succeeds and `tracingTraceId` is `null` in the response.
+
+### Trace ID in the Response
+
+When tracing is active, `POST /queries/{session_id}` returns a `tracingTraceId` field:
+
+```json
+{
+  "answer": "...",
+  "tracingTraceId": "abc123"
+}
+```
+
+Use this ID to look up the trace in your observability backend.
+
+For full provider documentation and advanced settings (`LANGFUSE_FLUSH_AT`, `LANGFUSE_FLUSH_INTERVAL_S`), see [`dos-utility` tracing configuration](../../dos-utility/docs/features.md#8-tracing-interface).
+
 ## Runtime Health Checks
 
 After starting, verify the service is healthy:
@@ -330,11 +369,15 @@ After starting, verify the service is healthy:
 # Service status
 curl http://localhost:8000/health
 
-# Database connectivity
+# NoSQL connectivity
 curl http://localhost:8000/health/db
 ```
 
-If database health check fails, verify:
+`/health/db` only probes the NoSQL backend (not the vector DB) and
+always returns HTTP 200; an unhealthy backend is signalled by
+`"database": "NOT connected"` in the JSON body.
+
+If the database health check reports `NOT connected`, verify:
 - NoSQL DB connection details in `.env`
 - Tables exist and have correct schema
-- Network connectivity to DB endpoint
+- Network connectivity to the DB endpoint

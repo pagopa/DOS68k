@@ -58,6 +58,7 @@ async def create_query(
     return await query_service.create_query(
         session_id=session_id,
         user_id=user.id,
+        user_role=user.role,
         question=query_data.question,
         session_history=query_data.model_dump(by_alias=False)["session_history"],
     )

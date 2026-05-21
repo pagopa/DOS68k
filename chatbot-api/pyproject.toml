@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "dos-utility",
+    "dos-utility[tracing]",
     "fastapi[standard]>=0.128.0",
     "nh3>=0.3.3",
     "pydantic>=2.12.5",
@@ -13,10 +13,6 @@ dependencies = [
     # LlamaIndex core + workflow
     "llama-index-core>=0.12.0",
     "llama-index-utils-workflow>=0.3.0",
-    # OpenTelemetry tracing
-    "opentelemetry-sdk>=1.30.0",
-    # OpenInference instrumentation for LlamaIndex
-    "openinference-instrumentation-llama-index>=3.0.0",
     # LLM provider — uncomment the one you are using:
     "llama-index-llms-google-genai>=0.4.0",
     # "llama-index-llms-openai>=0.4.0",
@@ -41,6 +37,8 @@ dev = [
     "pytest-asyncio>=1.3.0",
     "pytest-cov>=7.0.0",
     "pytest-dotenv>=0.5.2",
+    "questionary>=2.0.1",
+    "rich>=13.7.0",
     "ruff>=0.15.12",
 ]
 

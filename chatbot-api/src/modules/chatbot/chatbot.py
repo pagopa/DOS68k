@@ -21,6 +21,11 @@ log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
 
 
+FALLBACK_RESPONSE: str = (
+    "Sorry, I could not process your request.\nPlease try rephrasing your question."
+)
+
+
 class Chatbot:
     """RAG-based chatbot backed by a ReActAgent and one or more query engine tools.
 
@@ -139,7 +144,7 @@ class Chatbot:
             )
             # Structured output parsing failed — return a safe fallback.
             return {
-                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
             }
@@ -225,7 +230,7 @@ class Chatbot:
             )
         except Exception as e:
             response_json = {
-                "response": "Sorry, I could not process your request.\nPlease try rephrasing your question.",
+                "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
             }
