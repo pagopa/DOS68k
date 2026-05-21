@@ -17,7 +17,7 @@ class ChatbotSettings(BaseSettings):
     ]
     model_api_key: Annotated[str | None, Field(default=None, description="API key for the chosen provider")]
     base_url: Annotated[str | None, Field(default=None, description="Base URL for the chosen provider")]
-    request_timeout: Annotated[float | None, Field(default=5.0)]
+    request_timeout: Annotated[float | None, Field(default=None, description="Model response timeout")]
 
     # Embedding settings
     embed_provider: Provider

@@ -3,10 +3,12 @@ from pydantic_settings import BaseSettings
 from typing import Annotated, Literal
 from pydantic import Field, PositiveInt, PositiveFloat
 
+from dos_utility.types.models import Provider
+
 
 class TaskSettings(BaseSettings):
-    provider: Literal["google"]
-    model_api_key: Annotated[str, Field(description="API key for the chosen provider")]
+    provider: Provider
+    model_api_key: Annotated[str | None, Field(default=None, description="API key for the chosen provider")]
 
     # Embedding settings
     embed_chunk_size: Annotated[

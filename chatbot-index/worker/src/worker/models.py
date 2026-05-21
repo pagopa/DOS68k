@@ -1,10 +1,11 @@
 from logging import Logger
-from typing import Literal, Optional
+from typing import Optional
+
 from google.genai import types
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
+from dos_utility.types.models import Provider
 from dos_utility.utils.logger import get_logger
-
 from env import get_global_settings
 
 settings = get_global_settings()
@@ -12,14 +13,15 @@ logger: Logger = get_logger(name=__name__, level=settings.log_level)
 
 
 def get_embed_model(
-    provider: Literal["google"],
-    model_id: Optional[str],
-    embed_batch_size: Optional[int],
-    embed_dim: Optional[int],
-    task_type: Optional[str],
-    retries: Optional[int],
-    retry_min_seconds: Optional[float],
-    api_key: Optional[str],
+        provider: Provider,
+        model_id: str,
+        *,
+        embed_batch_size: Optional[int],
+        embed_dim: Optional[int],
+        task_type: Optional[str],
+        retries: Optional[int],
+        retry_min_seconds: Optional[float],
+        api_key: Optional[str],
 ) -> BaseEmbedding:
     """Returns an embedding model instance based on the configured provider.
 
