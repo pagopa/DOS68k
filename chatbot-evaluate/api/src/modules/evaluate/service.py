@@ -7,7 +7,6 @@ from fastapi import Depends, HTTPException, status
 from uuid import UUID
 
 from dos_utility.utils import logger
-from dos_utility.storage import StorageInterface, get_storage
 from dos_utility.database.nosql import (
     NoSQLInterface,
     get_nosql_client,
@@ -26,11 +25,9 @@ from ...env import (
 class EvaluationService:
     def __init__(
         self: Self,
-        storage: StorageInterface,
         nosql: NoSQLInterface,
         queue: QueueInterface,
     ):
-        self.storage: StorageInterface = storage
         self.nosql: NoSQLInterface = nosql
         self.queue: QueueInterface = queue
         self.settings: Settings = get_settings()
@@ -198,8 +195,7 @@ class EvaluationService:
 
 
 def get_evaluation_service(
-    storage: Annotated[StorageInterface, Depends(dependency=get_storage)],
     nosql: Annotated[NoSQLInterface, Depends(dependency=get_nosql_client)],
     queue: Annotated[QueueInterface, Depends(dependency=get_queue_client)],
 ) -> EvaluationService:
-    return EvaluationService(storage=storage, nosql=nosql, queue=queue)
+    return EvaluationService(nosql=nosql, queue=queue)
