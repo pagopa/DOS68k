@@ -1,21 +1,21 @@
-from logging import Logger
 from functools import lru_cache
+from logging import Logger
 from typing import Optional, List, Dict, Self, Any
-from workflows import Context
-from llama_index.core.tools import QueryEngineTool
+
+from llama_index.core.agent.workflow import AgentOutput
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.llms.llm import LLM, ToolSelection
-from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.agent.workflow import AgentOutput, ReActAgent
+from llama_index.core.tools import QueryEngineTool
+from workflows import Context
+
 from dos_utility.utils.logger import get_logger
-
-from .models import get_llm, get_embed_model
-from .tool.loader import load_tools
-from .agent import get_agent, get_agent_yaml_settings, AgentYamlSettings
+from .agent import get_agent, get_agent_yaml_settings, AgentYamlSettings, get_function_agent
 from .env import get_chatbot_settings, ChatbotSettings
+from .models import get_llm, get_embed_model
 from .structured_outputs import DOS68KAgentOutput
+from .tool.loader import load_tools
 from ..env import get_logging_settings, LogSettings
-
 
 log_settings: LogSettings = get_logging_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)
@@ -30,7 +30,7 @@ class Chatbot:
     """RAG-based chatbot backed by a ReActAgent and one or more query engine tools.
 
     Tools are loaded from YAML configs at startup (see tool/loader.py).
-    Agent behaviour (system prompt) is loaded from a YAML config (see agent.yaml).
+    Agent behaviour (system prompt) is loaded from a YAML config (see function_agent.yaml).
     A single LLM instance is used for both RAG synthesis and agent reasoning,
     tuned via temperature_agent.
     """
@@ -77,19 +77,31 @@ class Chatbot:
         agent_config: AgentYamlSettings = get_agent_yaml_settings(
             file=self.__settings.agent_config_path
         )
-        self.agent: ReActAgent = get_agent(
-            name=agent_config.name,
-            description=agent_config.description,
-            llm=self.model,
-            system_prompt=agent_config.system_prompt,
-            output_cls=DOS68KAgentOutput,
-            system_header=agent_config.system_header,
-            tools=list(tools_map.values()),
-        )
+
+        self.agent: Any
+        if self.__settings.provider == "google":
+            self.agent = get_agent(
+                name=agent_config.name,
+                description=agent_config.description,
+                llm=self.model,
+                system_prompt=agent_config.system_prompt,
+                output_cls=DOS68KAgentOutput,
+                system_header=agent_config.system_header,
+                tools=list(tools_map.values()),
+            )
+        elif self.__settings.provider == "ollama":
+            self.agent = get_function_agent(
+                name=agent_config.name,
+                description=agent_config.description,
+                llm=self.model,
+                system_prompt=agent_config.system_prompt,
+                system_header=agent_config.system_header,
+                tools=list(tools_map.values()),
+            )
 
     def __get_context(
-        self: Self, tool_calls: List[ToolSelection]
-    ) -> List[Dict[str, Any]]:
+            self: Self, tool_calls: List[ToolSelection]
+    ) -> Dict[str, List[Dict[str, Any]]]:
         """Retrieve context for the answer, if any RAG tool has been called.
 
         Args:
@@ -129,23 +141,42 @@ class Chatbot:
         """Converts the agent's raw output into the API response dict.
 
         Args:
-            engine_response: The AgentOutput returned by agent.run(). Its
-                structured_response field holds the validated AgentOutput Pydantic
-                model as a dict when parsing succeeded, or a non-dict value on failure.
+            engine_response: The AgentOutput returned by agent.run().
 
         Returns:
             Dict with keys: response, tags, contexts.
         """
-        structured: Optional[Dict[str, Any]] = (
-            engine_response.structured_response
-        )  # This is the DOS68KAgentOutput class
 
-        if not isinstance(structured, dict):
+        response_data = {
+            "response": "",
+            "tags": [],
+            "context": self.__get_context(tool_calls=engine_response.tool_calls),
+        }
+
+        structured = engine_response.structured_response
+        if isinstance(structured, dict) and "response" in structured:
+            logger.debug("Structured output parsed successfully from structured_response")
+            response_data["response"] = structured["response"]
+
+        elif engine_response.response and hasattr(engine_response.response,
+                                                  "content") and engine_response.response.content:
+            logger.debug("Fallback to ChatMessage content - structured_response was None")
+            response_data["response"] = engine_response.response.content
+
+        elif engine_response.response and hasattr(engine_response.response,
+                                                  "blocks") and engine_response.response.blocks:
+            logger.debug("Fallback to extracting text blocks from ChatMessage")
+            text_blocks = [
+                b.text for b in engine_response.response.blocks
+                if hasattr(b, "text") and b.text
+            ]
+            if text_blocks:
+                response_data["response"] = "\n".join(text_blocks)
+
+        if not response_data["response"].strip():
             logger.debug(
-                "Structured output parsing failed - got type=%s, falling back to error response",
-                type(structured).__name__,
+                "Both structured_response and chat content are empty. Falling back to error response."
             )
-            # Structured output parsing failed — return a safe fallback.
             return {
                 "response": FALLBACK_RESPONSE,
                 "tags": [],
@@ -153,17 +184,13 @@ class Chatbot:
             }
 
         logger.debug(
-            "Structured output parsed successfully - tool_calls=%d",
+            "Response processed successfully - tool_calls=%d",
             len(engine_response.tool_calls),
         )
-        return {
-            "response": structured["response"],
-            "tags": [],  # Left missing for now
-            "context": self.__get_context(tool_calls=engine_response.tool_calls),
-        }
+        return response_data
 
     def __messages_to_chathistory(
-        self: Self, messages: Optional[List[Dict[str, str]]] = None
+            self: Self, messages: Optional[List[Dict[str, str]]] = None
     ) -> List[ChatMessage]:
         """Converts the API chat history format into LlamaIndex ChatMessage objects.
 
@@ -198,9 +225,9 @@ class Chatbot:
         return chat_history
 
     async def chat_generate(
-        self: Self,
-        query_str: str,
-        messages: Optional[List[Dict[str, str]]] = None,
+            self: Self,
+            query_str: str,
+            messages: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
         """Generates a response to the user's query.
 
