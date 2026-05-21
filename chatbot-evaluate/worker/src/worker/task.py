@@ -5,7 +5,8 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
 from typing import Any
-from models import get_llm, LLM
+from models import get_llm, LLM, get_embed_model, BaseEmbedding
+from evaluator import Evaluator
 from env import (
     get_task_settings,
     TaskSettings,
@@ -17,6 +18,7 @@ from env import (
 
 from dos_utility.database.nosql import get_nosql_client_ctx, QueryResult, KeyCondition, ConditionOperator
 from dos_utility.utils.logger import get_logger
+
 
 async def process_task(body: bytes) -> None:
     """Process a task with the given body.
@@ -35,6 +37,17 @@ async def process_task(body: bytes) -> None:
         model_id = task_settings.model_id,
         temperature = task_settings.temperature,
         max_tokens = task_settings.max_tokens,
+        api_key = task_settings.model_api_key,
+    )
+
+    embedding: BaseEmbedding = get_embed_model(
+        provider = task_settings.provider,
+        model_id =task_settings.embed_model_id,
+        embed_batch_size = task_settings.embed_batch_size,
+        embed_dim = task_settings.embed_dim,
+        task_type = task_settings.embed_task,
+        retries = task_settings.embed_retries,
+        retry_min_seconds = task_settings.embed_retries,
         api_key = task_settings.model_api_key,
     )
 
@@ -81,7 +94,7 @@ async def process_task(body: bytes) -> None:
         Domanda contestualizzata:
 """ 
         synthesis_prompt = RichPromptTemplate(prompt_template)
-        contextualized_question = llm.acomplete(synthesis_prompt.format(
+        contextualized_question = await llm.acomplete(synthesis_prompt.format(
             question = message_to_evaluate['question'],
             history = history)
             )
@@ -92,6 +105,17 @@ async def process_task(body: bytes) -> None:
         question_to_evaluate = chat_session[0]['question']
     
     ### JUDGE
+    evaluator = Evaluator(settings = task_settings)
+    scores = await evaluator.evaluate(
+        question = contextualized_question,
+        answer = message_to_evaluate['answer'],
+        context = message_to_evaluate['context']
+    )
+
+    print("Scores:", scores)
+    ### ADD SCORES TO DYNAMO
+
+    ### UPDATE isEvaluated
         
 
 

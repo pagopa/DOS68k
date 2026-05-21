@@ -122,7 +122,7 @@ class EvaluationService:
         await self.nosql.update_item(
             table_name=self.settings.QUERY_TABLENAME,
             key={"sessionId": query["sessionId"], "id": query_id_str},
-            fields_to_update={"isEvaluated": True},
+            fields_to_update={"isEvaluated": False},
         )
 
         msg: bytes = json.dumps({"messageId": query_id_str, "sessionId": session_id_str}).encode("utf-8")
@@ -132,7 +132,9 @@ class EvaluationService:
             f"Message enqueued with id: {msg_id} for query_id: {query_id_str}"
         )
 
-        return {"query_id": str(query_id), "status": "queued"}
+        return {"query_id": query_id_str, 
+                "session_id": session_id_str,
+                "status": "queued"}
 
     async def evaluate_all(self: Self, session_id: UUID) -> dict:
         self.logger.info(f"Evaluating all queries for session_id: {session_id}")

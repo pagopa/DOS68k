@@ -18,9 +18,8 @@ class EvaluationResponse(BaseModel):
     )
 
     query_id: Annotated[str, Field(alias="queryId")]
-    question: Optional[str] = None
-    answer: Optional[str] = None
-    feedback: int
+    session_id: Annotated[str, Field(alias="sessionId")]
+    status: str
 
 
 class EvaluationAllResponse(BaseModel):
