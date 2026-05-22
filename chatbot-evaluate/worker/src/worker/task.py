@@ -102,12 +102,14 @@ async def process_task(body: bytes) -> None:
         
         print("Contextualized question:", question_to_evaluate)
     else:
-        question_to_evaluate = chat_session[0]['question']
+        message_to_evaluate = chat_session[0]
+        question_to_evaluate = message_to_evaluate['question']
     
     ### JUDGE
     evaluator = Evaluator(settings = task_settings)
+
     scores = await evaluator.evaluate(
-        question = contextualized_question,
+        question = question_to_evaluate,
         answer = message_to_evaluate['answer'],
         context = message_to_evaluate['context']
     )
@@ -116,8 +118,3 @@ async def process_task(body: bytes) -> None:
     ### ADD SCORES TO DYNAMO
 
     ### UPDATE isEvaluated
-        
-
-
-            
-    

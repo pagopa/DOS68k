@@ -46,10 +46,10 @@ services:
     #   - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
     depends_on:
       - localstack
-      - masking
+      # - masking
       - redis-vdb
-      - qdrant
-      - langfuse-web
+      # - qdrant
+      # - langfuse-web
 
   chatbot-evaluate-api:
     build:

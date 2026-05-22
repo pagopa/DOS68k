@@ -3,6 +3,7 @@ from ragas.metrics.collections import Faithfulness, ContextUtilization, AnswerRe
 from ragas.llms import llm_factory
 from ragas.embeddings import GoogleEmbeddings
 from ragas.embeddings.base import embedding_factory
+import os
 
 class Evaluator:
 
