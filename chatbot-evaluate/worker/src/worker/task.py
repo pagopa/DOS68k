@@ -111,7 +111,10 @@ async def process_task(body: bytes) -> None:
     scores = await evaluator.evaluate(
         question = question_to_evaluate,
         answer = message_to_evaluate['answer'],
-        context = message_to_evaluate['context']
+        context = [
+            c["content"]
+            for c in message_to_evaluate['context']
+        ],
     )
 
     print("Scores:", scores)

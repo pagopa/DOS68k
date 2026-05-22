@@ -9,8 +9,9 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "dos-utility",
-    "google-genai>=2.5.0",
+    "google-genai>=2.6.0",
     "google-generativeai>=0.8.6",
+    "jsonref>=1.1.0",
     "llama-index-embeddings-google-genai>=0.5.1",
     "llama-index-llms-google-genai>=0.9.5",
     "ragas>=0.4.3",
