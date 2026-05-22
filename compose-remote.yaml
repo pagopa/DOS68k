@@ -9,7 +9,7 @@
 # https://github.com/docker/awesome-compose
 services:
   api-gateway:
-    image: traefik:v3.2
+    image: traefik:v3.2@sha256:e561a37f8710d9cf41c78bdf421d822b2c0b48267ec0552e644565fb55466ea9
     ports:
       - 8080:8080
     volumes:
@@ -22,14 +22,14 @@ services:
       - chatbot-index-api
 
   auth:
-    image: ghcr.io/pagopa/dos68k/auth:latest
+    image: ghcr.io/pagopa/dos68k/auth:latest@sha256:df3e35c9f00ab22ef7ca8a074906c2a8c116bebe696a632047cc9fb6c670dda2
     env_file:
       - ./auth/.env
     ports:
       - 3000:3000
 
   chatbot-api:
-    image: ghcr.io/pagopa/dos68k/chatbot-api:latest
+    image: ghcr.io/pagopa/dos68k/chatbot-api:latest@sha256:3ad586259b72e79f4bdf1df4726f39b4263a5fab4351b269d9da6eaa35ff3dc8
     env_file:
       - ./chatbot-api/.env
     ports:
@@ -65,7 +65,7 @@ services:
       - localstack
 
   chatbot-index-api:
-    image: ghcr.io/pagopa/dos68k/chatbot-index-api:latest
+    image: ghcr.io/pagopa/dos68k/chatbot-index-api:latest@sha256:8c057c3ce5eb945d3682d987272438310fbf3327dbe1d1d70472a3038302a6a2
     env_file:
       - ./chatbot-index/api/.env
     ports:
@@ -79,7 +79,7 @@ services:
       - chatbot-index-worker
 
   chatbot-index-worker:
-    image: ghcr.io/pagopa/dos68k/chatbot-index-worker:latest
+    image: ghcr.io/pagopa/dos68k/chatbot-index-worker:latest@sha256:3e444a51da9ef691752db2204a505d80216398fc512f6647a6f9583037c5e85a
     env_file:
       - ./chatbot-index/worker/.env
     depends_on:
@@ -90,12 +90,12 @@ services:
       - localstack
 
   masking:
-    image: ghcr.io/pagopa/dos68k/masking:latest
+    image: ghcr.io/pagopa/dos68k/masking:latest@sha256:8f6cdfc925bfdb62934266f0831de3a54e975ed004f93128f13883e72005bac5
     ports:
       - 3001:3000
 
   frontend:
-    image: ghcr.io/pagopa/dos68k/frontend:latest
+    image: ghcr.io/pagopa/dos68k/frontend:latest@sha256:b1cd3b838759d4ddf9d54fd733d434219ce01ea1c2af1633e36f16555759a0b6
     environment:
       VITE_API_BASE_URL: http://localhost:8080
     ports:
@@ -120,7 +120,7 @@ services:
   #     retries: 10
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     volumes:
       - minio_data:/data
     ports:
@@ -131,7 +131,7 @@ services:
       - ./.env.storage
 
   redis-vdb:
-    image: redis/redis-stack:7.4.0-v8
+    image: redis/redis-stack:7.4.0-v8@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
     ports:
       - 6379:6379
       - 8001:8001
@@ -139,7 +139,7 @@ services:
       - redis_vdb_data:/data
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:latest@sha256:b3063c673f3973877c038eeecc392bad5011f072ee7892b56c9a8e204a3bdea9
     container_name: qdrantdb
     ports:
       - 6333:6333
@@ -147,7 +147,7 @@ services:
       - qdrant:/qdrant_storage
 
   redis-queue:
-    image: redis:8.4
+    image: redis:8.4@sha256:b69f2ae9adef7d679fc7cace28e1d4d7e0359b1341861a55995aef5d1b285166
     ports:
       - 6380:6379
     volumes:
@@ -155,7 +155,7 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
 
   langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3.115
+    image: docker.io/langfuse/langfuse-worker:3.115@sha256:c9dc71559f880bc82d7087ca6515b66ddf904dbf209ea578ea5fa17cd64b6ab0
     ports:
       - 3030:3030
     env_file:
@@ -167,7 +167,7 @@ services:
       - clickhouse
 
   langfuse-web:
-    image: docker.io/langfuse/langfuse:3.115
+    image: docker.io/langfuse/langfuse:3.115@sha256:48c51b585350a9de1e904df9410f5507afbfd94c079cf23efec1abf242c6f414
     ports:
       - 4001:3000
     env_file:
@@ -179,7 +179,7 @@ services:
         condition: service_healthy
 
   clickhouse:
-    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine
+    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine@sha256:68b9d9eb4cb949a03d1f90b76fd8d396a5999dd57ba1ee914ea36c77716ce937
     user: "101:101"
     environment:
       CLICKHOUSE_DB: default
@@ -193,10 +193,10 @@ services:
       - 9002:9000
 
   valkey:
-    image: valkey/valkey:8.1.4-alpine3.22
+    image: valkey/valkey:8.1.4-alpine3.22@sha256:e706d1213aaba6896c162bb6a3a9e1894e1a435f28f8f856d14fab2e10aa098b
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack@sha256:a3517e7b7c14780b755a0b1160b2770e2968ca2f4fbb355877b2b303f6d65033
     ports:
       - 4566:4566
     env_file:
