@@ -1,6 +1,7 @@
 import asyncio
 import json
 from logging import Logger
+from decimal import Decimal
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
 
@@ -69,8 +70,10 @@ async def process_task(body: bytes) -> None:
         chat_session = query_result.items
 
     chat_session = sorted(query_result.items, key = lambda x: x['createdAt'])
+
+    print(f"Found {len(chat_session)}")
+    history = []
     if len(chat_session) > 1:
-        history = []
         for chat_message in chat_session:
             if chat_message["id"] == message_id:
                 message_to_evaluate = chat_message
@@ -81,6 +84,7 @@ async def process_task(body: bytes) -> None:
                     ChatMessage(role=MessageRole.ASSISTANT, content=chat_message['answer']),
                 ]
         
+    if len(history)>=2:
         ### domanda sintetica
         prompt_template = """
         Il tuo compito è scrivere una domanda contestualizza considerando i messaggi che sono stati precedentemente scambiati.
@@ -118,6 +122,15 @@ async def process_task(body: bytes) -> None:
     )
 
     print("Scores:", scores)
-    ### ADD SCORES TO DYNAMO
+    logger.info(f"Calculated scores for message {message_id} of session {session_id}")
 
-    ### UPDATE isEvaluated
+    async with  get_nosql_client_ctx() as nosql_client:
+        await nosql_client.update_item(
+            table_name = nosql_settings.query_tablename,
+            key = {"sessionId": session_id, "id": message_id},
+            fields_to_update = {
+                "scores": {kk:Decimal(str(vv)) for kk,vv in scores.items()} ,
+                "isEvaluated": True,
+            }
+        )
+    logger.info("Evaluation stored to NoSql Database")

@@ -87,6 +87,8 @@ class QueryService:
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
                 "tracing_trace_id": query.get("tracingTraceId"),
+                "scores": query.get("scores"),
+                "isEvaluated": query.get("isEvaluated")
             }
             for query in queries
         ]

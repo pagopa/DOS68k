@@ -30,6 +30,15 @@ class Source(BaseModel):
     filename: str
 
 
+class Scores(BaseModel):
+    model_config: ConfigDict = ConfigDict(
+        serialize_by_alias=True, validate_by_name=True
+    )
+    relevancy: float
+    faithfulness: float
+    utilization: float
+
+
 class QueryResponseDTO(BaseModel):
     model_config: ConfigDict = ConfigDict(
         serialize_by_alias=True, validate_by_name=True
@@ -45,4 +54,8 @@ class QueryResponseDTO(BaseModel):
     expires_at: Annotated[Optional[str], Field(alias="expiresAt")]
     tracing_trace_id: Annotated[
         Optional[str], Field(alias="tracingTraceId", default=None)
+    ]
+    isEvaluated: Annotated[bool, Field(default=False)]
+    scores: Annotated[
+        Optional[Scores], Field(default=None)
     ]

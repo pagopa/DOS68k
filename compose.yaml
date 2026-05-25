@@ -71,6 +71,8 @@ services:
       dockerfile: ./chatbot-evaluate/worker/Dockerfile
     env_file:
       - ./chatbot-evaluate/worker/.env
+    # volumes:
+    #   - ./chatbot-evaluate/worker/src:/app/src
     depends_on:
       - redis-queue
       - localstack
