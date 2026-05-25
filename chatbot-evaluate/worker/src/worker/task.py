@@ -4,8 +4,11 @@ from logging import Logger
 from decimal import Decimal
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.prompts import RichPromptTemplate
+from pathlib import Path
+import yaml
+import os
 
-from typing import Any
+from typing import Any, List
 from models import get_llm, LLM, get_embed_model, BaseEmbedding
 from evaluator import Evaluator
 from env import (
@@ -85,18 +88,20 @@ async def process_task(body: bytes) -> None:
                 ]
         
     if len(history)>=2:
-        ### domanda sintetica
-        prompt_template = """
-        Il tuo compito è scrivere una domanda contestualizza considerando i messaggi che sono stati precedentemente scambiati.
+
+        yaml_file = task_settings.config_path
+
+        if not os.path.exists(yaml_file):
+            raise FileNotFoundError(f"Config file {yaml_file} does not exist")
+
+        logger.debug(f"Found config file {yaml_file}")
         
-        La domanda fatta è la seguente:
-        {{question}}
+        path = Path(yaml_file)
+        with path.open("r", encoding="utf-8") as file:
+            data = yaml.safe_load(file)
+        prompt_template = data.get("prompt")
+        logger.info(f"Contextualization prompt loaded.")
 
-        I messaggi scambiati sono:
-        {{history}}
-
-        Domanda contestualizzata:
-""" 
         synthesis_prompt = RichPromptTemplate(prompt_template)
         contextualized_question = await llm.acomplete(synthesis_prompt.format(
             question = message_to_evaluate['question'],
@@ -104,14 +109,13 @@ async def process_task(body: bytes) -> None:
             )
         question_to_evaluate = contextualized_question.text.strip()
         
-        print("Contextualized question:", question_to_evaluate)
+        logger.info(f"Contextualized question extracted.")
     else:
         message_to_evaluate = chat_session[0]
         question_to_evaluate = message_to_evaluate['question']
     
     ### JUDGE
     evaluator = Evaluator(settings = task_settings)
-
     scores = await evaluator.evaluate(
         question = question_to_evaluate,
         answer = message_to_evaluate['answer'],
@@ -121,7 +125,6 @@ async def process_task(body: bytes) -> None:
         ],
     )
 
-    print("Scores:", scores)
     logger.info(f"Calculated scores for message {message_id} of session {session_id}")
 
     async with  get_nosql_client_ctx() as nosql_client:

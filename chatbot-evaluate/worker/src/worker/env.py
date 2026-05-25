@@ -5,6 +5,7 @@ from pydantic import Field, PositiveInt, PositiveFloat
 
 
 class TaskSettings(BaseSettings):
+    config_path: Annotated[str, Field(description = "Path of the prompt to get contextualized question")]
     provider: Literal["google"]
     model_api_key: Annotated[str, Field(description="API key for the chosen provider")]
     model_id: Annotated[str, Field(description = "LLM type")]
