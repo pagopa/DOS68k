@@ -10,7 +10,7 @@ def test_get_embed_model_google(monkeypatch):
 
     result = models.get_embed_model(
         provider="google",
-        model_id="text-embedding-004",
+        model_id="gemini-embedding-001",
         embed_batch_size=100,
         embed_dim=768,
         task_type="RETRIEVAL_DOCUMENT",
@@ -20,7 +20,7 @@ def test_get_embed_model_google(monkeypatch):
     )
 
     assert isinstance(result, GoogleGenAIEmbeddingMock)
-    assert result.kwargs["model_name"] == "text-embedding-004"
+    assert result.kwargs["model_name"] == "gemini-embedding-001"
     assert result.kwargs["api_key"] == "test-key"
     assert result.kwargs["embed_batch_size"] == 100
     assert result.kwargs["retries"] == 3

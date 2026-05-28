@@ -21,7 +21,7 @@ class GoogleGenAIMock(GoogleGenAI):
         object.__setattr__(instance, "__pydantic_extra__", None)
         object.__setattr__(instance, "__pydantic_private__", {"_max_tokens": 1000})
         object.__setattr__(instance, "context_window", 4096)
-        object.__setattr__(instance, "model", "gemini-2.0-flash")
+        object.__setattr__(instance, "model", "gemini-2.5-flash")
         object.__setattr__(instance, "is_function_calling_model", True)
         return instance
 

@@ -18,7 +18,7 @@ class TaskSettingsMock:
     model_api_key = "test-key"
     embed_chunk_size = 512
     embed_chunk_overlap = 50
-    embed_model_id = "text-embedding-004"
+    embed_model_id = "gemini-embedding-001"
     embed_batch_size = 100
     embed_dim = 768
     embed_task = "RETRIEVAL_DOCUMENT"
