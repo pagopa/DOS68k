@@ -23,11 +23,11 @@ Service: [chatbot-api](../chatbot-api/README.md). Runs the RAG agent.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PROVIDER` | `google` | Model provider. Only `google` is wired end to end. |
-| `MODEL_ID` | `gemini-2.0-flash` | LLM used to answer. |
+| `MODEL_ID` | `gemini-2.5-flash` | LLM used to answer. |
 | `MODEL_API_KEY` | — (**required**) | Google API key. |
 | `MAX_TOKENS` | `1024` | Max tokens generated per answer. |
 | `TEMPERATURE_AGENT` | `0.0` | Agent sampling temperature (`0.0` = deterministic). |
-| `EMBED_MODEL_ID` | `text-embedding-004` | Embedding model used to embed the **query**. |
+| `EMBED_MODEL_ID` | `gemini-embedding-001` | Embedding model used to embed the **query**. |
 | `EMBED_DIM` | `768` | Embedding dimension. |
 | `EMBED_TASK` | `RETRIEVAL_QUERY` | Embedding task type for queries. |
 | `EMBED_BATCH_SIZE` | `100` | Texts per embedding API call. |
@@ -65,7 +65,7 @@ chunks, embeds, and stores documents.
 |---|---|---|
 | `PROVIDER` | `google` | Embedding provider. Only `google` is wired. |
 | `MODEL_API_KEY` | — (**required**) | Google API key. |
-| `EMBED_MODEL_ID` | `text-embedding-004` | Embedding model used to embed **documents**. |
+| `EMBED_MODEL_ID` | `gemini-embedding-001` | Embedding model used to embed **documents**. |
 | `EMBED_DIM` | `768` | Embedding dimension. |
 | `EMBED_TASK` | `RETRIEVAL_DOCUMENT` | Embedding task type for documents. |
 | `EMBED_CHUNK_SIZE` | `256` | Chunk size in tokens. |
@@ -148,7 +148,7 @@ sides must use the **same embedding model and the same `EMBED_DIM`**:
 - `chatbot-index/worker` `EMBED_MODEL_ID` / `EMBED_DIM`
 - the seeding script (`populate_vector_db.py`), if you use it
 
-The shipped defaults already align (`text-embedding-004`, dim `768`). If you
+The shipped defaults already align (`gemini-embedding-001`, dim `768`). If you
 change the model or dimension, change it in **all** of the above. A mismatch does
 not raise an error — retrieval simply returns irrelevant results.
 
