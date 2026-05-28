@@ -1,127 +1,84 @@
 # Chatbot API
 
-The chatbot-api is a FastAPI service that provides session-based chat with an LLM, backed by RAG (Retrieval-Augmented Generation) for document-aware answers. Users can create sessions (chats) and send questions; the service retrieves relevant documents from a vector database and generates answers using an LLM.
+The core of DOS68K. It manages chat **Sessions** and **Queries**, and runs the
+RAG agent that retrieves relevant passages from your **Indexes** and generates
+grounded answers.
 
-## Quick Start
+For the big picture, see [Overview](../docs/overview.md). For settings, see
+[Configuration](../docs/configuration.md#chatbot).
 
-### 1. Install Dependencies
+## Role in the platform
 
-```bash
-# From the repo root
-docker compose up -d --build chatbot-api
-```
+When a User asks a question, this service:
 
-This starts the chatbot-api, plus its dependencies (LocalStack, Redis, and others).
+1. Loads the conversation so far (the Session history).
+2. Hands the question to the agent, which decides which **RAG tool** to use,
+   retrieves the most relevant document chunks from the vector database, and
+   writes an answer based **only** on what it retrieved.
+3. Optionally masks PII in the question and answer (when enabled).
+4. Returns the answer together with its **Sources** (the retrieved passages).
+5. Stores the exchange in the Session.
 
-### 2. Configure Environment
+It reads the indexes that the [indexing service](../chatbot-index/api/README.md)
+populates; it does not ingest documents itself.
 
-Copy `.env.template` to `.env` and update:
+## What it can and can't do
 
-```bash
-FRONTEND_URL=http://localhost
-VECTOR_DB_PROVIDER=redis
-PROVIDER=google
-MODEL_API_KEY=your-api-key  # Get from https://aistudio.google.com
-```
+- Answers strictly from retrieved content; it is instructed not to fall back on
+  the model's own background knowledge, and to refuse out-of-scope or unsafe
+  requests.
+- Uses **Google Gemini** for both reasoning and query embeddings — a Google API
+  key (`MODEL_API_KEY`) is required.
+- Can only retrieve from an Index that has a **Tool config** pointing at it (see
+  [Customisation](#customisation)). Creating an Index alone is not enough.
 
-See [CONFIGURATION.md](./docs/CONFIGURATION.md) for all options.
+## Sessions
 
-### 3. Test the Service
+A Session is one user's conversation thread. Sessions are **permanent** or
+**temporary**; temporary Sessions automatically expire after
+`SESSION_EXPIRATION_DAYS`. Each Query within a Session carries its answer, its
+Sources, optional topic tags, a thumbs feedback value, and — once evaluated —
+its quality [Scores](../chatbot-evaluate/api/README.md).
 
-```bash
-# Health check
-curl http://localhost:8000/health
+## Customisation
 
-# Create a session and send a query.
-# Both X-User-Id and X-User-Role are required when bypassing the API gateway.
-curl -X POST http://localhost:8000/sessions \
-  -H "X-User-Id: 550e8400-e29b-41d4-a716-446655440000" \
-  -H "X-User-Role: user" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "My Chat", "isTemporary": false}'
-```
+Two things are configurable without touching code.
 
-Full API documentation is at `http://localhost:8000`.
+### RAG tools (which Indexes the chatbot can use)
 
----
+Each **RAG tool** binds the agent to one Index and tells it when to use that
+Index. Tools are defined as YAML files in the tool-config directory
+(`TOOLS_CONFIG_DIR`; the bundled setup mounts `scripts/tool_config/`). A tool
+config specifies the `index_id` to query, the tool's `name` and `description`
+(which the agent reasons over to decide when to use it), and optionally a
+per-tool retrieval depth and custom retrieval prompts. The annotated schema is
+in
+[src/modules/chatbot/tool/config/template.yaml](./src/modules/chatbot/tool/config/template.yaml).
 
-## Documentation
+> Tool configs are read **only at startup**. After adding or changing one,
+> restart this service (`docker compose restart chatbot-api`). Adding documents
+> to an Index that already has a tool does **not** require a restart.
 
-- **[CONFIGURATION.md](./docs/CONFIGURATION.md)** — Environment variables, provider selection, database setup, customization
+### Agent behaviour (the assistant's personality and guardrails)
 
----
+The system prompt — the assistant's identity, tone, scope, refusal rules, and
+grounding instructions — lives in a YAML file (`AGENT_CONFIG_PATH`; default
+[src/modules/chatbot/agent/agent.yaml](./src/modules/chatbot/agent/agent.yaml)).
+Edit it to change how the assistant introduces itself and what it will and won't
+discuss.
 
-## Development
+## Sample data
 
-### Prerequisites
+For a quick end-to-end test, the bundled
+[`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds a small
+demo corpus that matches the demo tool configs in `scripts/tool_config/`. See
+[Getting started: verify with the demo data](../docs/getting-started.md#5-verify-with-the-demo-data).
 
-- `uv` (Python package manager)
-- `docker` and `docker compose`
-- `task` (task runner)
+## PII masking & observability
 
-### Run Tests
-
-```bash
-task test                # Run with 80% coverage threshold
-task test:quick         # Run without coverage threshold
-task test COV_THRESHOLD=90  # Override threshold
-```
-
-Test files use `.env.test` for configuration and don't require a real database.
-
-### Lint & Format
-
-```bash
-uvx ruff check src/       # Lint Python code
-uvx ruff format src/      # Format Python code
-```
-
----
-
-## Customization
-
-### Custom RAG Tools
-
-Mount tool configurations from a local directory using Docker volumes in `compose.yaml`:
-
-```yaml
-chatbot-api:
-  volumes:
-    - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
-```
-
-The example directory `scripts/tool_config/` contains demo tool configs (`software-dev.yaml`, `zephyr-corp.yaml`, `borgonero-fc.yaml`) paired with the sample dataset loaded by `scripts/populate_vector_db.py`. See [Populate Vector DB](#populate-vector-db-for-testing).
-
-Or set `TOOLS_CONFIG_DIR=/path/to/tools` in `.env`. Each tool is a YAML file defining a vector index namespace. See [`src/modules/chatbot/tool/config/template.yaml`](./src/modules/chatbot/tool/config/template.yaml) for the schema.
-
-### Custom Agent Behavior
-
-Mount a custom agent config using Docker volumes in `compose.yaml`:
-
-```yaml
-chatbot-api:
-  volumes:
-    - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
-```
-
-Or set `AGENT_CONFIG_PATH=/path/to/agent.yaml` in `.env`. The file must contain `name`, `description`, `system_prompt`, and `system_header` fields.
-
----
-
-## Populate Vector DB
-
-The script [`scripts/populate_vector_db.py`](./scripts/populate_vector_db.py) seeds sample documents into the vector database.
-
-> ! **test purposes only**
-
-```bash
-# Remember to start a vector db service before running the script
-docker compose up -d --build <vector-db-service> # Es qdrant/redis-vdb
-
-cd chatbot-api
-
-uv sync --dev
-# Run --help to see the docs on how to use and which default values it has
-# uv run python scripts/populate_vector_db.py --help
-uv run python scripts/populate_vector_db.py
-```
+When `MASK_PII=true`, questions and answers are anonymised by the
+[masking service](../masking/README.md) before being stored (off by default).
+Every Query can also be traced to an observability backend; tracing is off by
+default and never affects answering — see
+[the tracing reference](../dos-utility/docs/features.md#8-tracing-interface).
+</content>

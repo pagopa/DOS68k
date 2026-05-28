@@ -2,6 +2,8 @@
 
 This frontend is an **optional** module of DOS68K. The platform runs without it — it ships as a reference UI to exercise the backend locally and as a starting point for a real client. It is not production-ready.
 
+For the big picture, see [Overview](../docs/overview.md); to run the whole platform, see [Getting started](../docs/getting-started.md).
+
 ## Tech stack
 
 - React 19 + TypeScript

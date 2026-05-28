@@ -1,54 +1,38 @@
 # Chatbot Index Worker
 
-The index worker is the async document processing engine of DOS68k. It listens to a queue for indexing jobs, downloads documents from object storage, splits them into chunks, generates vector embeddings, and writes them to the vector database — making documents searchable by the chatbot.
+The background engine that turns uploaded **Documents** into searchable content.
+It runs continuously, with no public interface.
 
-## Prerequisites
+For the big picture, see [Overview](../../docs/overview.md). For settings, see
+[Configuration](../../docs/configuration.md#document-indexing--worker).
 
-- [uv](https://docs.astral.sh/uv/)
-- [Docker](https://docs.docker.com/get-docker/)
-- [task](https://taskfile.dev/)
+## Role in the platform
 
-## Quick start
+The worker consumes indexing jobs placed on the queue by the
+[index API](../api/README.md). For each Document it:
 
-### 1. Configure environment
+1. Downloads the file from object storage.
+2. Extracts its text and splits it into chunks.
+3. Generates a vector embedding for each chunk (via **Google Gemini**).
+4. Writes the chunks into the Index in the vector database.
 
-Copy `.env.template` to `.env` and fill in the required values:
-
-```bash
-cp .env.template .env
-```
-
-At minimum, set these providers:
-- `QUEUE_PROVIDER` — Queue backend (`sqs` or `redis`)
-- `STORAGE_PROVIDER` — Storage backend (`aws_s3` or `minio`)
-- `VECTOR_DB_PROVIDER` — Vector DB backend (`redis` or `qdrant`)
-- `PROVIDER` — Embedding provider (`google`)
-- `MODEL_API_KEY` — API key for the embedding provider
-
-For detailed configuration, see [CONFIGURATION.md](docs/CONFIGURATION.md).
-
-### 2. Run the worker
-
-**Docker (recommended):**
-```bash
-docker compose up -d --build chatbot-index-worker
-```
-
-**Locally:**
-```bash
-uv run src/worker/main.py
-```
+When a Document is re-indexed, the worker replaces the old chunks with the new
+ones. This is why a Google API key (`MODEL_API_KEY`) is required for the worker.
 
 ## Supported documents
 
-| Format | MIME type |
+| Format | Notes |
 |---|---|
-| PDF | `application/pdf` (text extracted page by page) |
-| Plain text | `text/plain` |
-| Markdown | `text/markdown` |
+| PDF | Text extracted page by page |
+| Markdown | |
+| Plain text | |
 
-## Next steps
+## What to watch
 
-- **Configure providers**: See [CONFIGURATION.md](docs/CONFIGURATION.md) for queue, storage, and vector DB setup
-- **Customize embeddings**: Learn about chunking and embedding settings in [CONFIGURATION.md](docs/CONFIGURATION.md)
-- **Test**: Run `task test` to verify the setup
+- The worker's **embedding model and `EMBED_DIM` must match the chatbot's**, or
+  retrieval will return irrelevant results. See
+  [Configuration: embedding consistency](../../docs/configuration.md#embedding-consistency).
+- The worker must read from the **same storage bucket** the API writes to
+  (`INDEX_DOCUMENTS_BUCKET_NAME`) and the **same queue** the API publishes to.
+  The bundled templates already line these up.
+</content>

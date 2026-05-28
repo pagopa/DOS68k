@@ -1,33 +1,37 @@
-# Chatbot Evaluate worker
+# Chatbot Evaluate Worker
 
-## Prerequisites
+The background engine that scores answer quality. It runs continuously, with no
+public interface.
 
-In order to work locally with this service you need the following softwares:
+For the big picture, see [Overview](../../docs/overview.md). For settings, see
+[Configuration](../../docs/configuration.md#evaluation--worker).
 
-- uv
-- docker
-- [task](https://taskfile.dev/)
+## Role in the platform
 
-## Test
+The worker consumes evaluation jobs placed on the queue by the
+[evaluate API](../api/README.md). For each answer it:
 
-Run unit tests with coverage report, no threshold enforced:
+1. Reconstructs the conversation up to that answer and, for follow-up questions,
+   rewrites the question into a standalone form.
+2. Runs [RAGAS](https://docs.ragas.io/) scoring, using **Google Gemini** as the
+   judge model.
+3. Writes the resulting **Scores** back onto the Query record.
 
-```bash
-task test:quick
-```
+It computes three Scores per answer:
 
-Run unit tests enforcing a minimum coverage threshold (default: 80%):
+| Score | What it measures |
+|---|---|
+| **Faithfulness** | Whether the answer is supported by the retrieved Sources (no hallucination). |
+| **Answer relevancy** | How well the answer addresses the question. |
+| **Context utilisation** | How well the retrieved Sources were actually used. |
 
-```bash
-task test
-```
+A Google API key (`MODEL_API_KEY`) is required, since scoring calls the model.
 
-To override the minimum coverage threshold:
+## What to watch
 
-```bash
-task test COV_THREASHOLD=90
-```
-
-## Env config
-
-This service uses a queue to read messages to process. In order to use it correctly you have to set an `.env` file with the correct queue configuration. Follow instructions [here](../../dos-utility/docs/features.md#3-queue-interface).
+- Evaluation runs on its **own queue**, separate from document indexing — see
+  [Configuration: queue separation](../../docs/configuration.md#queue-separation).
+- The worker reads Queries from the **same NoSQL tables** the chatbot writes;
+  keep the table names aligned — see
+  [Configuration: shared table names](../../docs/configuration.md#shared-table-names).
+</content>

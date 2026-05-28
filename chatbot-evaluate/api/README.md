@@ -1,44 +1,30 @@
 # Chatbot Evaluate API
 
-## Prerequisites
+The entry point for measuring answer quality. It records user feedback on
+answers and accepts requests to run automatic quality evaluation.
 
-In order to work locally with this service you need the following softwares:
+For the big picture, see [Overview](../../docs/overview.md). For settings, see
+[Configuration](../../docs/configuration.md#evaluation--api).
 
-- uv
-- docker
-- [task](https://taskfile.dev/)
+## Role in the platform
 
-## Test
+This service does two things:
 
-Run unit tests with coverage report, no threshold enforced:
+- **Feedback.** Records a simple thumbs-up / thumbs-down on a given answer. Any
+  User can rate their own answers.
+- **Evaluation.** Accepts a request to evaluate one answer, or a batch of
+  answers in a Session, and places jobs on the evaluation queue. The actual
+  scoring is done in the background by the
+  [evaluate worker](../worker/README.md); this service returns immediately.
+  Evaluation is **Admin-only**.
 
-```bash
-task test:quick
-```
+Both feedback and evaluation results are stored on the Query records (in the
+same `queries` table the chatbot writes), so they show up alongside the answer.
 
-Run unit tests enforcing a minimum coverage threshold (default: 80%):
+## What to watch
 
-```bash
-task test
-```
-
-To override the minimum coverage threshold:
-
-```bash
-task test COV_THREASHOLD=90
-```
-
-## Env config
-
-This service uses a queue to send messages to a worker. In order to use it correctly you have to set an `.env` file with the correct queue configuration. Follow instructions [here](../../dos-utility/docs/features.md#3-queue-interface).
-
-## Start service
-
-If you want to independently start this service, run the following commands.
-
-```bash
-cd .. # Make sure to be at the repo root level
-docker compose up -d --build chatbot-evaluate-api
-```
-
-Now you can access the service OpenAPI specification at `http://localhost:8002`.
+- A batch "evaluate all" request is capped at `EVALUATE_UPPER_LIMIT` queries,
+  prioritising answers that already have user feedback.
+- Evaluation runs on its **own queue**, separate from document indexing — see
+  [Configuration: queue separation](../../docs/configuration.md#queue-separation).
+</content>

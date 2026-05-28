@@ -1,183 +1,42 @@
 # Chatbot Index API
 
-## Overview
+The document management entry point for DOS68K. Admins use it to create and
+delete **Indexes** and to upload, list, and delete **Documents** within them.
 
-The **Chatbot Index API** is the document indexing gateway for the DOS68K RAG platform. It provides a simple HTTP API for creating indexes, uploading documents, and managing the documents within each index.
+For the big picture, see [Overview](../../docs/overview.md). For settings, see
+[Configuration](../../docs/configuration.md#document-indexing--api).
 
-**Key responsibilities:**
-- Create, delete, and list document indexes
-- Upload documents (PDF, Markdown, plain text) to indexes
-- List and delete documents from indexes
-- Enqueue documents for asynchronous processing by the [Chatbot Index Worker](../worker/README.md)
+## Role in the platform
 
-The service stores uploaded documents in object storage (MinIO or AWS S3) and sends processing messages to a queue (Redis or SQS). The worker service then asynchronously embeds the documents and ingests them into the vector DB.
+This service is the front door for getting content into the platform. When an
+Admin uploads a Document, it:
 
-## Quick Start
+1. Stores the file in object storage.
+2. Places a job on the indexing queue.
 
-### Prerequisites
+It then returns immediately — the actual processing (parsing, chunking,
+embedding) is done in the background by the
+[index worker](../worker/README.md). A Document becomes searchable once the
+worker finishes.
 
-- `uv` (Python package manager)
-- `docker` and `docker compose`
-- `task` (task runner, optional but recommended)
+Deleting a Document or an Index also removes the corresponding files from
+storage and the corresponding vectors from the vector database.
 
-### Start the service
+## What it can and can't do
 
-```bash
-cd ../..  # Go to repo root
-docker compose up -d --build chatbot-index-api
-```
+- Accepts **PDF, Markdown, and plain-text** files only; other formats are
+  rejected.
+- All operations are **Admin-only**.
+- Creating an Index here makes it available for documents, but does **not** make
+  it answerable by the chatbot on its own — the chatbot also needs a **Tool
+  config** for that Index (see
+  [chatbot-api](../../chatbot-api/README.md#customisation)).
 
-The API will be available at `http://localhost:8003`. The OpenAPI specification is at `http://localhost:8003/docs`.
+## Storage bucket
 
-### Create storage bucket
-
-Before uploading documents, create the storage bucket:
-
-**MinIO (default):**
-```bash
-aws --endpoint-url http://localhost:9000 s3 mb s3://chatbot-index --region us-east-1
-```
-
-Or access the MinIO console at `http://localhost:9001` (username: `admin`, password: `minioadmin`) and create the bucket from the UI.
-
-**AWS S3:** Use the AWS console or CLI as normal.
-
-### Health check
-
-Verify all dependencies are connected:
-
-```bash
-curl http://localhost:8003/health
-curl http://localhost:8003/health/queue
-curl http://localhost:8003/health/storage
-curl http://localhost:8003/health/vdb
-```
-
-## Documentation
-
-- **[Configuration Guide](./docs/CONFIGURATION.md)** — Detailed setup for each provider (Redis, SQS, MinIO, S3, Qdrant)
-
-## API Overview
-
-All endpoints require two headers (except `/health` endpoints):
-- `X-User-Id: <uuid>` — must be a valid UUID
-- `X-User-Role: admin` — only `admin` is accepted; any other value is rejected with `403`
-
-In production these headers are injected by the API gateway (Traefik
-forward-auth via the auth service). For local development you must
-supply them yourself.
-
-**Health checks (no auth required):**
-- `GET /health` — Service status
-- `GET /health/{queue,storage,vdb}` — Dependency status
-
-**Index management:**
-- `POST /index/{index_id}` — Create index
-- `DELETE /index/{index_id}` — Delete index
-- `GET /index/all` — List all indexes
-
-**Document management:**
-- `POST /index/{index_id}/documents` — Upload document
-- `GET /index/{index_id}/documents` — List documents
-- `DELETE /index/{index_id}/documents/{document_name}` — Delete document
-
-## Local Development
-
-### Run tests
-
-```bash
-task test                   # Run with 80% coverage threshold
-task test COV_THREASHOLD=90 # Custom threshold
-task test:quick            # No coverage enforcement
-```
-
-### Lint and format
-
-```bash
-uv run ruff check src
-uv run ruff format src
-```
-
-## Configuration
-
-Minimal configuration needed to start:
-
-```bash
-export FRONTEND_URL=http://localhost          # CORS origin
-export QUEUE_PROVIDER=redis                   # Queue backend
-export STORAGE_PROVIDER=minio                 # Storage backend
-export VECTOR_DB_PROVIDER=redis               # Vector DB backend
-export INDEX_DOCUMENTS_BUCKET_NAME=chatbot-index  # Storage bucket name
-```
-
-See the [Configuration Guide](./docs/CONFIGURATION.md) for complete provider-specific settings.
-
----
-
-## API Documentation
-
-Index and Document endpoints require both headers:
-
-```
-X-User-Id: <uuid>
-X-User-Role: admin
-```
-
-Health endpoints do not require authentication.
-
-### Health
-
-All `/health/*` endpoints always return HTTP 200; an unhealthy backend
-is signalled by `"<component>": "NOT connected"` in the JSON body.
-
-- `GET /health` — Service status
-  - Response: `{ "status": "ok", "service": "Chatbot Index API" }`
-- `GET /health/queue` — Queue connectivity
-  - Response: `{ "status": "ok", "service": "Chatbot Index API", "queue": "connected" }`
-- `GET /health/storage` — Storage connectivity
-  - Response: `{ "status": "ok", "service": "Chatbot Index API", "storage": "connected" }`
-- `GET /health/vdb` — Vector DB connectivity
-  - Response: `{ "status": "ok", "service": "Chatbot Index API", "vector_db": "connected" }`
-
-### Indexes
-
-- `POST /index/{index_id}` — Create a new index
-  - Response `201`:
-    ```json
-    { "indexId": "string", "userId": "<uuid>", "createdAt": "YYYY-MM-DD HH:MM:SS" }
-    ```
-  - Response `409`: `{ "detail": "Index already exists" }`
-
-- `DELETE /index/{index_id}` — Delete an index and all its documents
-  - Response `200`: `{ "message": "Index '<index_id>' deleted successfully" }`
-  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
-
-- `GET /index/all` — List all indexes
-  - Response `200`: `["index-name-1", "index-name-2"]`
-
-### Documents
-
-- `POST /index/{index_id}/documents` — Upload a document into an index
-  - Request: multipart form with a `file` field. Accepted formats: `.pdf`, `.md`, `.txt`
-  - Response `202`:
-    ```json
-    {
-      "indexId": "<index_id>",
-      "documentName": "<filename>",
-      "message": "Document '<filename>' uploaded successfully"
-    }
-    ```
-  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
-  - Response `415`: `{ "detail": "Unsupported file type '<ext>'. Allowed types: .md, .pdf, .txt" }`
-
-- `GET /index/{index_id}/documents` — List documents in an index
-  - Response `200`: `[{ "documentName": "string" }]`
-  - Response `404`: `{ "detail": "Index '<index_id>' does not exist" }`
-
-- `DELETE /index/{index_id}/documents/{document_name}` — Delete a document from an index
-  - Response `200`: `{ "message": "Document '<document_name>' deleted from index '<index_id>'" }`
-  - Response `404`: `{ "detail": "Document '<document_name>' not found in index '<index_id>'" }` or `{ "detail": "Index '<index_id>' does not exist" }`
-
----
-
-For more details, see the OpenAPI docs at `/` when the service is running.
+Uploaded files live in the object-storage bucket named by
+`INDEX_DOCUMENTS_BUCKET_NAME`. This must match the worker's value and the bucket
+must exist; the bundled `compose.yaml` provisions it automatically via a
+one-shot `minio-init` job, so no manual bucket creation is needed for the
+default setup.
+</content>
