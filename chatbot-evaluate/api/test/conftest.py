@@ -18,10 +18,13 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest_asyncio.fixture(scope="function")
 async def engine():
     # In-memory SQLite
-    eng: AsyncEngine = create_async_engine(url="sqlite+aiosqlite:///:memory:", poolclass=StaticPool, future=True)
+    eng: AsyncEngine = create_async_engine(
+        url="sqlite+aiosqlite:///:memory:", poolclass=StaticPool, future=True
+    )
 
     # # Create tables
     # async with eng.begin() as conn:
@@ -32,14 +35,18 @@ async def engine():
     finally:
         await eng.dispose()
 
+
 # AsyncSession for tests
 @pytest_asyncio.fixture
 async def session(engine: AsyncEngine):
-    session_local = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    session_local = sessionmaker(
+        bind=engine, class_=AsyncSession, expire_on_commit=False
+    )
 
     async with session_local() as s:
         yield s
-        await s.rollback() # Per isolamento tra i test
+        await s.rollback()  # Per isolamento tra i test
+
 
 @pytest_asyncio.fixture
 async def app_test(session: AsyncSession):
@@ -53,6 +60,7 @@ async def app_test(session: AsyncSession):
         yield session
 
     redis_mock: QueueMock = QueueMock()
+
     async def override_get_queue_client():
         # Return a RedisMock instance for testing
         yield redis_mock
@@ -65,10 +73,13 @@ async def app_test(session: AsyncSession):
     finally:
         app.dependency_overrides.clear()
 
+
 @pytest_asyncio.fixture
 async def client_test(app_test: Tuple[FastAPI, QueueMock]):
     app, queue_client = app_test
 
     # Async client for testing FastAPI app
-    async with AsyncClient(base_url="http://testserver", transport=ASGITransport(app=app)) as client:
+    async with AsyncClient(
+        base_url="http://testserver", transport=ASGITransport(app=app)
+    ) as client:
         yield client, queue_client

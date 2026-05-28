@@ -17,8 +17,16 @@ A conversational thread between a user and the chatbot, identified by `sessionId
 _Avoid_: Chat, conversation, thread
 
 **Query**:
-One question/answer turn within a **Session**. Carries the answer plus its **Sources**, auto-tagged topics, and a `badAnswer` flag.
+One question/answer turn within a **Session**. Carries the answer plus its **Sources**, auto-tagged topics, a thumbs `feedback` value, and (once evaluated) its **Scores**.
 _Avoid_: Message, prompt, exchange
+
+**RAG tool**:
+A retrieval capability the chatbot agent can invoke, bound to exactly one **Index**. The agent can only retrieve from an Index that has a RAG tool pointing at it. Defined declaratively by a **Tool config** and loaded by `chatbot-api` at startup.
+_Avoid_: skill, function, plugin
+
+**Tool config**:
+A YAML file that declares one **RAG tool** — which **Index** it queries (`index_id`), the name/description the agent reasons over, and optional retrieval prompts. Discovered from the tool-config directory at `chatbot-api` startup; adding or changing one requires a restart. Creating an Index does not create a Tool config.
+_Avoid_: tool definition, tool spec
 
 **Sources**:
 An ordered list of retrieved chunks returned alongside an answer. Each **Source** is one chunk (text + score + originating **Document** filename); the same **Document** may appear in multiple **Sources**. The canonical UI label for what the API returns as `context` on a `Query`.
@@ -61,3 +69,4 @@ _Avoid_: monitoring backend, observability vendor (these are fine in prose, but 
 ## Flagged ambiguities
 
 - "context" was overloaded between the LLM prompt context window and the retrieved RAG chunks. The retrieved chunks are now called **Sources** in the UI; the API field name `context` is preserved for wire compatibility.
+- "Evaluate all" (admin action on a **Session**) is **not literal**. The endpoint enqueues **Scores** only for Queries that already have a user `feedback` value (non-zero), are not yet evaluated, and fits within `EVALUATE_UPPER_LIMIT`. UI copy must reflect this — never label it as "score every answer in this chat".

@@ -82,12 +82,14 @@ class QueryService:
                 "session_id": query["sessionId"],
                 "question": query["question"],
                 "answer": query["answer"],
-                "bad_answer": query["badAnswer"],
                 "topic": query["topic"],
                 "context": query["context"],
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
+                "feedback": query.get("feedback", 0),
                 "tracing_trace_id": query.get("tracingTraceId"),
+                "scores": query.get("scores"),
+                "is_evaluated": query.get("isEvaluated", False),
             }
             for query in queries
         ]
@@ -205,12 +207,14 @@ class QueryService:
             "session_id": item["sessionId"],
             "question": item["question"],
             "answer": item["answer"],
-            "bad_answer": item["badAnswer"],
             "topic": item["topic"],
             "context": item["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
+            "feedback": item.get("feedback", 0),
             "tracing_trace_id": item.get("tracingTraceId"),
+            "scores": item.get("scores"),
+            "is_evaluated": item.get("isEvaluated", False),
         }
 
 

@@ -51,11 +51,12 @@ MOCK_QUERY_ITEM = {
     "sessionId": MOCK_SESSION_ID,
     "question": "What is Python?",
     "answer": "A programming language",
-    "badAnswer": False,
     "topic": ["programming"],
     "context": [],
     "createdAt": "2024-01-01T00:00:00",
     "expiresAt": None,
+    "feedback": 0,
+    "isEvaluated": False,
 }
 
 
@@ -152,8 +153,9 @@ class MockQueryRepository:
         return {
             "id": MOCK_QUERY_ID,
             "sessionId": session_id,
-            "badAnswer": False,
             "createdAt": "2024-01-01T00:00:00",
+            "feedback": 0,
+            "isEvaluated": False,
             **query_data,
         }
 
@@ -173,7 +175,6 @@ class MockQueryRepositoryEmpty:
         return {
             "id": MOCK_QUERY_ID,
             "sessionId": session_id,
-            "badAnswer": False,
             "createdAt": "2024-01-01T00:00:00",
             **query_data,
         }
@@ -213,7 +214,6 @@ def get_query_service_get_queries_200_mock():
                     "session_id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
                     "question": "What is the capital of France?",
                     "answer": "The capital of France is Paris.",
-                    "bad_answer": False,
                     "topic": ["geography", "capital cities"],
                     "context": [
                         {
@@ -225,6 +225,9 @@ def get_query_service_get_queries_200_mock():
                     ],
                     "created_at": "2024-06-01T12:00:00Z",
                     "expires_at": "2024-06-01T13:00:00Z",
+                    "feedback": 0,
+                    "is_evaluated": False,
+                    "scores": None,
                 }
             ]
 
@@ -258,7 +261,6 @@ def get_query_service_create_query_201_mock():
                 "session_id": session_id,
                 "question": question,
                 "answer": "The capital of France is Paris.",
-                "bad_answer": False,
                 "topic": ["geography", "capital cities"],
                 "context": [
                     {

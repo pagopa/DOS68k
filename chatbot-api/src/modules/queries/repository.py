@@ -41,12 +41,13 @@ class QueryRepository:
         item: Dict[str, Any] = {
             "id": str(uuid7()),
             "sessionId": session_id,
-            "badAnswer": False,
             "createdAt": datetime.now().isoformat(),
+            "feedback": 0,
+            "isEvaluated": False,
             **query_data,
         }
 
-        await self.nosql_client.put_item(table_name="queries", item=item)
+        await self.nosql_client.put_item(table_name=self.env.QUERY_TABLENAME, item=item)
 
         return item
 

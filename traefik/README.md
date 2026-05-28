@@ -1,5 +1,7 @@
 # API Gateway
 
+> For the big picture, see [Overview](../docs/overview.md).
+
 The API Gateway is the single entry point for every request directed at a DOS68K backend service. Frontends, third-party clients and internal tools never talk to a backend directly: they hit the gateway, which authenticates the caller, attaches a trusted identity, and proxies the request to the correct upstream.
 
 DOS68K ships with a [Traefik](https://traefik.io/) configuration as the reference implementation, but the platform does not depend on Traefik itself. Any API gateway that supports a **forward-auth** primitive (NGINX with `auth_request`, Envoy with `ext_authz`, HAProxy, Kong, AWS ALB + Lambda authorizer, etc.) can replace it with no changes to the backend services. The contract described below is the load-bearing part — the gateway product is interchangeable.

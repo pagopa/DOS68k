@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { createApiClient, ApiError } from './index'
-import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse } from './types'
+import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse, EvaluationAllResponse } from './types'
 
 const BASE = 'http://test-gateway'
 
@@ -19,11 +19,13 @@ const mockQuery: QueryResponseDTO = {
   sessionId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
   question: 'What is DOS68K?',
   answer: 'DOS68K is a RAG chatbot platform.',
-  badAnswer: false,
   topic: ['platform'],
-  context: [{ chunkId: '1', content: 'DOS68K is...', score: 0.92, filename: 'readme.md' }],
+  context: [{ chunkId: 1, content: 'DOS68K is...', score: 0.92, filename: 'readme.md' }],
   createdAt: '2024-01-15T10:05:00Z',
   expiresAt: null,
+  feedback: 0,
+  isEvaluated: false,
+  scores: null,
 }
 
 const server = setupServer()
@@ -276,6 +278,191 @@ describe('getQueries', () => {
     const err = await createApiClient(BASE, () => null).getQueries(SESSION_ID).catch(e => e)
     expect(err).toBeInstanceOf(ApiError)
     expect(err.status).toBe(500)
+  })
+})
+
+// ------- submitFeedback -------
+
+describe('submitFeedback', () => {
+  const SESSION_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+  const QUERY_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+  const URL = `${BASE}/evaluate/simple-feedback/${SESSION_ID}/${QUERY_ID}`
+
+  it('sends POST to /evaluate/simple-feedback/{sessionId}/{queryId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(URL, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json({ ok: true }, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => null).submitFeedback(SESSION_ID, QUERY_ID, 1)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain(`/evaluate/simple-feedback/${SESSION_ID}/${QUERY_ID}`)
+  })
+
+  it('sends feedback value as form-encoded body (feedback=1)', async () => {
+    let body: string | undefined
+    let contentType: string | null = null
+    server.use(
+      http.post(URL, async ({ request }) => {
+        body = await request.text()
+        contentType = request.headers.get('Content-Type')
+        return HttpResponse.json({ ok: true }, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => null).submitFeedback(SESSION_ID, QUERY_ID, 1)
+    expect(contentType).toContain('application/x-www-form-urlencoded')
+    expect(body).toBe('feedback=1')
+  })
+
+  it('sends -1 form value when value is -1', async () => {
+    let body: string | undefined
+    server.use(
+      http.post(URL, async ({ request }) => {
+        body = await request.text()
+        return HttpResponse.json({ ok: true }, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => null).submitFeedback(SESSION_ID, QUERY_ID, -1)
+    expect(body).toBe('feedback=-1')
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(URL, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json({ ok: true }, { status: 201 })
+      })
+    )
+    await createApiClient(BASE, () => 'fb-tok').submitFeedback(SESSION_ID, QUERY_ID, 1)
+    expect(authHeader).toBe('Bearer fb-tok')
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null)
+      .submitFeedback(SESSION_ID, QUERY_ID, 1)
+      .catch((e) => e as ApiError)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+  })
+})
+
+// ------- evaluateQuery -------
+
+describe('evaluateQuery', () => {
+  const SESSION_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+  const QUERY_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+  const URL = `${BASE}/evaluate/${SESSION_ID}/${QUERY_ID}`
+
+  it('sends POST to /evaluate/{sessionId}/{queryId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(URL, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json({ ok: true }, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => null).evaluateQuery(SESSION_ID, QUERY_ID)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain(`/evaluate/${SESSION_ID}/${QUERY_ID}`)
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(URL, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json({ ok: true }, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => 'ev-tok').evaluateQuery(SESSION_ID, QUERY_ID)
+    expect(authHeader).toBe('Bearer ev-tok')
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null)
+      .evaluateQuery(SESSION_ID, QUERY_ID)
+      .catch((e) => e as ApiError)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+  })
+})
+
+// ------- evaluateRated -------
+
+describe('evaluateRated', () => {
+  const SESSION_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+  const URL = `${BASE}/evaluate/all/${SESSION_ID}`
+
+  const mockResponse: EvaluationAllResponse = {
+    evaluations: [
+      { queryId: 'a1b2c3d4-0000-0000-0000-000000000001', sessionId: SESSION_ID, status: 'queued' },
+      { queryId: 'a1b2c3d4-0000-0000-0000-000000000002', sessionId: SESSION_ID, status: 'queued' },
+    ],
+  }
+
+  it('sends POST to /evaluate/all/{sessionId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(URL, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json(mockResponse, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => null).evaluateRated(SESSION_ID)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain(`/evaluate/all/${SESSION_ID}`)
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(URL, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json(mockResponse, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => 'all-tok').evaluateRated(SESSION_ID)
+    expect(authHeader).toBe('Bearer all-tok')
+  })
+
+  it('parses response JSON into EvaluationAllResponse', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json(mockResponse, { status: 202 }))
+    )
+    const result = await createApiClient(BASE, () => null).evaluateRated(SESSION_ID)
+    expect(result).toEqual(mockResponse)
+    expect(result.evaluations).toHaveLength(2)
+    expect(result.evaluations[0]).toMatchObject({
+      queryId: expect.any(String),
+      sessionId: SESSION_ID,
+      status: expect.any(String),
+    })
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null)
+      .evaluateRated(SESSION_ID)
+      .catch((e) => e as ApiError)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
   })
 })
 

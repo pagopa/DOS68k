@@ -1,8 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import type { QueryResponseDTO } from '@/lib/api'
+import type { QueryResponseDTO, Scores } from '@/lib/api'
 import { Sources } from './sources'
+import { FeedbackButtons } from './feedback-buttons'
+import { AnswerAdminActions } from './answer-admin-actions'
+import { ScoresBadges, type EvaluationStatus } from './scores-badges'
+import { useSubmitFeedback } from './hooks'
 
 interface PendingEntry {
   question: string
@@ -10,8 +14,12 @@ interface PendingEntry {
 }
 
 interface MessageListProps {
+  sessionId: string
   queries: QueryResponseDTO[]
   pending: PendingEntry | null
+  pendingIds: string[]
+  failedIds: Set<string>
+  onStartEvaluation: (queryId: string) => void
 }
 
 function QuestionBubble({ text }: { text: string }) {
@@ -46,14 +54,37 @@ function ThinkingIndicator() {
   )
 }
 
-export function MessageList({ queries, pending }: MessageListProps) {
+export function MessageList({
+  sessionId,
+  queries,
+  pending,
+  pendingIds,
+  failedIds,
+  onStartEvaluation,
+}: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const submitFeedback = useSubmitFeedback(sessionId)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [queries.length, pending])
 
-  const sorted = [...queries].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const sorted = useMemo(
+    () => [...queries].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [queries]
+  )
+
+  function statusFor(q: QueryResponseDTO): EvaluationStatus {
+    if (pendingIds.includes(q.id)) return 'pending'
+    if (failedIds.has(q.id)) return 'failed'
+    if (q.isEvaluated && q.scores) return 'resolved'
+    if (q.isEvaluated && !q.scores) return 'failed'
+    return 'idle'
+  }
+
+  function scoresFor(q: QueryResponseDTO): Scores | null {
+    return q.scores
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
@@ -61,7 +92,26 @@ export function MessageList({ queries, pending }: MessageListProps) {
         <div key={q.id} className="flex flex-col gap-2">
           <QuestionBubble text={q.question} />
           <AnswerBubble text={q.answer} />
-          <Sources context={q.context} />
+          <div className="flex items-center justify-between">
+            <Sources context={q.context} />
+            <div className="flex items-center gap-2">
+              <ScoresBadges
+                status={statusFor(q)}
+                scores={scoresFor(q)}
+                onRetry={() => onStartEvaluation(q.id)}
+              />
+              <FeedbackButtons
+                feedback={q.feedback}
+                onSubmit={(value) =>
+                  submitFeedback.mutateAsync({ queryId: q.id, value })
+                }
+              />
+              <AnswerAdminActions
+                isEvaluated={q.isEvaluated}
+                onEvaluate={() => onStartEvaluation(q.id)}
+              />
+            </div>
+          </div>
         </div>
       ))}
 

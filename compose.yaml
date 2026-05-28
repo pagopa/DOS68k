@@ -1,12 +1,26 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
+# DOS68K — local development stack.
+#
+# This file boots the platform with the providers selected by the shipped
+# .env.template files (NoSQL=DynamoDB via LocalStack, Queue+Vector DB=Redis,
+# Storage=MinIO, Auth=local, Tracing=noop).
+#
+# Optional backends and dev-only tools are kept in this file but commented
+# out, so what runs by default matches what is configured. To enable one:
+#
+#   * Qdrant vector DB    → uncomment the `qdrant` service block AND add
+#                            `qdrant` back to the depends_on of chatbot-api,
+#                            chatbot-index-api, and chatbot-index-worker.
+#                            Then set VECTOR_DB_PROVIDER=qdrant in the
+#                            relevant .env files.
+#   * Langfuse tracing    → uncomment the `db`, `langfuse-worker`,
+#                            `langfuse-web`, `clickhouse`, and `valkey`
+#                            blocks (and the matching volumes), add
+#                            `langfuse-web` back to chatbot-api's
+#                            depends_on, and set TRACING_PROVIDER=langfuse
+#                            in chatbot-api/.env.
+#   * dynamodb-admin UI   → uncomment the `dynamodb-admin` block. It is a
+#                            debugging UI for inspecting DynamoDB; not
+#                            required by the platform.
 services:
   api-gateway:
     image: traefik:v3.2@sha256:e561a37f8710d9cf41c78bdf421d822b2c0b48267ec0552e644565fb55466ea9
@@ -40,16 +54,16 @@ services:
     ports:
       - 8000:8000
     # Uncomment the volumes below to mount custom RAG tool configs or a custom agent config.
-    # See chatbot-api/README.md#customization for details.
-    # volumes:
-    #   - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
+    # See chatbot-api/README.md#customisation for details.
+    volumes:
+      - ./chatbot-api/scripts/tool_config:/app/src/modules/chatbot/tool/config
     #   - ./my-agent.yaml:/app/src/modules/chatbot/agent/agent.yaml
     depends_on:
       - localstack
       - masking
       - redis-vdb
-      - qdrant
-      - langfuse-web
+      # - qdrant         # uncomment when VECTOR_DB_PROVIDER=qdrant
+      # - langfuse-web   # uncomment when TRACING_PROVIDER=langfuse
 
   chatbot-evaluate-api:
     build:
@@ -63,6 +77,7 @@ services:
       - redis-queue
       - redis-vdb
       - localstack
+      - chatbot-evaluate-worker
 
   chatbot-evaluate-worker:
     build:
@@ -86,7 +101,7 @@ services:
       - redis-queue
       - minio
       - redis-vdb
-      - qdrant
+      # - qdrant         # uncomment when VECTOR_DB_PROVIDER=qdrant
       - localstack
       - chatbot-index-worker
 
@@ -100,7 +115,7 @@ services:
       - redis-queue
       - minio
       - redis-vdb
-      - qdrant
+      # - qdrant         # uncomment when VECTOR_DB_PROVIDER=qdrant
       - localstack
 
   masking:
@@ -115,27 +130,14 @@ services:
       context: .
       dockerfile: ./frontend/Dockerfile
     environment:
+      # The frontend talks to the backend through the API gateway (Traefik), not
+      # to chatbot-api directly — only the gateway exposes every route (sessions,
+      # queries, index, documents, health) and applies forward-auth.
       VITE_API_BASE_URL: http://localhost:8080
     ports:
       - 80:80
     depends_on:
       - api-gateway
-
-  db:
-    image: postgres:17@sha256:2a0d0fe14825b0939f78a8cad5cd4e6aa68bf94d0e5dd96e24b6d23af4315545
-    restart: always
-    shm_size: 128mb
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    env_file:
-      - ./.env.database
-    ports:
-      - 5432:5432
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d db"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   minio:
     image: minio/minio:latest@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
@@ -148,6 +150,24 @@ services:
     env_file:
       - ./.env.storage
 
+  # One-shot job: create the document bucket in MinIO so the first upload
+  # succeeds. MinIO does not auto-create buckets and nothing else provisions
+  # one. The bucket name must match INDEX_DOCUMENTS_BUCKET_NAME in the
+  # chatbot-index api and worker .env files (default: documents). Credentials
+  # come from ./.env.storage (MINIO_ROOT_USER / MINIO_ROOT_PASSWORD).
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    env_file:
+      - ./.env.storage
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\"; do echo 'waiting for minio...'; sleep 2; done;
+      mc mb --ignore-existing local/documents;
+      echo 'bucket ready';
+      "
+
   redis-vdb:
     image: redis/redis-stack:7.4.0-v8@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
     ports:
@@ -156,14 +176,6 @@ services:
     volumes:
       - redis_vdb_data:/data
 
-  qdrant:
-    image: qdrant/qdrant:latest@sha256:b3063c673f3973877c038eeecc392bad5011f072ee7892b56c9a8e204a3bdea9
-    container_name: qdrantdb
-    ports:
-      - 6333:6333
-    volumes:
-      - qdrant:/qdrant_storage
-
   redis-queue:
     image: redis:8.4@sha256:0cf7723388c29e8a936a9a1502f3fdfc8fec0688ffca8875d8e87940bec045eb
     ports:
@@ -171,48 +183,6 @@ services:
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
-
-  langfuse-worker:
-    image: docker.io/langfuse/langfuse-worker:3.115@sha256:c9dc71559f880bc82d7087ca6515b66ddf904dbf209ea578ea5fa17cd64b6ab0
-    ports:
-      - 3030:3030
-    env_file:
-      - ./.env.langfuse
-    depends_on:
-      - db
-      - minio
-      - localstack
-      - valkey
-      - clickhouse
-
-  langfuse-web:
-    image: docker.io/langfuse/langfuse:3.115@sha256:48c51b585350a9de1e904df9410f5507afbfd94c079cf23efec1abf242c6f414
-    ports:
-      - 4001:3000
-    env_file:
-      - ./.env.langfuse
-    depends_on:
-      langfuse-worker:
-        condition: service_started
-      db:
-        condition: service_healthy
-
-  clickhouse:
-    image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine@sha256:68b9d9eb4cb949a03d1f90b76fd8d396a5999dd57ba1ee914ea36c77716ce937
-    user: "101:101"
-    environment:
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: clickhouse
-    volumes:
-      - langfuse_clickhouse_data:/var/lib/clickhouse
-      - langfuse_clickhouse_logs:/var/log/clickhouse-server
-    ports:
-      - 8123:8123
-      - 9002:9000
-
-  valkey:
-    image: valkey/valkey:8.1.4-alpine3.22@sha256:e706d1213aaba6896c162bb6a3a9e1894e1a435f28f8f856d14fab2e10aa098b
 
   localstack:
     image: localstack/localstack@sha256:bcbf91685f1157de81a76de9dc7ad20741f6b7b896e0f61a24ac89c7fb0c4b4d
@@ -225,20 +195,111 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/init/ready.d:/etc/localstack/init/ready.d
 
+  # ---------------------------------------------------------------------------
+  # Optional services — disabled by default.
+  # Uncomment the block(s) you need and follow the matching note at the top
+  # of this file (depends_on / env vars).
+  # ---------------------------------------------------------------------------
+
+  # Alternative vector DB. Enable when VECTOR_DB_PROVIDER=qdrant.
+  # qdrant:
+  #   image: qdrant/qdrant:latest@sha256:b3063c673f3973877c038eeecc392bad5011f072ee7892b56c9a8e204a3bdea9
+  #   container_name: qdrantdb
+  #   ports:
+  #     - 6333:6333
+  #   volumes:
+  #     - qdrant:/qdrant_storage
+
+  # --- Langfuse tracing stack ---
+  # Enable ALL FIVE blocks (db, langfuse-worker, langfuse-web, clickhouse,
+  # valkey) together. They have no purpose unless TRACING_PROVIDER=langfuse.
+
+  # db:
+  #   image: postgres:17@sha256:2a0d0fe14825b0939f78a8cad5cd4e6aa68bf94d0e5dd96e24b6d23af4315545
+  #   restart: always
+  #   shm_size: 128mb
+  #   volumes:
+  #     - db_data:/var/lib/postgresql/data
+  #   env_file:
+  #     - ./.env.database
+  #   ports:
+  #     - 5432:5432
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U user -d db"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+
+  # langfuse-worker:
+  #   image: docker.io/langfuse/langfuse-worker:3.115@sha256:c9dc71559f880bc82d7087ca6515b66ddf904dbf209ea578ea5fa17cd64b6ab0
+  #   ports:
+  #     - 3030:3030
+  #   env_file:
+  #     - ./.env.langfuse
+  #   depends_on:
+  #     - db
+  #     - minio
+  #     - localstack
+  #     - valkey
+  #     - clickhouse
+
+  # langfuse-web:
+  #   image: docker.io/langfuse/langfuse:3.115@sha256:48c51b585350a9de1e904df9410f5507afbfd94c079cf23efec1abf242c6f414
+  #   ports:
+  #     - 4001:3000
+  #   env_file:
+  #     - ./.env.langfuse
+  #   depends_on:
+  #     langfuse-worker:
+  #       condition: service_started
+  #     db:
+  #       condition: service_healthy
+
+  # clickhouse:
+  #   image: docker.io/clickhouse/clickhouse-server:25.8.8.26-alpine@sha256:68b9d9eb4cb949a03d1f90b76fd8d396a5999dd57ba1ee914ea36c77716ce937
+  #   user: "101:101"
+  #   environment:
+  #     CLICKHOUSE_DB: default
+  #     CLICKHOUSE_USER: clickhouse
+  #     CLICKHOUSE_PASSWORD: clickhouse
+  #   volumes:
+  #     - langfuse_clickhouse_data:/var/lib/clickhouse
+  #     - langfuse_clickhouse_logs:/var/log/clickhouse-server
+  #   ports:
+  #     - 8123:8123
+  #     - 9002:9000
+
+  # valkey:
+  #   image: valkey/valkey:8.1.4-alpine3.22@sha256:e706d1213aaba6896c162bb6a3a9e1894e1a435f28f8f856d14fab2e10aa098b
+
+  # --- Debugging UI for DynamoDB (not required by the platform) ---
+  # dynamodb-admin:
+  #   image: aaronshaf/dynamodb-admin
+  #   ports:
+  #     - "8006:8001"
+  #   environment:
+  #     DYNAMO_ENDPOINT: http://localstack:4566
+  #     AWS_REGION: us-east-1
+  #     AWS_ACCESS_KEY_ID: test
+  #     AWS_SECRET_ACCESS_KEY: test
+  #   depends_on:
+  #     - localstack
+
 volumes:
-  langfuse_clickhouse_data:
-    driver: local
-  langfuse_clickhouse_logs:
-    driver: local
   minio_data:
     driver: local
   redis_data:
     driver: local
   redis_vdb_data:
     driver: local
-  db_data:
-    driver: local
-  qdrant:
-    driver: local
   localstack:
     driver: local
+  # Uncomment these when you enable the matching optional services above.
+  # qdrant:
+  #   driver: local
+  # db_data:
+  #   driver: local
+  # langfuse_clickhouse_data:
+  #   driver: local
+  # langfuse_clickhouse_logs:
+  #   driver: local

@@ -3,7 +3,8 @@ export type { ApiClient, GetToken } from './client'
 export { ApiError } from './types'
 export type {
   SessionDTO, CreateSessionInput,
-  QueryResponseDTO, CreateQueryInput, Source, HistoryEntry,
+  QueryResponseDTO, CreateQueryInput, Source, Scores, HistoryEntry,
+  EvaluationResponse, EvaluationAllResponse,
   CreateIndexResponse, HealthStatus,
   DocumentInfo, UploadDocumentResponse,
 } from './types'

@@ -7,7 +7,8 @@ Inserts a small set of curated documents — grouped into topics like
 ``software-dev``, ``zephyr-corp``, ``borgonero-fc`` — into the configured
 vector store (Redis or Qdrant). Each topic becomes one index that the
 chatbot-api agent can later query via a RAG tool. Embeddings are produced
-by Google GenAI (``gemini-embedding-001``) — a Google API key is required.
+by Google GenAI (``gemini-embedding-001`` — must match chatbot-api's
+EMBED_MODEL_ID) — a Google API key is required.
 
 Quick start
 -----------
@@ -424,6 +425,9 @@ def get_embeddings(
 
     client = genai.Client(api_key=api_key)
     response = client.models.embed_content(
+        # Must match chatbot-api's EMBED_MODEL_ID, or the chatbot's query
+        # embeddings won't align with these document embeddings and retrieval
+        # over the seeded indexes will return irrelevant results.
         model="gemini-embedding-001",
         contents=texts,
         config=genai_types.EmbedContentConfig(

@@ -9,7 +9,7 @@ def test_get_task_settings(monkeypatch):
     monkeypatch.setenv("MODEL_API_KEY", "test-key")
     monkeypatch.setenv("EMBED_CHUNK_SIZE", "512")
     monkeypatch.setenv("EMBED_CHUNK_OVERLAP", "50")
-    monkeypatch.setenv("EMBED_MODEL_ID", "text-embedding-004")
+    monkeypatch.setenv("EMBED_MODEL_ID", "gemini-embedding-001")
     env.get_task_settings.cache_clear()
 
     settings = env.get_task_settings()
@@ -19,7 +19,7 @@ def test_get_task_settings(monkeypatch):
     assert settings.model_api_key == "test-key"
     assert settings.embed_chunk_size == 512
     assert settings.embed_chunk_overlap == 50
-    assert settings.embed_model_id == "text-embedding-004"
+    assert settings.embed_model_id == "gemini-embedding-001"
     env.get_task_settings.cache_clear()
 
 

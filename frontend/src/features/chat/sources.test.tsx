@@ -4,9 +4,9 @@ import { Sources } from './sources'
 import type { Source } from '@/lib/api'
 
 const ctx: Source[] = [
-  { chunkId: '1', content: 'High score chunk', score: 0.923, filename: 'beta.pdf' },
-  { chunkId: '2', content: 'Null score chunk', score: null, filename: 'beta.pdf' },
-  { chunkId: '3', content: 'Alpha chunk', score: 0.751, filename: 'alpha.txt' },
+  { chunkId: 1, content: 'High score chunk', score: 0.923, filename: 'beta.pdf' },
+  { chunkId: 2, content: 'Null score chunk', score: null, filename: 'beta.pdf' },
+  { chunkId: 3, content: 'Alpha chunk', score: 0.751, filename: 'alpha.txt' },
 ]
 
 describe('Sources', () => {
@@ -52,8 +52,8 @@ describe('Sources', () => {
   it('two sources with the same filename render as separate rows with distinct scores', async () => {
     const user = userEvent.setup()
     const repeated: Source[] = [
-      { chunkId: '1', content: 'First passage', score: 0.9, filename: 'doc.pdf' },
-      { chunkId: '2', content: 'Second passage', score: 0.6, filename: 'doc.pdf' },
+      { chunkId: 1, content: 'First passage', score: 0.9, filename: 'doc.pdf' },
+      { chunkId: 2, content: 'Second passage', score: 0.6, filename: 'doc.pdf' },
     ]
     render(<Sources context={repeated} />)
     await user.click(screen.getByRole('button', { name: 'Sources (2)' }))

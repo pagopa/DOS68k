@@ -61,6 +61,52 @@ export function useQueries(sessionId: string, enabled = true) {
   })
 }
 
+export function useSubmitFeedback(sessionId: string) {
+  const qc = useQueryClient()
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: ({ queryId, value }: { queryId: string; value: 1 | -1 }) =>
+      client.submitFeedback(sessionId, queryId, value),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queriesKey(sessionId) }),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to submit feedback'
+      toast.error(message)
+    },
+  })
+}
+
+export function useEvaluateQuery(sessionId: string) {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (queryId: string) => client.evaluateQuery(sessionId, queryId),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to start evaluation'
+      toast.error(message)
+    },
+  })
+}
+
+export function useEvaluateRated(sessionId: string) {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: () => client.evaluateRated(sessionId),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to start evaluation'
+      toast.error(message)
+    },
+  })
+}
+
+export function useGetQueries() {
+  const client = useApiClient()
+  return client.getQueries.bind(client)
+}
+
+export function useInvalidateQueries(sessionId: string) {
+  const qc = useQueryClient()
+  return () => qc.invalidateQueries({ queryKey: queriesKey(sessionId) })
+}
+
 export function useCreateQuery(sessionId: string) {
   const qc = useQueryClient()
   const client = useApiClient()

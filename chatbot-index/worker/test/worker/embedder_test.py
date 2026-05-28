@@ -13,7 +13,7 @@ def test_embedder_transform(monkeypatch):
 
     e = Embedder(
         provider="google",
-        embed_model_id="text-embedding-004",
+        embed_model_id="gemini-embedding-001",
         embed_batch_size=100,
         embed_dim=3,
         embed_task="RETRIEVAL_DOCUMENT",
@@ -44,7 +44,7 @@ def test_get_embedder(monkeypatch):
 
     e = get_embedder(
         provider="google",
-        embed_model_id="text-embedding-004",
+        embed_model_id="gemini-embedding-001",
         embed_batch_size=100,
         embed_dim=3,
         embed_task="RETRIEVAL_DOCUMENT",

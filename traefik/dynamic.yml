@@ -52,11 +52,6 @@ http:
         prefixes:
           - /chatbot
 
-    strip-chatbot-evaluate-prefix:
-      stripPrefix:
-        prefixes:
-          - /chatbot-evaluate
-
     strip-chatbot-index-prefix:
       stripPrefix:
         prefixes:
@@ -85,6 +80,17 @@ http:
         - auth
         - strip-authorization
 
+    # chatbot-evaluate-api: evaluations + simple feedback
+    chatbot-evaluate-api-core:
+      rule: "PathPrefix(`/evaluate`)"
+      entryPoints: [web]
+      service: chatbot-evaluate-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+
     # chatbot-index-api: indexes + index-side health probes
     chatbot-index-api-core:
       rule: "PathPrefix(`/index`) || Path(`/health/queue`) || Path(`/health/storage`) || Path(`/health/vdb`)"
@@ -107,17 +113,6 @@ http:
         - auth
         - strip-authorization
         - strip-chatbot-prefix
-
-    chatbot-evaluate-passthrough:
-      rule: "PathPrefix(`/chatbot-evaluate/`)"
-      entryPoints: [web]
-      service: chatbot-evaluate-api
-      middlewares:
-        - cors
-        - ratelimit
-        - auth
-        - strip-authorization
-        - strip-chatbot-evaluate-prefix
 
     chatbot-index-passthrough:
       rule: "PathPrefix(`/chatbot-index/`)"

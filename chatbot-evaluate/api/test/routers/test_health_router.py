@@ -3,9 +3,10 @@ import pytest
 from typing import Tuple
 from httpx import AsyncClient
 
-from src.routers.health import router as health_router
+from src.modules.health.health import router as health_router
 
 from test.mocks import QueueMock
+
 
 @pytest.mark.asyncio
 async def test_health_check(client_test: Tuple[AsyncClient, QueueMock]):
@@ -18,6 +19,7 @@ async def test_health_check(client_test: Tuple[AsyncClient, QueueMock]):
         "service": "Chatbot Evaluate API",
     }
 
+
 @pytest.mark.asyncio
 async def test_health_check_db(client_test: Tuple[AsyncClient, QueueMock]):
     client, _ = client_test
@@ -29,6 +31,7 @@ async def test_health_check_db(client_test: Tuple[AsyncClient, QueueMock]):
         "service": "Chatbot Evaluate API",
         "database": "connected",
     }
+
 
 @pytest.mark.asyncio
 async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, QueueMock]):
@@ -43,8 +46,11 @@ async def test_health_check_queue_connected(client_test: Tuple[AsyncClient, Queu
         "queue": "connected",
     }
 
+
 @pytest.mark.asyncio
-async def test_health_check_queue_disconnected(client_test: Tuple[AsyncClient, QueueMock]):
+async def test_health_check_queue_disconnected(
+    client_test: Tuple[AsyncClient, QueueMock],
+):
     client, queue_client = client_test
 
     # Simulate disconnected queue by setting ping_response to False

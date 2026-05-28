@@ -1,0 +1,15 @@
+prompt: |
+  Your goal is to rephrase a follw-up question to a standalone question using the conversation between a user and an AI assistant.
+  The standalone question must:
+  - Be in the same language as the follow-up question.
+  - Be concise and coherent. 
+  - Include only the context needed to make the question understandable on its own.
+  - If the follow-up question is already standalone, return it unchanged.
+
+  Follow-up question:
+  {{question}}
+
+  Conversation:
+  {{history}}
+
+  Standalone question:

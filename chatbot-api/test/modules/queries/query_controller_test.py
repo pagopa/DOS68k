@@ -31,6 +31,8 @@ async def test_get_queries_200(
     )
 
     assert response.status_code == 200
+    body = response.json()
+    assert body[0]["feedback"] == 0
 
 
 @pytest.mark.asyncio

@@ -18,7 +18,7 @@ COPY ./dos-utility ../dos-utility
 ENV UV_PYTHON_PREFERENCE=only-system
 
 # Install the application dependencies
-RUN rm -f uv.lock && uv sync --no-cache
+RUN uv sync --frozen --no-cache
 FROM python:${PYTHON_VERSION}
 
 WORKDIR /app
