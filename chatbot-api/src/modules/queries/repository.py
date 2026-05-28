@@ -47,7 +47,7 @@ class QueryRepository:
             **query_data,
         }
 
-        await self.nosql_client.put_item(table_name="queries", item=item)
+        await self.nosql_client.put_item(table_name=self.env.QUERY_TABLENAME, item=item)
 
         return item
 

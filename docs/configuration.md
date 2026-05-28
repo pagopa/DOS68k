@@ -85,6 +85,7 @@ feedback and evaluation requests.
 |---|---|---|
 | `EVALUATE_UPPER_LIMIT` | `50` | Max queries evaluated per "evaluate all" request. |
 | `QUERY_TABLENAME` | `queries` | NoSQL table for queries. |
+| `SESSIONS_TABLENAME` | `sessions` | NoSQL table for sessions. Used to authorize feedback against session ownership. |
 | `FRONTEND_URL` | `http://localhost` | Allowed CORS origin. |
 | `LOG_LEVEL` | `20` (INFO) | Python log level. |
 
