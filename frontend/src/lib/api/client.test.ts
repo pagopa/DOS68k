@@ -354,6 +354,52 @@ describe('submitFeedback', () => {
   })
 })
 
+// ------- evaluateQuery -------
+
+describe('evaluateQuery', () => {
+  const SESSION_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+  const QUERY_ID = 'a1b2c3d4-0000-0000-0000-000000000001'
+  const URL = `${BASE}/evaluate/${SESSION_ID}/${QUERY_ID}`
+
+  it('sends POST to /evaluate/{sessionId}/{queryId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(URL, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json({ ok: true }, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => null).evaluateQuery(SESSION_ID, QUERY_ID)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain(`/evaluate/${SESSION_ID}/${QUERY_ID}`)
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(URL, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json({ ok: true }, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => 'ev-tok').evaluateQuery(SESSION_ID, QUERY_ID)
+    expect(authHeader).toBe('Bearer ev-tok')
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null)
+      .evaluateQuery(SESSION_ID, QUERY_ID)
+      .catch((e) => e as ApiError)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+  })
+})
+
 // ------- createQuery -------
 
 describe('createQuery', () => {

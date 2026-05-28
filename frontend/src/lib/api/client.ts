@@ -72,6 +72,9 @@ export function createApiClient(baseUrl: string, getToken: GetToken) {
         form: { feedback: value },
       })
     },
+    evaluateQuery(sessionId: string, queryId: string): Promise<unknown> {
+      return req(`/evaluate/${sessionId}/${queryId}`, { method: 'POST' })
+    },
     getIndexes(): Promise<string[]> {
       return req('/index/all')
     },
