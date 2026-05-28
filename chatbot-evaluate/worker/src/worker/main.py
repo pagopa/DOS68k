@@ -3,7 +3,7 @@ import logging
 
 from dos_utility.queue import get_queue_client_ctx
 
-from .task import process_task
+from task import process_task
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
