@@ -10,6 +10,7 @@ class Settings(BaseSettings):
         PositiveInt, Field(default=20, description="Default 20 for INFO")
     ]
     QUERY_TABLENAME: Annotated[str, Field(default="queries")]
+    SESSIONS_TABLENAME: Annotated[str, Field(default="sessions")]
     EVALUATE_UPPER_LIMIT: Annotated[int, Field(default=50)]
 
 

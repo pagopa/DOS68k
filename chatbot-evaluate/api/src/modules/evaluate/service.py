@@ -35,44 +35,56 @@ class EvaluationService:
             name=__file__, level=self.settings.LOG_LEVEL
         )
 
+    async def __get_owned_session(
+        self: Self, session_id: str, user_id: str
+    ) -> Dict[str, Any]:
+        session_result: QueryResult = await self.nosql.query(
+            table_name=self.settings.SESSIONS_TABLENAME,
+            key_conditions=[
+                KeyCondition(
+                    field="id", operator=ConditionOperator.EQ, value=session_id
+                ),
+                KeyCondition(
+                    field="userId", operator=ConditionOperator.EQ, value=user_id
+                ),
+            ],
+        )
+
+        if len(session_result.items) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session {session_id} not found",
+            )
+
+        return session_result.items[0]
+
     async def create_simple_feedback(
-        self: Self, user_id: str, query_id: UUID, feedback: int
+        self: Self,
+        user_id: str,
+        session_id: UUID,
+        query_id: UUID,
+        feedback: int,
     ) -> Dict[str, Any]:
         self.logger.info(
             f"Creating simple feedback for query_id: {query_id}, feedback: {feedback}"
         )
 
+        session_id_str: str = str(session_id)
         query_id_str: str = str(query_id)
-        query_result: QueryResult = await self.nosql.query(
+
+        await self.__get_owned_session(session_id=session_id_str, user_id=user_id)
+
+        updated_item: Optional[Dict[str, Any]] = await self.nosql.update_item(
             table_name=self.settings.QUERY_TABLENAME,
-            key_conditions=[
-                KeyCondition(
-                    field="id",
-                    operator=ConditionOperator.EQ,
-                    value=query_id_str,
-                ),
-            ],
+            key={"sessionId": session_id_str, "id": query_id_str},
+            fields_to_update={"feedback": feedback},
         )
 
-        if query_result is None or len(query_result.items) == 0:
+        if updated_item is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Query {query_id_str} not found",
             )
-
-        query: Dict[str, Any] = query_result.items[0]
-
-        if query["userId"] != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Unauthorized",
-            )
-
-        updated_item: Optional[Dict[str, Any]] = await self.nosql.update_item(
-            table_name=self.settings.QUERY_TABLENAME,
-            key={"sessionId": query["sessionId"], "id": query_id_str},
-            fields_to_update={"feedback": feedback},
-        )
 
         return updated_item
 
@@ -81,7 +93,9 @@ class EvaluationService:
 
         query_id_str: str = str(query_id)
         session_id_str: str = str(session_id)
-        self.logger.info(f"retrieving query {query_id_str} from session {session_id_str}")
+        self.logger.info(
+            f"retrieving query {query_id_str} from session {session_id_str}"
+        )
         query_result: QueryResult = await self.nosql.query(
             table_name=self.settings.QUERY_TABLENAME,
             key_conditions=[
@@ -110,28 +124,26 @@ class EvaluationService:
 
         query: Dict[str, Any] = items[0]
 
-        if query.get("isEvaluated", True):
+        if query.get("isEvaluated", False):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Query {query_id_str} has already been evaluated",
             )
 
-        await self.nosql.update_item(
-            table_name=self.settings.QUERY_TABLENAME,
-            key={"sessionId": query["sessionId"], "id": query_id_str},
-            fields_to_update={"isEvaluated": False},
-        )
-
-        msg: bytes = json.dumps({"messageId": query_id_str, "sessionId": session_id_str}).encode("utf-8")
+        msg: bytes = json.dumps(
+            {"messageId": query_id_str, "sessionId": session_id_str}
+        ).encode("utf-8")
         msg_id: str = await self.queue.enqueue(msg=msg)
 
         self.logger.info(
             f"Message enqueued with id: {msg_id} for query_id: {query_id_str}"
         )
 
-        return {"query_id": query_id_str, 
-                "session_id": session_id_str,
-                "status": "queued"}
+        return {
+            "query_id": query_id_str,
+            "session_id": session_id_str,
+            "status": "queued",
+        }
 
     async def evaluate_all(self: Self, session_id: UUID) -> dict:
         self.logger.info(f"Evaluating all queries for session_id: {session_id}")
@@ -141,7 +153,9 @@ class EvaluationService:
             table_name=self.settings.QUERY_TABLENAME,
             key_conditions=[
                 KeyCondition(
-                    field="sessionId", operator=ConditionOperator.EQ, value=session_id_str
+                    field="sessionId",
+                    operator=ConditionOperator.EQ,
+                    value=session_id_str,
                 )
             ],
         )
@@ -165,13 +179,15 @@ class EvaluationService:
         query_ids = [item.get("id") for item in selected]
 
         for item in selected:
-            msg: bytes = json.dumps({"sessionId": session_id_str, "messageId": item.get("id")}).encode("utf-8")
+            msg: bytes = json.dumps(
+                {"sessionId": session_id_str, "messageId": item.get("id")}
+            ).encode("utf-8")
             msg_id: str = await self.queue.enqueue(msg=msg)
             self.logger.info(
                 f"Message enqueued with id: {msg_id} for query_id: {item.get('id')}"
             )
 
-        self.logger.info(f"Marked {len(selected)} queries as evaluated")
+        self.logger.info(f"Enqueued {len(selected)} queries for evaluation")
 
         selected_by_id = {item.get("id"): item for item in selected}
         evaluations = [
@@ -183,13 +199,6 @@ class EvaluationService:
             }
             for qid in query_ids
         ]
-
-        for item in selected:
-            await self.nosql.update_item(
-                table_name=self.settings.QUERY_TABLENAME,
-                key={"sessionId": session_id_str, "id": item.get("id")},
-                fields_to_update={"isEvaluated": True},
-            )
 
         return {"evaluations": evaluations}
 

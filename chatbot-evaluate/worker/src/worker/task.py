@@ -9,9 +9,9 @@ import yaml
 import os
 
 from typing import Any, List
-from models import get_llm, LLM, get_embed_model, BaseEmbedding
-from evaluator import Evaluator
-from env import (
+from .models import get_llm, LLM, get_embed_model, BaseEmbedding
+from .evaluator import Evaluator
+from .env import (
     get_task_settings,
     TaskSettings,
     get_global_settings,
@@ -20,7 +20,12 @@ from env import (
     NOSQLSettings,
 )
 
-from dos_utility.database.nosql import get_nosql_client_ctx, QueryResult, KeyCondition, ConditionOperator
+from dos_utility.database.nosql import (
+    get_nosql_client_ctx,
+    QueryResult,
+    KeyCondition,
+    ConditionOperator,
+)
 from dos_utility.utils.logger import get_logger
 
 
@@ -37,44 +42,43 @@ async def process_task(body: bytes) -> None:
     logger: Logger = get_logger(name=__name__, level=settings.log_level)
 
     llm: LLM = get_llm(
-        provider = task_settings.provider,
-        model_id = task_settings.model_id,
-        temperature = task_settings.temperature,
-        max_tokens = task_settings.max_tokens,
-        api_key = task_settings.model_api_key,
+        provider=task_settings.provider,
+        model_id=task_settings.model_id,
+        temperature=task_settings.temperature,
+        max_tokens=task_settings.max_tokens,
+        api_key=task_settings.model_api_key,
     )
 
     embedding: BaseEmbedding = get_embed_model(
-        provider = task_settings.provider,
-        model_id =task_settings.embed_model_id,
-        embed_batch_size = task_settings.embed_batch_size,
-        embed_dim = task_settings.embed_dim,
-        task_type = task_settings.embed_task,
-        retries = task_settings.embed_retries,
-        retry_min_seconds = task_settings.embed_retries,
-        api_key = task_settings.model_api_key,
+        provider=task_settings.provider,
+        model_id=task_settings.embed_model_id,
+        embed_batch_size=task_settings.embed_batch_size,
+        embed_dim=task_settings.embed_dim,
+        task_type=task_settings.embed_task,
+        retries=task_settings.embed_retries,
+        retry_min_seconds=task_settings.embed_retry_min_seconds,
+        api_key=task_settings.model_api_key,
     )
 
     logger.debug("Initializing document loader, parser, and embedder...")
 
     converted_data: Any = json.loads(body.decode("utf-8"))
-    session_id = converted_data['sessionId']
-    message_id = converted_data['messageId']
+    session_id = converted_data["sessionId"]
+    message_id = converted_data["messageId"]
 
-    async with  get_nosql_client_ctx() as nosql_client:
+    async with get_nosql_client_ctx() as nosql_client:
         query_result: QueryResult = await nosql_client.query(
-                table_name= nosql_settings.query_tablename,
-                key_conditions=[
-                    KeyCondition(
-                        field="sessionId", operator=ConditionOperator.EQ, value=session_id
-                    )
-                ],
-            )
+            table_name=nosql_settings.query_tablename,
+            key_conditions=[
+                KeyCondition(
+                    field="sessionId", operator=ConditionOperator.EQ, value=session_id
+                )
+            ],
+        )
         chat_session = query_result.items
 
-    chat_session = sorted(query_result.items, key = lambda x: x['createdAt'])
+    chat_session = sorted(query_result.items, key=lambda x: x["createdAt"])
 
-    print(f"Found {len(chat_session)}")
     history = []
     if len(chat_session) > 1:
         for chat_message in chat_session:
@@ -83,19 +87,22 @@ async def process_task(body: bytes) -> None:
                 break
             else:
                 history += [
-                    ChatMessage(role=MessageRole.USER, content= chat_message['question']),
-                    ChatMessage(role=MessageRole.ASSISTANT, content=chat_message['answer']),
+                    ChatMessage(
+                        role=MessageRole.USER, content=chat_message["question"]
+                    ),
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content=chat_message["answer"]
+                    ),
                 ]
-        
-    if len(history)>=2:
 
+    if len(history) >= 2:
         yaml_file = task_settings.config_path
 
         if not os.path.exists(yaml_file):
             raise FileNotFoundError(f"Config file {yaml_file} does not exist")
 
         logger.debug(f"Found config file {yaml_file}")
-        
+
         path = Path(yaml_file)
         with path.open("r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
@@ -103,37 +110,35 @@ async def process_task(body: bytes) -> None:
         logger.info(f"Contextualization prompt loaded.")
 
         synthesis_prompt = RichPromptTemplate(prompt_template)
-        contextualized_question = await llm.acomplete(synthesis_prompt.format(
-            question = message_to_evaluate['question'],
-            history = history)
+        contextualized_question = await llm.acomplete(
+            synthesis_prompt.format(
+                question=message_to_evaluate["question"], history=history
             )
+        )
         question_to_evaluate = contextualized_question.text.strip()
-        
+
         logger.info(f"Contextualized question extracted.")
     else:
         message_to_evaluate = chat_session[0]
-        question_to_evaluate = message_to_evaluate['question']
-    
+        question_to_evaluate = message_to_evaluate["question"]
+
     ### JUDGE
-    evaluator = Evaluator(settings = task_settings)
+    evaluator = Evaluator(settings=task_settings)
     scores = await evaluator.evaluate(
-        question = question_to_evaluate,
-        answer = message_to_evaluate['answer'],
-        context = [
-            c["content"]
-            for c in message_to_evaluate['context']
-        ],
+        question=question_to_evaluate,
+        answer=message_to_evaluate["answer"],
+        context=[c["content"] for c in message_to_evaluate["context"]],
     )
 
     logger.info(f"Calculated scores for message {message_id} of session {session_id}")
 
-    async with  get_nosql_client_ctx() as nosql_client:
+    async with get_nosql_client_ctx() as nosql_client:
         await nosql_client.update_item(
-            table_name = nosql_settings.query_tablename,
-            key = {"sessionId": session_id, "id": message_id},
-            fields_to_update = {
-                "scores": {kk:Decimal(str(vv)) for kk,vv in scores.items()} ,
+            table_name=nosql_settings.query_tablename,
+            key={"sessionId": session_id, "id": message_id},
+            fields_to_update={
+                "scores": {kk: Decimal(str(vv)) for kk, vv in scores.items()},
                 "isEvaluated": True,
-            }
+            },
         )
     logger.info("Evaluation stored to NoSql Database")

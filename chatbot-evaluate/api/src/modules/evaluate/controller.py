@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, status, Form
-from typing import Annotated, Literal
+from fastapi import APIRouter, Depends, HTTPException, status, Form
+from typing import Annotated
 from uuid import UUID
 
 from dos_utility.auth import get_admin_user, get_user, User
@@ -11,29 +11,34 @@ router: APIRouter = APIRouter(prefix="/evaluate", tags=["evaluate"])
 
 
 @router.post(
-    path="/simple-feedback/{query_id}",
+    path="/simple-feedback/{session_id}/{query_id}",
     response_model=SimpleFeedbackResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {
             "description": "Simple feedback created successfully"
         },
-        status.HTTP_404_NOT_FOUND: {"description": "Query not found"},
-        status.HTTP_409_CONFLICT: {"description": "Simple feedback already exists"},
+        status.HTTP_404_NOT_FOUND: {"description": "Session or query not found"},
     },
     summary="Create a new simple feedback for the authenticated user",
 )
 async def simple_feedback(
+    session_id: UUID,
     query_id: UUID,
-    feedback: Annotated[Literal[1, -1], Form(description="1 for OK, -1 for KO")],
-    user: Annotated[
-        User, Depends(dependency=get_user)
-    ],  # Any user can do it, as long as he's the 'owner' of the message
+    feedback: Annotated[int, Form(description="1 for OK, -1 for KO")],
+    user: Annotated[User, Depends(dependency=get_user)],
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
 ) -> SimpleFeedbackResponse:
+    if feedback not in (1, -1):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="feedback must be 1 (OK) or -1 (KO)",
+        )
+
     return await service.create_simple_feedback(
         user_id=user.id,
-        query_id=str(query_id),
+        session_id=session_id,
+        query_id=query_id,
         feedback=feedback,
     )
 
@@ -73,5 +78,4 @@ async def post_evaluate(
     query_id: UUID,
     service: Annotated[EvaluationService, Depends(dependency=get_evaluation_service)],
 ) -> EvaluationResponse:
-    return await service.evaluate(session_id = session_id, 
-                                  query_id=query_id)
+    return await service.evaluate(session_id=session_id, query_id=query_id)

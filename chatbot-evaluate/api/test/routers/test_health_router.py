@@ -3,7 +3,7 @@ import pytest
 from typing import Tuple
 from httpx import AsyncClient
 
-from src.routers.health import router as health_router
+from src.modules.health.health import router as health_router
 
 from test.mocks import QueueMock
 

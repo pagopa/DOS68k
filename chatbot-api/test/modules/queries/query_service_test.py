@@ -53,7 +53,7 @@ async def test_get_queries_returns_list():
     assert result[0]["id"] == MOCK_QUERY_ID
     assert result[0]["session_id"] == MOCK_SESSION_ID
     assert result[0]["question"] == "What is Python?"
-    assert result[0]["bad_answer"] is False
+    assert result[0]["feedback"] == 0
 
 
 @pytest.mark.asyncio
@@ -110,7 +110,7 @@ async def test_create_query_success():
     assert result["session_id"] == MOCK_SESSION_ID
     assert result["question"] == "What is Python?"
     assert result["answer"] == "Simulated answer"
-    assert result["bad_answer"] is False
+    assert result["feedback"] == 0
     assert "created_at" in result
 
 

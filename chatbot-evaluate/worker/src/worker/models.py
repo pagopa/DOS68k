@@ -6,7 +6,8 @@ from logging import Logger
 from ragas.llms import llm_factory
 
 from dos_utility.utils.logger import get_logger
-from env import get_global_settings, GlobalSettings
+from .env import get_global_settings, GlobalSettings
+
 
 log_settings: GlobalSettings = get_global_settings()
 logger: Logger = get_logger(name=__name__, level=log_settings.log_level)

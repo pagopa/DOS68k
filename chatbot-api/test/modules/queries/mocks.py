@@ -55,6 +55,8 @@ MOCK_QUERY_ITEM = {
     "context": [],
     "createdAt": "2024-01-01T00:00:00",
     "expiresAt": None,
+    "feedback": 0,
+    "isEvaluated": False,
 }
 
 
@@ -152,6 +154,8 @@ class MockQueryRepository:
             "id": MOCK_QUERY_ID,
             "sessionId": session_id,
             "createdAt": "2024-01-01T00:00:00",
+            "feedback": 0,
+            "isEvaluated": False,
             **query_data,
         }
 
@@ -210,7 +214,6 @@ def get_query_service_get_queries_200_mock():
                     "session_id": "03084655-d5c4-42b4-b39a-7097f4a5ed1f",
                     "question": "What is the capital of France?",
                     "answer": "The capital of France is Paris.",
-                    "bad_answer": False,
                     "topic": ["geography", "capital cities"],
                     "context": [
                         {
@@ -255,7 +258,6 @@ def get_query_service_create_query_201_mock():
                 "session_id": session_id,
                 "question": question,
                 "answer": "The capital of France is Paris.",
-                "bad_answer": False,
                 "topic": ["geography", "capital cities"],
                 "context": [
                     {

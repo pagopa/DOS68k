@@ -86,9 +86,10 @@ class QueryService:
                 "context": query["context"],
                 "created_at": query["createdAt"],
                 "expires_at": format_expiration_dt(query["expiresAt"]),
+                "feedback": query.get("feedback", 0),
                 "tracing_trace_id": query.get("tracingTraceId"),
                 "scores": query.get("scores"),
-                "isEvaluated": query.get("isEvaluated")
+                "is_evaluated": query.get("isEvaluated", False),
             }
             for query in queries
         ]
@@ -210,7 +211,10 @@ class QueryService:
             "context": item["context"],
             "created_at": item["createdAt"],
             "expires_at": format_expiration_dt(item["expiresAt"]),
+            "feedback": item.get("feedback", 0),
             "tracing_trace_id": item.get("tracingTraceId"),
+            "scores": item.get("scores"),
+            "is_evaluated": item.get("isEvaluated", False),
         }
 
 
