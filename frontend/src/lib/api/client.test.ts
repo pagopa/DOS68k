@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
 import { createApiClient, ApiError } from './index'
-import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse } from './types'
+import type { SessionDTO, QueryResponseDTO, CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse, EvaluationAllResponse } from './types'
 
 const BASE = 'http://test-gateway'
 
@@ -394,6 +394,72 @@ describe('evaluateQuery', () => {
     )
     const err = await createApiClient(BASE, () => null)
       .evaluateQuery(SESSION_ID, QUERY_ID)
+      .catch((e) => e as ApiError)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+  })
+})
+
+// ------- evaluateRated -------
+
+describe('evaluateRated', () => {
+  const SESSION_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+  const URL = `${BASE}/evaluate/all/${SESSION_ID}`
+
+  const mockResponse: EvaluationAllResponse = {
+    evaluations: [
+      { queryId: 'a1b2c3d4-0000-0000-0000-000000000001', sessionId: SESSION_ID, status: 'queued' },
+      { queryId: 'a1b2c3d4-0000-0000-0000-000000000002', sessionId: SESSION_ID, status: 'queued' },
+    ],
+  }
+
+  it('sends POST to /evaluate/all/{sessionId}', async () => {
+    let capturedMethod: string | undefined
+    let capturedUrl: string | undefined
+    server.use(
+      http.post(URL, ({ request }) => {
+        capturedMethod = request.method
+        capturedUrl = request.url
+        return HttpResponse.json(mockResponse, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => null).evaluateRated(SESSION_ID)
+    expect(capturedMethod).toBe('POST')
+    expect(capturedUrl).toContain(`/evaluate/all/${SESSION_ID}`)
+  })
+
+  it('sends Authorization header when token is present', async () => {
+    let authHeader: string | null = null
+    server.use(
+      http.post(URL, ({ request }) => {
+        authHeader = request.headers.get('Authorization')
+        return HttpResponse.json(mockResponse, { status: 202 })
+      })
+    )
+    await createApiClient(BASE, () => 'all-tok').evaluateRated(SESSION_ID)
+    expect(authHeader).toBe('Bearer all-tok')
+  })
+
+  it('parses response JSON into EvaluationAllResponse', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json(mockResponse, { status: 202 }))
+    )
+    const result = await createApiClient(BASE, () => null).evaluateRated(SESSION_ID)
+    expect(result).toEqual(mockResponse)
+    expect(result.evaluations).toHaveLength(2)
+    expect(result.evaluations[0]).toMatchObject({
+      queryId: expect.any(String),
+      sessionId: SESSION_ID,
+      status: expect.any(String),
+    })
+  })
+
+  it('throws ApiError on non-2xx', async () => {
+    server.use(
+      http.post(URL, () => HttpResponse.json({ detail: 'Not found' }, { status: 404 }))
+    )
+    const err = await createApiClient(BASE, () => null)
+      .evaluateRated(SESSION_ID)
       .catch((e) => e as ApiError)
     expect(err).toBeInstanceOf(ApiError)
     expect((err as ApiError).status).toBe(404)

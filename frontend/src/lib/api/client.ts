@@ -2,6 +2,7 @@ import { ApiError } from './types'
 import type {
   SessionDTO, CreateSessionInput, QueryResponseDTO, CreateQueryInput,
   CreateIndexResponse, HealthStatus, DocumentInfo, UploadDocumentResponse,
+  EvaluationAllResponse,
 } from './types'
 
 export type GetToken = () => string | null
@@ -74,6 +75,9 @@ export function createApiClient(baseUrl: string, getToken: GetToken) {
     },
     evaluateQuery(sessionId: string, queryId: string): Promise<unknown> {
       return req(`/evaluate/${sessionId}/${queryId}`, { method: 'POST' })
+    },
+    evaluateRated(sessionId: string): Promise<EvaluationAllResponse> {
+      return req(`/evaluate/all/${sessionId}`, { method: 'POST' })
     },
     getIndexes(): Promise<string[]> {
       return req('/index/all')

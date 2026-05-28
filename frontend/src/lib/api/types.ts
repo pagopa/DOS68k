@@ -43,6 +43,16 @@ export interface QueryResponseDTO {
   scores: Scores | null
 }
 
+export interface EvaluationResponse {
+  queryId: string
+  sessionId: string
+  status: string
+}
+
+export interface EvaluationAllResponse {
+  evaluations: EvaluationResponse[]
+}
+
 export interface CreateQueryInput {
   question: string
   sessionHistory: HistoryEntry[]

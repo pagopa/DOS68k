@@ -86,6 +86,17 @@ export function useEvaluateQuery(sessionId: string) {
   })
 }
 
+export function useEvaluateRated(sessionId: string) {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: () => client.evaluateRated(sessionId),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to start evaluation'
+      toast.error(message)
+    },
+  })
+}
+
 export function useGetQueries() {
   const client = useApiClient()
   return client.getQueries.bind(client)
