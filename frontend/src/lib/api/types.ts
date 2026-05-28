@@ -17,10 +17,16 @@ export interface HistoryEntry {
 }
 
 export interface Source {
-  chunkId: string
+  chunkId: number
   content: string
   score: number | null
   filename: string
+}
+
+export interface Scores {
+  relevancy: number
+  faithfulness: number
+  utilization: number
 }
 
 export interface QueryResponseDTO {
@@ -28,11 +34,13 @@ export interface QueryResponseDTO {
   sessionId: string
   question: string
   answer: string
-  badAnswer: boolean
   topic: string[]
   context: Source[]
   createdAt: string
   expiresAt: string | null
+  feedback: number
+  isEvaluated: boolean
+  scores: Scores | null
 }
 
 export interface CreateQueryInput {

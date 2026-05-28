@@ -41,7 +41,7 @@ export function ChatView({ sessionId }: ChatViewProps) {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <MessageList queries={queries} pending={pending} />
+      <MessageList sessionId={sessionId} queries={queries} pending={pending} />
       <MessageComposer
         value={draft}
         onChange={setDraft}

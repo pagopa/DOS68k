@@ -69,3 +69,4 @@ _Avoid_: monitoring backend, observability vendor (these are fine in prose, but 
 ## Flagged ambiguities
 
 - "context" was overloaded between the LLM prompt context window and the retrieved RAG chunks. The retrieved chunks are now called **Sources** in the UI; the API field name `context` is preserved for wire compatibility.
+- "Evaluate all" (admin action on a **Session**) is **not literal**. The endpoint enqueues **Scores** only for Queries that already have a user `feedback` value (non-zero), are not yet evaluated, and fits within `EVALUATE_UPPER_LIMIT`. UI copy must reflect this — never label it as "score every answer in this chat".

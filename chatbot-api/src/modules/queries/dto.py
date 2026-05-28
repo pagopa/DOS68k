@@ -56,6 +56,5 @@ class QueryResponseDTO(BaseModel):
         Optional[str], Field(alias="tracingTraceId", default=None)
     ]
     is_evaluated: Annotated[bool, Field(default=False, alias="isEvaluated")]
-    scores: Annotated[
-        Optional[Scores], Field(default=None)
-    ]
+    scores: Annotated[Optional[Scores], Field(default=None)]
+    feedback: Annotated[int, Field(default=0)]

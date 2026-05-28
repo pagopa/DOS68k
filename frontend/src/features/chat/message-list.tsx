@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { QueryResponseDTO } from '@/lib/api'
 import { Sources } from './sources'
+import { FeedbackButtons } from './feedback-buttons'
+import { useSubmitFeedback } from './hooks'
 
 interface PendingEntry {
   question: string
@@ -10,6 +12,7 @@ interface PendingEntry {
 }
 
 interface MessageListProps {
+  sessionId: string
   queries: QueryResponseDTO[]
   pending: PendingEntry | null
 }
@@ -46,8 +49,9 @@ function ThinkingIndicator() {
   )
 }
 
-export function MessageList({ queries, pending }: MessageListProps) {
+export function MessageList({ sessionId, queries, pending }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const submitFeedback = useSubmitFeedback(sessionId)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -61,7 +65,15 @@ export function MessageList({ queries, pending }: MessageListProps) {
         <div key={q.id} className="flex flex-col gap-2">
           <QuestionBubble text={q.question} />
           <AnswerBubble text={q.answer} />
-          <Sources context={q.context} />
+          <div className="flex items-center justify-between">
+            <Sources context={q.context} />
+            <FeedbackButtons
+              feedback={q.feedback}
+              onSubmit={(value) =>
+                submitFeedback.mutateAsync({ queryId: q.id, value })
+              }
+            />
+          </div>
         </div>
       ))}
 

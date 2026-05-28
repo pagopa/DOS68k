@@ -61,6 +61,20 @@ export function useQueries(sessionId: string, enabled = true) {
   })
 }
 
+export function useSubmitFeedback(sessionId: string) {
+  const qc = useQueryClient()
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: ({ queryId, value }: { queryId: string; value: 1 | -1 }) =>
+      client.submitFeedback(sessionId, queryId, value),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queriesKey(sessionId) }),
+    onError: (err) => {
+      const message = err instanceof ApiError ? `${err.status}: ${err.message}` : 'Failed to submit feedback'
+      toast.error(message)
+    },
+  })
+}
+
 export function useCreateQuery(sessionId: string) {
   const qc = useQueryClient()
   const client = useApiClient()

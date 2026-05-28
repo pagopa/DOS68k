@@ -225,6 +225,9 @@ def get_query_service_get_queries_200_mock():
                     ],
                     "created_at": "2024-06-01T12:00:00Z",
                     "expires_at": "2024-06-01T13:00:00Z",
+                    "feedback": 0,
+                    "is_evaluated": False,
+                    "scores": None,
                 }
             ]
 

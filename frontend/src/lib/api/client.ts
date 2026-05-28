@@ -10,9 +10,9 @@ async function doRequest<T>(
   baseUrl: string,
   path: string,
   getToken: GetToken,
-  init: RequestInit & { json?: unknown; timeoutMs?: number } = {}
+  init: RequestInit & { json?: unknown; form?: Record<string, string | number>; timeoutMs?: number } = {}
 ): Promise<T> {
-  const { json, timeoutMs, ...rest } = init
+  const { json, form, timeoutMs, ...rest } = init
   if (timeoutMs) rest.signal = AbortSignal.timeout(timeoutMs)
   const headers: Record<string, string> = {}
 
@@ -22,6 +22,11 @@ async function doRequest<T>(
   if (json !== undefined) {
     headers['Content-Type'] = 'application/json'
     rest.body = JSON.stringify(json)
+  } else if (form !== undefined) {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    rest.body = Object.entries(form)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&')
   }
 
   const res = await fetch(`${baseUrl}${path}`, {
@@ -40,8 +45,10 @@ async function doRequest<T>(
 }
 
 export function createApiClient(baseUrl: string, getToken: GetToken) {
-  const req = <T>(path: string, init?: RequestInit & { json?: unknown }) =>
-    doRequest<T>(baseUrl, path, getToken, init)
+  const req = <T>(
+    path: string,
+    init?: RequestInit & { json?: unknown; form?: Record<string, string | number> }
+  ) => doRequest<T>(baseUrl, path, getToken, init)
 
   return {
     getSessions(): Promise<SessionDTO[]> {
@@ -58,6 +65,12 @@ export function createApiClient(baseUrl: string, getToken: GetToken) {
     },
     createQuery(sessionId: string, input: CreateQueryInput): Promise<QueryResponseDTO> {
       return req(`/queries/${sessionId}`, { method: 'POST', json: input })
+    },
+    submitFeedback(sessionId: string, queryId: string, value: 1 | -1): Promise<unknown> {
+      return req(`/evaluate/simple-feedback/${sessionId}/${queryId}`, {
+        method: 'POST',
+        form: { feedback: value },
+      })
     },
     getIndexes(): Promise<string[]> {
       return req('/index/all')
