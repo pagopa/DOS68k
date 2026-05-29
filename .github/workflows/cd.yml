@@ -61,6 +61,12 @@ jobs:
             chatbot-api:
               - 'chatbot-api/**'
               - 'dos-utility/**'
+            chatbot-evaluate-api:
+              - 'chatbot-evaluate/api/**'
+              - 'dos-utility/**'
+            chatbot-evaluate-worker:
+              - 'chatbot-evaluate/worker/**'
+              - 'dos-utility/**'
             chatbot-index-api:
               - 'chatbot-index/api/**'
               - 'dos-utility/**'
