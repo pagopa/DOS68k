@@ -46,7 +46,7 @@ services:
       - qdrant
 
   chatbot-evaluate-api:
-    image: ghcr.io/pagopa/dos68k/chatbot-evaluate-api:latest
+    image: ghcr.io/pagopa/dos68k/chatbot-evaluate-api:latest@sha256:c9aca87ae3b541ad1d72fd3eacc29968b9ef3ed28f979598f0976f2146fd238e
     env_file:
       - ./chatbot-evaluate/api/.env
     ports:
@@ -57,7 +57,7 @@ services:
       - localstack
 
   chatbot-evaluate-worker:
-    image: ghcr.io/pagopa/dos68k/chatbot-evaluate-worker:latest
+    image: ghcr.io/pagopa/dos68k/chatbot-evaluate-worker:latest@sha256:cde37219f5148ce58277d0d40c21f99258027fd99694f579fa2bf34075be7831
     env_file:
       - ./chatbot-evaluate/worker/.env
     depends_on:

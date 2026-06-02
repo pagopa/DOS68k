@@ -156,7 +156,7 @@ services:
   # chatbot-index api and worker .env files (default: documents). Credentials
   # come from ./.env.storage (MINIO_ROOT_USER / MINIO_ROOT_PASSWORD).
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:latest@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727
     depends_on:
       - minio
     env_file:
