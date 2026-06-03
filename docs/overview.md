@@ -21,6 +21,12 @@ and every piece of infrastructure (database, queue, storage, vector database,
 authentication, tracing) is swappable by configuration rather than code. See
 [Architecture](#architecture) below.
 
+The chatbot is a **ReAct agent**: for each question it reasons in steps,
+deciding when to call a retrieval tool to pull relevant passages from your
+documents before it writes an answer. Because this pattern depends on the
+language model reliably following its reasoning format, the *choice of model is
+load-bearing* — see [the model limitation below](#what-you-cannot-do-current-limitations).
+
 ## Roles
 
 DOS68K enforces exactly two roles:
@@ -60,10 +66,16 @@ in (see [authentication](#authentication-model) below).
 These are real constraints in the current codebase. Read them before planning a
 deployment — several are easy to trip over.
 
-- **LLM and embeddings: Google Gemini only.** This is the only model provider
-  wired end to end. A Google API key is mandatory. Other providers (OpenAI,
-  Azure OpenAI, Bedrock) appear as commented-out stubs and require code changes
-  to enable.
+- **LLM and embeddings: Google Gemini only — and only one model is tested.**
+  Two separate constraints stack here. First, Google is the only model provider
+  *wired* end to end: a Google API key is mandatory, and other providers (OpenAI,
+  Azure OpenAI, Bedrock) appear as commented-out stubs that require code changes
+  to enable. Second, even within Google, only `gemini-2.5-flash` has been
+  *tested* to drive the ReAct agent correctly. These are not the same guarantee:
+  wiring a provider makes it run, but the [ReAct pattern](#what-dos68k-is)
+  depends on the model emitting a strict reasoning format, so a different or
+  weaker model can produce a broken reasoning loop even once wired. Changing
+  `MODEL_ID` away from the tested model is unsupported.
 - **NoSQL database: DynamoDB only.** No other NoSQL backend is implemented.
 - **Document formats: PDF, Markdown, plain text only.** Other file types are
   rejected.
