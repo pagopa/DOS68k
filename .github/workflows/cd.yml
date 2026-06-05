@@ -3,34 +3,13 @@ name: Build and Push Docker Images
 on:
   push:
     branches:
-      - main
+      - internal/deploy-pagopa-v2
     paths:
-      - 'auth/Dockerfile'
-      - 'auth/src/**'
-      - 'auth/pyproject.toml'
       - 'chatbot-api/Dockerfile'
       - 'chatbot-api/src/**'
       - 'chatbot-api/pyproject.toml'
-      - 'chatbot-evaluate/api/Dockerfile'
-      - 'chatbot-evaluate/api/src/**'
-      - 'chatbot-evaluate/api/pyproject.toml'
-      - 'chatbot-evaluate/worker/Dockerfile'
-      - 'chatbot-evaluate/worker/src/**'
-      - 'chatbot-evaluate/worker/pyproject.toml'
-      - 'chatbot-index/api/Dockerfile'
-      - 'chatbot-index/api/src/**'
-      - 'chatbot-index/api/pyproject.toml'
-      - 'chatbot-index/worker/Dockerfile'
-      - 'chatbot-index/worker/src/**'
-      - 'chatbot-index/worker/pyproject.toml'
-      - 'masking/Dockerfile'
-      - 'masking/src/**'
-      - 'masking/pyproject.toml'
       - 'dos-utility/src/**'
       - 'dos-utility/pyproject.toml'
-      - 'frontend/Dockerfile'
-      - 'frontend/src'
-      - 'frontend/pnpm-lock.yaml'
 
 permissions:
   contents: read
@@ -53,28 +32,8 @@ jobs:
         with:
         # Add remaining services once completed
           filters: |
-            frontend:
-              - 'frontend/**'
-            auth:
-              - 'auth/**'
-              - 'dos-utility/**'
             chatbot-api:
               - 'chatbot-api/**'
-              - 'dos-utility/**'
-            chatbot-evaluate-api:
-              - 'chatbot-evaluate/api/**'
-              - 'dos-utility/**'
-            chatbot-evaluate-worker:
-              - 'chatbot-evaluate/worker/**'
-              - 'dos-utility/**'
-            chatbot-index-api:
-              - 'chatbot-index/api/**'
-              - 'dos-utility/**'
-            chatbot-index-worker:
-              - 'chatbot-index/worker/**'
-              - 'dos-utility/**'
-            masking:
-              - 'masking/**'
               - 'dos-utility/**'
 
       - id: set-matrix
@@ -141,7 +100,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=pagopa-v2
 
       - uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
