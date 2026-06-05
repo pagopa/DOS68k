@@ -1,7 +1,7 @@
 import asyncio
 from abc import abstractmethod
 from typing import Self, List, Annotated, Optional, Any
-from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, ConfigDict
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -11,10 +11,11 @@ from llama_index.core.vector_stores.types import (
 
 
 class ObjectData(BaseModel):
+    model_config = ConfigDict(serialize_by_alias=True, populate_by_name=True)
     """Represents a single object to be stored in the vector database. Each object corresponds to a chunk of text from a file, along with its embedding vector."""
 
     filename: Annotated[
-        str, Field(description="The name of the file the object comes from.")
+        str, Field(description="The name of the file the object comes from.", alias="doc_id")
     ]
     chunk_id: Annotated[
         int,
@@ -22,7 +23,7 @@ class ObjectData(BaseModel):
             description="The chunk ID within the file. If the file is not chunked set it to 0."
         ),
     ]
-    content: Annotated[str, Field(description="The content of the chunk.")]
+    content: Annotated[str, Field(description="The content of the chunk.", alias="text")]
     vector: Annotated[
         List[float],
         Field(
