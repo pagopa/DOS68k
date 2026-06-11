@@ -32,16 +32,17 @@ Please use **English** for all interactions.
 ## Types of contributions
 
 **Report a bug**
-
 Use GitHub Issues to report defects, unexpected behavior, configuration problems, or inconsistencies in the project.
+- [Template Bug-Report](.github/ISSUE_TEMPLATE/BUG-REPORT.yaml)
 
 **Suggest an improvement**
-
 Use GitHub Issues or Discussions to propose enhancements, new ideas, usability improvements, integrations, or developer experience improvements.
+- [Template ENHANCEMENT-REQUEST](.github/ISSUE_TEMPLATE/ENHANCEMENT-REQUEST.yaml)
 
 **Improve documentation**
-
 Documentation feedback is highly encouraged. Missing information, inaccuracies, unclear instructions, and documentation improvements can all be reported through GitHub Issues.
+- [Template DOCUMENTATION-FEEDBACK](.github/ISSUE_TEMPLATE/DOCUMENTATION-FEEDBACK.yaml)
+
 
 **Participate in discussions**
 
