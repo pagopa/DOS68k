@@ -1,0 +1,59 @@
+name: Bug Report
+description: Report a defect, unexpected behavior, or configuration issue.
+title: "[Bug]: "
+labels:
+  - bug
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug in DOS68k.
+
+        Before submitting, please make sure you are not including secrets,
+        credentials, personal data, or other sensitive information.
+
+  - type: textarea
+    id: trying-to-do
+    attributes:
+      label: What are you trying to do?
+      description: Describe the action, workflow, or use case where the problem occurred.
+      placeholder: "Example: I am trying to index a PDF document and query it through the chatbot."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: What is the expected result?
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: What happened instead?
+      description: Describe the actual behavior, error, or unexpected result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide the minimum steps needed to reproduce the issue.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Relevant context
+      description: Share relevant links, logs, configuration details, screenshots, or traces. Please mask sensitive information.
+    validations:
+      required: false
