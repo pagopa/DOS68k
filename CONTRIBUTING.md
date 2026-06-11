@@ -25,9 +25,7 @@ All project interactions take place on GitHub:
 At this stage, the primary contribution channels are:
 
 - **Issues** for bug reports, improvement proposals, documentation feedback, and questions
-- **Discussions** for ideas, feedback, and broader conversations about the project
-
-Additional contribution workflows may be introduced as the project and its governance mature.
+- **Discussions** for questions, ideas, governance topics, and broader conversations about the project
 
 Please use **English** for all interactions.
 
