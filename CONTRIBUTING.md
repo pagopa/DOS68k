@@ -1,53 +1,63 @@
 > ⚠️ **Draft – Not yet approved**
->
-> This document is a working draft created during the early bootstrap
-> phase of the DOS68k project.
-> It is not binding and may change following internal review and
-> organizational approval.
+> 
+> This document is part of the community bootstrap phase of the DOS68k project.
+> It is not binding and may change as the project governance and contribution
+> processes evolve.
+> 
+
+**Status:** Draft  
+**Version:** 0.1.0  
+**Last updated:** 2026-06-11  
+**Applies to:** Community bootstrap phase
 
 # Contributing to DOS68k
 
 Thank you for your interest in contributing to DOS68k.
 
-At this stage, the project is in an early bootstrap phase.
-Community participation is welcome and encouraged, even before
-the introduction of production-ready code.
+DOS68k is currently in an early bootstrap phase. Community participation is welcome and encouraged as the project evolves and its governance model takes shape.
+
+This document describes the contribution mechanisms currently available and will evolve together with the project.
 
 ## Where collaboration happens
 
 All project interactions take place on GitHub:
 
-- **Issues** for bug reports, improvement proposals, or questions
-- **Discussions** for ideas, feedback, and broader proposals
-- **Pull Requests** for bug reports, improvement proposal 
+At this stage, the primary contribution channels are:
+
+- **Issues** for bug reports, improvement proposals, documentation feedback, and questions
+- **Discussions** for ideas, feedback, and broader conversations about the project
+
+Additional contribution workflows may be introduced as the project and its governance mature.
 
 Please use **English** for all interactions.
 
 ## Types of contributions
 
-DOS68k is expected to welcome different types of contributions, including:
+**Report a bug**
 
-- Opening issues to report bugs, suggest improvements, or share feedback
-- Participating in discussions about project direction, architecture, and governance
-- Improving documentation and community resources
-- Contributing code, such as bug fixes, new features, refactoring, or tests
-- Reviewing pull requests and providing technical feedback
+Use GitHub Issues to report defects, unexpected behavior, configuration problems, or inconsistencies in the project.
 
-Some contribution types (especially code-related ones) will become fully
-available as the project codebase and technical workflows are introduced.
+**Suggest an improvement**
 
-## Commit messages (recommended)
+Use GitHub Issues or Discussions to propose enhancements, new ideas, usability improvements, integrations, or developer experience improvements.
 
-During the bootstrap phase, commit messages should be clear and descriptive.
+**Improve documentation**
 
-When applicable, we recommend using a scope prefix to improve readability
-for external contributors, for example:
+Documentation feedback is highly encouraged. Missing information, inaccuracies, unclear instructions, and documentation improvements can all be reported through GitHub Issues.
 
-- `[community] Add draft community guidelines`
-- `[governance] Update proposed decision-making process`
+**Participate in discussions**
 
-This is a **recommendation**, not a requirement, and may evolve as the
-project governance matures.
+Contributors are encouraged to participate in conversations related to project direction, architecture, governance, and community practices.
+
+**Pull Requests**
+
+DOS68k is currently defining its contribution and governance processes.
+
+For this reason, Pull Requests are not yet considered a primary contribution channel.
+
+Contributors are encouraged to use GitHub Issues and Discussions to report bugs, suggest improvements and participate in project discussions.
+
+A dedicated Pull Request workflow will be introduced in a future iteration of the project.
 
 ## Pull Requests (early-stage)
 
@@ -66,13 +76,20 @@ Project governance, roles, and decision-making processes are described in
 For significant or cross-cutting proposals, contributors are encouraged
 to start with a GitHub Discussion, as outlined in the governance document.
 
+## License
+
+DOS68k is released under the Mozilla Public License 2.0 (MPL-2.0).
+
+Contributors are expected to submit content and contributions that are compatible with the project license.
+
+Additional contribution requirements, if needed, will be defined as the project's governance and contribution model evolve.
+
 ## Code of Conduct
 
 The project's Code of Conduct is described in
 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
 
-The Code of Conduct will be defined and approved at organizational level.
-Until then, this file serves as a placeholder.
+All participants are expected to follow the Code of Conduct and the Community Guidelines when interacting within project spaces.
 
 
 ---
