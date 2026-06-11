@@ -48,14 +48,13 @@ Documentation feedback is highly encouraged. Missing information, inaccuracies, 
 Contributors are encouraged to participate in conversations related to project direction, architecture, governance, and community practices.
 
 **Pull Requests**
+The public contribution workflow for Pull Requests is currently under definition.
 
-DOS68k is currently defining its contribution and governance processes.
+At this stage, external contributors are encouraged to participate through GitHub Issues and Discussions.
 
-For this reason, Pull Requests are not yet considered a primary contribution channel.
+Pull Requests may still be used by the internal project team as part of the regular development workflow.
 
-Contributors are encouraged to use GitHub Issues and Discussions to report bugs, suggest improvements and participate in project discussions.
-
-A dedicated Pull Request workflow will be introduced in a future iteration of the project.
+Guidelines for external code, documentation, and community Pull Request contributions will be published as the project governance and contribution model evolve.
 
 ## Pull Requests (early-stage)
 
