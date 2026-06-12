@@ -2,18 +2,6 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class Reference(BaseModel):
-    """A source document retrieved from the vector database."""
-
-    source: str
-
-
-class RAGOutput(BaseModel):
-    """Structured output for individual RAG tool calls."""
-
-    response: str
-
-
 class DOS68KAgentOutput(BaseModel):
     """Final structured output produced by the agent."""
 
