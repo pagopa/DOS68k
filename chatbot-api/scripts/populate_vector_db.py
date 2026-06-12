@@ -422,8 +422,9 @@ def get_embeddings(
         texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
 ) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
-    from google import genai
-    from google.genai import types as genai_types
+    if embed_provider == "google":
+        from google import genai
+        from google.genai import types as genai_types
 
         client = genai.Client(api_key=api_key)
         response = client.models.embed_content(
@@ -449,8 +450,7 @@ def get_embeddings(
 
         return [i[:768] for i in embed_model.get_text_embedding_batch(texts)]
 
-    # mock: random unit vectors
-    return [random_unit_vector(embed_dim) for _ in texts]
+    raise Exception(f"Unknown provider {embed_provider}")
 
 
 # ---------------------------------------------------------------------------
@@ -604,7 +604,7 @@ def show_summary(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Populate the vector DB with sample documents for chatbot testing. "
-        "Run with no flags to launch the interactive wizard.",
+                    "Run with no flags to launch the interactive wizard.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
