@@ -7,6 +7,7 @@ db/
 queue-data/
 vector-db/
 localstack/data/
+.config
 .venv
 qdrant_storage/
 
@@ -15,3 +16,5 @@ chatbot-index/evaluation*
 Makefile
 chatbot-api/evaluation*
 chatbot-index/worker/scripts*
+.DS_Store
+.idea
