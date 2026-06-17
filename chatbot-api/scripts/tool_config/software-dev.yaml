@@ -1,0 +1,11 @@
+index_id: software-dev
+
+name: SoftwareDevTool
+
+description: >
+  RAG tool that retrieves information about software development topics including
+  REST APIs, Docker, Python asyncio, FastAPI, vector databases (Redis, Qdrant),
+  Retrieval-Augmented Generation (RAG), LlamaIndex, and Pydantic.
+  Use this tool when the user asks about any of these technologies or related
+  software engineering concepts.
+  Do NOT use this tool for questions unrelated to software development.

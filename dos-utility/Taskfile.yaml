@@ -1,0 +1,16 @@
+version: "3"
+
+tasks:
+  test:
+    desc: Run unit tests with coverage threshold (default 80%)
+    summary: Run unit tests with coverage, failing if below the minimum threshold
+    vars:
+      COVERAGE_MIN_THREASHOLD: '{{.COV_THREASHOLD| default 80}}'
+    cmds:
+      - uv run pytest --cov=dos_utility --cov-report=term-missing --cov-fail-under={{.COVERAGE_MIN_THREASHOLD}}
+
+  test:quick:
+    desc: Run unit tests with coverage report, no threshold check
+    summary: Run unit tests with coverage report without enforcing a minimum threshold
+    cmds:
+      - uv run pytest --cov=dos_utility --cov-report=term-missing

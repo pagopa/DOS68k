@@ -1,0 +1,25 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .env import get_settings
+from .modules.index.controller import router as index_router
+from .modules.document.controller import router as document_router
+from .modules.health.controller import router as health_router
+
+app: FastAPI = FastAPI(
+    title="Chatbot Index API",
+    description="API for interacting with the Chatbot Index service.",
+    docs_url="/",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[get_settings().frontend_url],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(router=health_router)
+app.include_router(router=index_router)
+app.include_router(router=document_router)

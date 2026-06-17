@@ -1,0 +1,144 @@
+http:
+  middlewares:
+    # Calls auth service; if it returns 2xx, copies X-User-Id and X-User-Role
+    # from the auth response onto the upstream request (overriding any
+    # client-supplied values).
+    auth:
+      forwardAuth:
+        address: "http://auth:3000/protected/jwt-check"
+        authResponseHeaders:
+          - X-User-Id
+          - X-User-Role
+
+    # Removes the bearer token from the upstream request. The gateway has
+    # already validated it; backends consume identity from X-User-Id/Role.
+    strip-authorization:
+      headers:
+        customRequestHeaders:
+          Authorization: ""
+
+    cors:
+      headers:
+        accessControlAllowOriginList:
+          - http://localhost
+          - http://localhost:5173
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+          - PATCH
+        accessControlExposeHeaders:
+          - Content-Length
+        accessControlMaxAge: 7200
+        accessControlAllowCredentials: true
+
+    ratelimit:
+      rateLimit:
+        average: 100
+        burst: 100
+
+    strip-auth-prefix:
+      stripPrefix:
+        prefixes:
+          - /auth
+
+    strip-chatbot-prefix:
+      stripPrefix:
+        prefixes:
+          - /chatbot
+
+    strip-chatbot-index-prefix:
+      stripPrefix:
+        prefixes:
+          - /chatbot-index
+
+  routers:
+    # Public passthrough to the auth service (e.g. login, health). Not
+    # protected by forwardAuth, otherwise we'd recurse.
+    auth-passthrough:
+      rule: "PathPrefix(`/auth/`)"
+      entryPoints: [web]
+      service: auth
+      middlewares:
+        - cors
+        - ratelimit
+        - strip-auth-prefix
+
+    # chatbot-api: sessions + queries
+    chatbot-api-core:
+      rule: "PathPrefix(`/sessions`) || PathPrefix(`/queries`)"
+      entryPoints: [web]
+      service: chatbot-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+
+    # chatbot-evaluate-api: evaluations + simple feedback
+    chatbot-evaluate-api-core:
+      rule: "PathPrefix(`/evaluate`)"
+      entryPoints: [web]
+      service: chatbot-evaluate-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+
+    # chatbot-index-api: indexes + index-side health probes
+    chatbot-index-api-core:
+      rule: "PathPrefix(`/index`) || Path(`/health/queue`) || Path(`/health/storage`) || Path(`/health/vdb`)"
+      entryPoints: [web]
+      service: chatbot-index-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+
+    # Generic passthroughs (strip prefix, forward to the named service)
+    chatbot-passthrough:
+      rule: "PathPrefix(`/chatbot/`)"
+      entryPoints: [web]
+      service: chatbot-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+        - strip-chatbot-prefix
+
+    chatbot-index-passthrough:
+      rule: "PathPrefix(`/chatbot-index/`)"
+      entryPoints: [web]
+      service: chatbot-index-api
+      middlewares:
+        - cors
+        - ratelimit
+        - auth
+        - strip-authorization
+        - strip-chatbot-index-prefix
+
+  services:
+    auth:
+      loadBalancer:
+        servers:
+          - url: "http://auth:3000"
+    chatbot-api:
+      loadBalancer:
+        servers:
+          - url: "http://chatbot-api:8000"
+    chatbot-index-api:
+      loadBalancer:
+        servers:
+          - url: "http://chatbot-index-api:8000"
+    chatbot-evaluate-api:
+      loadBalancer:
+        servers:
+          - url: "http://chatbot-evaluate-api:8000"

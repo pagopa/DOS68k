@@ -1,0 +1,12 @@
+index_id: borgonero-fc
+
+name: BorgoneroFCTool
+
+description: >
+  RAG tool that retrieves information about Borgonero FC, an Italian football
+  club from Piedmont. Covers the club's history and founding, Stadio delle Valli,
+  season results (including 2023-24 Serie C), player statistics, transfer activity,
+  and coaching staff.
+  Use this tool when the user asks about Borgonero FC, its matches, players,
+  stadium, or club history.
+  Do NOT use this tool for questions unrelated to Borgonero FC.
