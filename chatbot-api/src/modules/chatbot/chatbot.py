@@ -1,20 +1,23 @@
 from logging import Logger
 from functools import lru_cache
-from typing import Optional, List, Dict, Self, Any
-from workflows import Context
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.core.llms.llm import LLM, ToolSelection
-from llama_index.core.base.embeddings.base import BaseEmbedding
-from llama_index.core.agent.workflow import AgentOutput, ReActAgent
-from dos_utility.utils.logger import get_logger
+from typing import Any, Dict, List, Optional, Self
 
-from .models import get_llm, get_embed_model
-from .tool.loader import load_tools
-from .agent import get_agent, get_agent_yaml_settings, AgentYamlSettings
-from .env import get_chatbot_settings, ChatbotSettings
+from dos_utility.utils.logger import get_logger
+from dos_utility.agent import (
+    AgentConfig,
+    AgentInterface,
+    AgentResponse,
+    ChatGenerationException,
+    ChatTurn,
+    RagToolSpec,
+    get_agent_client,
+)
+
+from .tool.loader import load_rag_tool_specs
+from .agent import AgentYamlSettings, get_agent_yaml_settings
+from .env import ChatbotSettings, get_chatbot_settings
 from .structured_outputs import DOS68KAgentOutput
-from ..env import get_logging_settings, LogSettings
+from ..env import LogSettings, get_logging_settings
 
 
 log_settings: LogSettings = get_logging_settings()
@@ -27,216 +30,93 @@ FALLBACK_RESPONSE: str = (
 
 
 class Chatbot:
-    """RAG-based chatbot backed by a ReActAgent and one or more query engine tools.
+    """Thin orchestrator on top of the provider-agnostic `AgentInterface`.
 
-    Tools are loaded from YAML configs at startup (see tool/loader.py).
-    Agent behaviour (system prompt) is loaded from a YAML config (see agent.yaml).
-    A single LLM instance is used for both RAG synthesis and agent reasoning,
-    tuned via temperature_agent.
+    Loads tool and agent YAML configurations from `ChatbotSettings`, builds an
+    `AgentInterface` instance via `dos_utility.agent.get_agent_client` and
+    delegates every chat-generation request to it. The actual LLM provider
+    (model, embeddings, reasoning loop, structured output parsing, ...) lives
+    entirely inside `dos_utility`, so this module has no direct dependency on
+    any LLM SDK.
     """
 
     def __init__(self: Self):
         self.__settings: ChatbotSettings = get_chatbot_settings()
 
-        # LLM for agent reasoning and RAG synthesis.
-        self.model: LLM = get_llm(
-            provider=self.__settings.provider,
-            model_id=self.__settings.model_id,
-            temperature=self.__settings.temperature_agent,
-            max_tokens=self.__settings.max_tokens,
-            api_key=self.__settings.model_api_key,
+        agent_yaml: AgentYamlSettings = get_agent_yaml_settings(
+            file=self.__settings.agent_config_path
         )
-        self.embed_model: BaseEmbedding = get_embed_model(
-            provider=self.__settings.provider,
-            model_id=self.__settings.embed_model_id,
-            embed_batch_size=self.__settings.embed_batch_size,
-            embed_dim=self.__settings.embed_dim,
-            task_type=self.__settings.embed_task,
-            retries=self.__settings.embed_retries,
-            retry_min_seconds=self.__settings.embed_retry_min_seconds,
-            api_key=self.__settings.model_api_key,
+        rag_tools: List[RagToolSpec] = load_rag_tool_specs(
+            config_dir=self.__settings.tools_config_dir
         )
-        # Load all tools from YAML configs. Each tool wraps a vector index.
-        tools_map: Dict[str, QueryEngineTool] = load_tools(
-            llm=self.model,
-            embed_model=self.embed_model,
-            similarity_top_k=self.__settings.similarity_topk,
-            config_dir=self.__settings.tools_config_dir,
+        self.tool_names: List[str] = [t.name for t in rag_tools]
+
+        self.agent: AgentInterface = get_agent_client(
+            rag_tools=rag_tools,
+            agent_config=AgentConfig(
+                name=agent_yaml.name,
+                description=agent_yaml.description,
+                system_prompt=agent_yaml.system_prompt,
+                system_header=agent_yaml.system_header,
+            ),
+            output_schema=DOS68KAgentOutput,
         )
-        self.tool_names: List[str] = list(tools_map.keys())
+
         logger.debug(
-            "Chatbot initialized - provider=%s, model_id=%s, tools=%s",
-            self.__settings.provider,
-            self.__settings.model_id,
+            "Chatbot initialized - tools=%s",
             self.tool_names,
         )
 
-        agent_config: AgentYamlSettings = get_agent_yaml_settings(
-            file=self.__settings.agent_config_path
-        )
-        self.agent: ReActAgent = get_agent(
-            name=agent_config.name,
-            description=agent_config.description,
-            llm=self.model,
-            system_prompt=agent_config.system_prompt,
-            output_cls=DOS68KAgentOutput,
-            system_header=agent_config.system_header,
-            tools=list(tools_map.values()),
-        )
+    def __messages_to_history(
+        self: Self, messages: Optional[List[Dict[str, str]]]
+    ) -> List[ChatTurn]:
+        if not messages:
+            return []
 
-    def __get_context(
-        self: Self, tool_calls: List[ToolSelection]
-    ) -> List[Dict[str, Any]]:
-        """Retrieve context for the answer, if any RAG tool has been called.
-
-        Args:
-            tool_calls (List[ToolSelection]): tool called
-
-        Returns:
-            Dict[str, Dict[str, Any]]: for each file (saved in the vector db), it returns the retrieved chunk.
-                                        Example: [
-                                            {
-                                                "filename": "test.md",
-                                                "chunk_id": 1,
-                                                "content": "some content",
-                                                "score": 0.9,
-                                            },
-                                            ...,
-                                        ],
-        """
-        sources: List[Dict[str, Any]] = []
-        for tool_call in tool_calls:
-            nodes = getattr(tool_call.tool_output.raw_output, "source_nodes", [])
-
-            for node in nodes:
-                sources.append(
-                    {
-                        "chunk_id": node.metadata.get("chunk_id", ""),
-                        "content": node.text,
-                        "score": node.score,
-                        "filename": node.metadata.get("filename", ""),
-                    }
-                )
-
-        sources.sort(key=lambda s: (s["score"] is None, -(s["score"] or 0)))
-
-        return sources
-
-    def __get_response_json(self: Self, engine_response: AgentOutput) -> Dict[str, Any]:
-        """Converts the agent's raw output into the API response dict.
-
-        Args:
-            engine_response: The AgentOutput returned by agent.run(). Its
-                structured_response field holds the validated AgentOutput Pydantic
-                model as a dict when parsing succeeded, or a non-dict value on failure.
-
-        Returns:
-            Dict with keys: response, tags, contexts.
-        """
-        structured: Optional[Dict[str, Any]] = (
-            engine_response.structured_response
-        )  # This is the DOS68KAgentOutput class
-
-        if not isinstance(structured, dict):
-            logger.debug(
-                "Structured output parsing failed - got type=%s, falling back to error response",
-                type(structured).__name__,
-            )
-            # Structured output parsing failed — return a safe fallback.
-            return {
-                "response": FALLBACK_RESPONSE,
-                "tags": [],
-                "context": [],
-            }
-
-        logger.debug(
-            "Structured output parsed successfully - tool_calls=%d",
-            len(engine_response.tool_calls),
-        )
-        return {
-            "response": structured["response"],
-            "tags": [],  # Left missing for now
-            "context": self.__get_context(tool_calls=engine_response.tool_calls),
-        }
-
-    def __messages_to_chathistory(
-        self: Self, messages: Optional[List[Dict[str, str]]] = None
-    ) -> List[ChatMessage]:
-        """Converts the API chat history format into LlamaIndex ChatMessage objects.
-
-        Args:
-            messages: List of dicts with "question" and "answer" keys, ordered oldest first.
-                The "answer" value may be None for the last turn if the assistant hasn't replied yet.
-
-        Returns:
-            Flat list of alternating USER / ASSISTANT ChatMessage objects.
-        """
-        chat_history: List[ChatMessage] = []
-
-        if messages is not None:
-            for message in messages:
-                user_content: str = message["question"]
-                assistant_content: Optional[str] = (
-                    message["answer"].strip()
-                    if message.get("answer") is not None
-                    else None
-                )
-                chat_history.append(
-                    ChatMessage(role=MessageRole.USER, content=user_content)
-                )
-
-                if assistant_content is not None:
-                    chat_history.append(
-                        ChatMessage(
-                            role=MessageRole.ASSISTANT, content=assistant_content
-                        )
-                    )
-
-        return chat_history
+        return [
+            ChatTurn(question=m["question"], answer=m.get("answer"))
+            for m in messages
+        ]
 
     async def chat_generate(
         self: Self,
         query_str: str,
         messages: Optional[List[Dict[str, str]]] = None,
     ) -> Dict[str, Any]:
-        """Generates a response to the user's query.
+        """Generate a response for `query_str` and return it as a plain dict.
 
         Args:
-            query_str: The user's query string.
-            messages: Chat history. Each dict has "question" and "answer" keys.
+            query_str: The user's current question.
+            messages: Chat history shaped as a list of `{"question", "answer"}` dicts,
+                ordered oldest first.
 
         Returns:
-            Dict with keys: response, tags, references, contexts.
+            Dict with keys: `response`, `tags`, `context`. On failure a safe
+            fallback payload with `FALLBACK_RESPONSE` is returned instead.
         """
-        chat_history: List[ChatMessage] = self.__messages_to_chathistory(
-            messages=messages
-        )
-        logger.debug(f"Converted chat history, {len(chat_history)} messages")
+        history: List[ChatTurn] = self.__messages_to_history(messages=messages)
+        logger.debug("Converted chat history, %d turns", len(history))
 
         try:
-            ctx: Context = Context.from_dict(workflow=self.agent, data={})
-
-            logger.debug("Running agent...")
-            engine_response: AgentOutput = await self.agent.run(
-                user_msg=query_str,
-                chat_history=chat_history,
-                ctx=ctx,
-                early_stopping_method="generate",
+            response: AgentResponse = await self.agent.chat_generate(
+                query=query_str, history=history
             )
-            logger.debug("Agent run completed")
 
-            response_json: Dict[str, Any] = self.__get_response_json(
-                engine_response=engine_response
-            )
-        except Exception as e:
-            response_json = {
-                "response": FALLBACK_RESPONSE,
-                "tags": [],
-                "context": [],
+            return {
+                "response": response.response,
+                "tags": response.tags,
+                "context": [c.model_dump() for c in response.context],
             }
+        except ChatGenerationException as e:
+            logger.warning("Chat generation failed: %s", e)
+        except Exception as e:
             logger.warning(f"Exception: {e}")
 
-        return response_json
+        return {
+            "response": FALLBACK_RESPONSE,
+            "tags": [],
+            "context": [],
+        }
 
 
 @lru_cache

@@ -23,7 +23,7 @@ Service: [chatbot-api](../chatbot-api/README.md). Runs the RAG agent.
 | Variable | Default | Purpose |
 |---|---|---|
 | `PROVIDER` | `google` | Model provider. Only `google` is wired end to end. |
-| `MODEL_ID` | `gemini-2.5-flash` | LLM used to answer. |
+| `MODEL_ID` | `gemini-2.5-flash` | LLM used to answer. Only this model is tested — see note. |
 | `MODEL_API_KEY` | — (**required**) | Google API key. |
 | `MAX_TOKENS` | `1024` | Max tokens generated per answer. |
 | `TEMPERATURE_AGENT` | `0.0` | Agent sampling temperature (`0.0` = deterministic). |
@@ -43,6 +43,11 @@ Service: [chatbot-api](../chatbot-api/README.md). Runs the RAG agent.
 | `AGENT_CONFIG_PATH` | built-in `agent.yaml` | Path to the agent (system prompt) config. |
 | `FRONTEND_URL` | `http://localhost` | Allowed CORS origin. |
 | `LOG_LEVEL` | `20` (INFO) | Python log level. |
+
+> The chatbot is a ReAct agent, which depends on the model following a strict
+> reasoning format. Only `gemini-2.5-flash` has been tested to drive it
+> correctly; changing `MODEL_ID` to another model is unsupported. See
+> [Overview: limitations](./overview.md#what-you-cannot-do-current-limitations).
 
 ## Document Indexing — API
 

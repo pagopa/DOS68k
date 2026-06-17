@@ -10,6 +10,7 @@ Here a list of functionalities this package provide:
 - [NoSQL DB interface](#6-nosql-db-interface)
 - [Utilities](#7-utilities)
 - [Tracing interface](#8-tracing-interface)
+- [Agent interface](#9-agent-interface)
 
 ## 1. SQL DB connection
 
@@ -513,12 +514,12 @@ The interface contract requires that **implementations never block the calling t
 
 `TraceHandle` exposes:
 
-| Method | Description |
-|--------|-------------|
-| `handle.id` | Unique trace ID assigned by the provider |
-| `handle.set_output(str)` | Set the final answer on the trace |
-| `handle.set_metadata(dict)` | Attach arbitrary key/value metadata |
-| `handle.add_span(name, input, output, metadata)` | Record a nested span |
+| Method                                           | Description                              |
+| ------------------------------------------------ | ---------------------------------------- |
+| `handle.id`                                      | Unique trace ID assigned by the provider |
+| `handle.set_output(str)`                         | Set the final answer on the trace        |
+| `handle.set_metadata(dict)`                      | Attach arbitrary key/value metadata      |
+| `handle.add_span(name, input, output, metadata)` | Record a nested span                     |
 
 ### 8.3 Implement new provider
 
@@ -548,3 +549,157 @@ Required env variables:
 export REDIS_HOST=<host>  # Default: localhost
 export REDIS_PORT=<port>  # Default: 6379
 ```
+
+## 9. Agent interface
+
+An adaptive layer that encapsulates **every interaction with an LLM/agent** behind a single provider-agnostic interface. The goal is to keep services (e.g. `chatbot-api`) free of any direct dependency on a concrete LLM SDK: they pass declarative `RagToolSpec`s + an `AgentConfig` and get back a ready-to-use `AgentInterface`. Currently supported providers:
+
+- `llamaindex_google` — LlamaIndex `ReActAgent` driven by Google GenAI (Gemini) for both the LLM and the embeddings, with RAG tools backed by the `dos_utility.vector_db` interface.
+- `llamaindex_openai` — LlamaIndex `ReActAgent` driven by OpenAI for both the LLM and the embeddings, with RAG tools backed by the `dos_utility.vector_db` interface.
+
+### 9.1 Env setup
+
+Select the provider:
+
+```bash
+export AGENT_PROVIDER=<provider>   # llamaindex_google | llamaindex_openai
+```
+
+#### 9.1.1 LlamaIndex + Google GenAI env
+
+```bash
+export AGENT_PROVIDER=llamaindex_google
+export MODEL_ID=<model-id>                  # e.g. gemini-2.5-flash
+export MODEL_API_KEY=<api-key>              # Google GenAI API key
+export MAX_TOKENS=<int>                     # Default: 1024
+export TEMPERATURE_AGENT=<float>            # Default: 0.0 (deterministic)
+
+# Embeddings
+export EMBED_MODEL_ID=<embed-model-id>      # e.g. gemini-embedding-001
+export EMBED_DIM=<int>                      # Default: 768 (must match indexing-time value)
+export EMBED_BATCH_SIZE=<int>               # Default: 100
+export EMBED_TASK=<task>                    # Default: RETRIEVAL_QUERY
+export EMBED_RETRIES=<int>                  # Default: 3
+export EMBED_RETRY_MIN_SECONDS=<float>      # Default: 1.0
+
+# Retrieval
+export SIMILARITY_TOPK=<int>                # Default: 5
+```
+
+The provider must also be installed as an optional dependency on the consumer service:
+
+```toml
+dependencies = ["dos-utility[llamaindex-google]"]
+```
+
+#### 9.1.2 LlamaIndex + OpenAI env
+
+```bash
+export AGENT_PROVIDER=llamaindex_openai
+export MODEL_ID=<model-id>                  # e.g. gpt-4o-mini
+export MODEL_API_KEY=<api-key>              # OpenAI API key
+export MAX_TOKENS=<int>                     # Default: 1024
+export TEMPERATURE_AGENT=<float>            # Default: 0.0 (deterministic)
+export OPENAI_API_BASE=<url>                # Optional, override the OpenAI-compatible API base URL
+
+# Embeddings
+export EMBED_MODEL_ID=<embed-model-id>      # e.g. text-embedding-3-small
+export EMBED_DIM=<int>                      # Default: 1536 (must match indexing-time value)
+export EMBED_BATCH_SIZE=<int>               # Default: 100
+export EMBED_RETRIES=<int>                  # Default: 3
+
+# Retrieval
+export SIMILARITY_TOPK=<int>                # Default: 5
+```
+
+The provider must also be installed as an optional dependency on the consumer service:
+
+```toml
+dependencies = ["dos-utility[llamaindex-openai]"]
+```
+
+### 9.2 How to use it
+
+Always import the interface and the public data models, never the concrete implementation:
+
+```python
+from typing import List, Optional
+from pydantic import BaseModel
+
+from dos_utility.agent import (
+    AgentConfig,
+    AgentInterface,
+    AgentResponse,
+    ChatGenerationException,
+    ChatTurn,
+    RagToolSpec,
+    get_agent_client,
+)
+
+
+class MyOutput(BaseModel):
+    response: str
+    tags: List[str] = []
+
+
+rag_tools: List[RagToolSpec] = [
+    RagToolSpec(
+        index_id="docs",                  # must match an index created via dos_utility.vector_db
+        name="docs_search",
+        description="Search the project documentation.",
+        similarity_top_k=5,               # optional, falls back to SIMILARITY_TOPK
+        qa_prompt=None,                   # optional provider-specific prompt overrides
+        refine_prompt=None,
+    ),
+]
+
+agent: AgentInterface = get_agent_client(
+    rag_tools=rag_tools,
+    agent_config=AgentConfig(
+        name="MyAgent",
+        description="Domain-specific assistant.",
+        system_prompt="You are helpful.",
+        system_header=None,
+    ),
+    output_schema=MyOutput,               # optional structured-output Pydantic model
+)
+
+history: Optional[List[ChatTurn]] = [
+    ChatTurn(question="Who are you?", answer="I am MyAgent."),
+]
+
+try:
+    result: AgentResponse = await agent.chat_generate(
+        query="What can you do?", history=history,
+    )
+    print(result.response, result.tags, result.context)
+except ChatGenerationException as e:
+    # Caller is expected to fall back to a safe default
+    ...
+finally:
+    await agent.close()
+```
+
+The interface exposes:
+
+| Method                                           | Description                                                                            |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `await agent.is_healthy()`                       | Lightweight readiness probe (e.g. a single LLM ping)                                   |
+| `await agent.chat_generate(query, history=None)` | Run the agent for one user turn and return an `AgentResponse(response, tags, context)` |
+| `await agent.close()`                            | Release provider resources (no-op for stateless providers)                             |
+
+`AgentResponse.context` is a list of `ContextChunk(filename, chunk_id, content, score)` describing the retrieved evidence the agent used.
+
+### 9.3 Implement new provider
+
+- Create a class that extends `AgentInterface` (`src/dos_utility/agent/interface.py`). Place it under `src/dos_utility/agent/<provider>/implementation.py`.
+- Add provider-specific settings to `src/dos_utility/agent/<provider>/env.py` (use `pydantic-settings`, mirror the existing providers).
+- Add the provider name to `AgentProvider` in `src/dos_utility/agent/env.py`.
+- Wire the new branch in `get_agent_client()` (`src/dos_utility/agent/__init__.py`).
+- Add the SDK(s) as an optional dependency group in `pyproject.toml` (`<provider>` extra).
+- Write parametrized tests under `test/agent/` (mock the SDK at the boundary, same pattern as the other providers).
+- Update this doc.
+
+### 9.4 Update the interface
+
+If the `AgentInterface` needs new methods, add them as `@abstractmethod`, update all provider implementations and their tests. Check every service that calls `get_agent_client()` for compatibility.

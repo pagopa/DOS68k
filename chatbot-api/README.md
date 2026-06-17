@@ -27,6 +27,10 @@ populates; it does not ingest documents itself.
 - Answers strictly from retrieved content; it is instructed not to fall back on
   the model's own background knowledge, and to refuse out-of-scope or unsafe
   requests.
+- Is a **ReAct agent**: it reasons in steps and decides when to invoke a RAG
+  tool before answering. Because ReAct depends on the model following a strict
+  reasoning format, the model is load-bearing — only `gemini-2.5-flash` is
+  tested. See [Overview: limitations](../docs/overview.md#what-you-cannot-do-current-limitations).
 - Uses **Google Gemini** for both reasoning and query embeddings — a Google API
   key (`MODEL_API_KEY`) is required.
 - Can only retrieve from an Index that has a **Tool config** pointing at it (see

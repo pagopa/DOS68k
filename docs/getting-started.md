@@ -127,13 +127,24 @@ Seed the data with the bundled script (run on your machine, requires `uv`):
 ```bash
 cd chatbot-api
 uv sync
-uv run python scripts/populate_vector_db.py --provider redis --topic all --google-api-key <YOUR_GOOGLE_API_KEY>
+
+# With Google embeddings (default):
+uv run python scripts/populate_vector_db.py --provider redis --topic all \
+  --embed-provider google --google-api-key <YOUR_GOOGLE_API_KEY>
+
+# With OpenAI embeddings:
+uv run python scripts/populate_vector_db.py --provider redis --topic all \
+  --embed-provider openai --openai-api-key <YOUR_OPENAI_API_KEY>
 ```
 
-This embeds the sample documents (with the same model the chatbot queries with)
-and loads them into the vector database. You do **not** need to restart anything
-— the chatbot retrieves live, so the seeded data is searchable on the next
-question.
+The `--embed-provider` flag selects the embedding backend (`google` or `openai`; defaults to `google`).
+Pass `--embed-model-id` to override the model (defaults: `gemini-embedding-001` for Google,
+`text-embedding-3-small` for OpenAI). The model **must match** `EMBED_MODEL_ID` in `chatbot-api/.env`,
+otherwise query embeddings won't align with the stored document vectors and retrieval will return
+irrelevant results. For OpenAI-compatible APIs, `--openai-api-base` overrides the base URL.
+
+This embeds the sample documents and loads them into the vector database. You do **not** need to
+restart anything — the chatbot retrieves live, so the seeded data is searchable on the next question.
 
 Now open http://localhost, click **Continue as User**, and ask something like
 *"What is a REST API?"* or *"What is Borgonero FC's home stadium?"*. You should

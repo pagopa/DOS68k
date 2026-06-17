@@ -20,8 +20,12 @@ _Avoid_: Chat, conversation, thread
 One question/answer turn within a **Session**. Carries the answer plus its **Sources**, auto-tagged topics, a thumbs `feedback` value, and (once evaluated) its **Scores**.
 _Avoid_: Message, prompt, exchange
 
+**Agent**:
+The reasoning component of the chatbot that answers a **Query**. Implemented as a *ReAct agent*: it reasons in steps, deciding when to invoke a **RAG tool** to retrieve passages before composing an answer.
+_Avoid_: bot, assistant, LLM, model (the Agent orchestrates an LLM via the ReAct pattern; the LLM alone is not the Agent)
+
 **RAG tool**:
-A retrieval capability the chatbot agent can invoke, bound to exactly one **Index**. The agent can only retrieve from an Index that has a RAG tool pointing at it. Defined declaratively by a **Tool config** and loaded by `chatbot-api` at startup.
+A retrieval capability the **Agent** can invoke, bound to exactly one **Index**. The Agent can only retrieve from an Index that has a RAG tool pointing at it. Defined declaratively by a **Tool config** and loaded by `chatbot-api` at startup.
 _Avoid_: skill, function, plugin
 
 **Tool config**:
