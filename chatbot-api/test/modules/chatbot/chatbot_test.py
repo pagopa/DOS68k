@@ -28,9 +28,7 @@ def _patch_common(monkeypatch: pytest.MonkeyPatch, agent) -> None:
     monkeypatch.setattr(
         chatbot_module, "get_agent_yaml_settings", get_agent_yaml_settings_mock
     )
-    monkeypatch.setattr(
-        chatbot_module, "load_rag_tool_specs", load_rag_tool_specs_mock
-    )
+    monkeypatch.setattr(chatbot_module, "load_rag_tool_specs", load_rag_tool_specs_mock)
     monkeypatch.setattr(
         chatbot_module, "get_agent_client", build_get_agent_client_mock(agent)
     )
@@ -61,7 +59,7 @@ async def test_chat_generate(monkeypatch: pytest.MonkeyPatch) -> None:
     assert response["context"] == [
         {
             "filename": "file1.pdf",
-            "chunk_id": "1",
+            "chunk_id": 1,
             "content": "some content",
             "score": 0.9,
         }

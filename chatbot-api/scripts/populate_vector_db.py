@@ -408,7 +408,7 @@ TOPICS: dict[str, list[dict]] = {
 }
 
 PROVIDERS = ["redis", "qdrant"]
-EMBED_PROVIDERS = ["google"]
+EMBED_PROVIDERS = ["google", "openai"]
 
 
 # ---------------------------------------------------------------------------
@@ -417,25 +417,47 @@ EMBED_PROVIDERS = ["google"]
 
 
 def get_embeddings(
-    texts: list[str], embed_provider: str, api_key: str | None, embed_dim: int
+    texts: list[str],
+    embed_provider: str,
+    api_key: str | None,
+    embed_dim: int,
+    model_id: str | None = None,
+    api_base: str | None = None,
 ) -> list[list[float]]:
     """Generates embeddings for a list of texts using the given provider."""
-    from google import genai
-    from google.genai import types as genai_types
+    if embed_provider == "google":
+        from google import genai
+        from google.genai import types as genai_types
 
-    client = genai.Client(api_key=api_key)
-    response = client.models.embed_content(
-        # Must match chatbot-api's EMBED_MODEL_ID, or the chatbot's query
-        # embeddings won't align with these document embeddings and retrieval
-        # over the seeded indexes will return irrelevant results.
-        model="gemini-embedding-001",
-        contents=texts,
-        config=genai_types.EmbedContentConfig(
-            output_dimensionality=embed_dim,
-            task_type="RETRIEVAL_DOCUMENT",
-        ),
-    )
-    return [list(e.values) for e in response.embeddings]
+        client = genai.Client(api_key=api_key)
+        response = client.models.embed_content(
+            # Must match chatbot-api's EMBED_MODEL_ID, or the chatbot's query
+            # embeddings won't align with these document embeddings and retrieval
+            # over the seeded indexes will return irrelevant results.
+            model=model_id or "gemini-embedding-001",
+            contents=texts,
+            config=genai_types.EmbedContentConfig(
+                output_dimensionality=embed_dim,
+                task_type="RETRIEVAL_DOCUMENT",
+            ),
+        )
+        return [list(e.values) for e in response.embeddings]
+
+    if embed_provider == "openai":
+        from openai import OpenAI
+
+        kwargs: dict = {"api_key": api_key}
+        if api_base is not None:
+            kwargs["base_url"] = api_base
+        client = OpenAI(**kwargs)
+        response = client.embeddings.create(
+            model=model_id or "text-embedding-3-small",
+            input=texts,
+            dimensions=embed_dim,
+        )
+        return [item.embedding for item in response.data]
+
+    raise ValueError(f"Unsupported embed provider: {embed_provider}")
 
 
 # ---------------------------------------------------------------------------
@@ -450,6 +472,8 @@ async def populate(
     embed_dim: int,
     embed_provider: str,
     api_key: str | None,
+    embed_model_id: str | None = None,
+    api_base: str | None = None,
 ) -> None:
     os.environ["VECTOR_DB_PROVIDER"] = provider
 
@@ -466,7 +490,9 @@ async def populate(
 
     with console.status("[bold]Generating embeddings...", spinner="dots"):
         texts = [doc["content"] for doc in docs]
-        embeddings = get_embeddings(texts, embed_provider, api_key, embed_dim)
+        embeddings = get_embeddings(
+            texts, embed_provider, api_key, embed_dim, embed_model_id, api_base
+        )
     console.print(
         f"[green]✓[/] Generated {len(embeddings)} vectors (dim={len(embeddings[0])})"
     )
@@ -492,7 +518,12 @@ async def populate(
         with console.status("[bold]Verifying with semantic search...", spinner="dots"):
             query_text = docs[0]["content"][:80]
             query_embedding = get_embeddings(
-                [query_text], embed_provider, api_key, embed_dim
+                [query_text],
+                embed_provider,
+                api_key,
+                embed_dim,
+                embed_model_id,
+                api_base,
             )[0]
             results = await vdb.semantic_search(
                 index_name=index_name,
@@ -554,11 +585,18 @@ def run_wizard(args: argparse.Namespace) -> argparse.Namespace:
         if args.embed_provider is None:
             raise KeyboardInterrupt
 
-    if not args.google_api_key:
+    if args.embed_provider == "google" and not args.google_api_key:
         args.google_api_key = questionary.password(
             "Google API key (input hidden):",
         ).ask()
         if not args.google_api_key:
+            raise KeyboardInterrupt
+
+    if args.embed_provider == "openai" and not args.openai_api_key:
+        args.openai_api_key = questionary.password(
+            "OpenAI API key (input hidden):",
+        ).ask()
+        if not args.openai_api_key:
             raise KeyboardInterrupt
 
     return args
@@ -609,7 +647,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--embed-provider",
         choices=EMBED_PROVIDERS,
         default=None,
-        help="Embedding provider. Only 'google' is supported for now. Prompted if omitted.",
+        help="Embedding provider ('google' or 'openai'). Prompted if omitted.",
+    )
+    parser.add_argument(
+        "--embed-model-id",
+        default=None,
+        help=(
+            "Embedding model identifier. Defaults: google → gemini-embedding-001, "
+            "openai → text-embedding-3-small. Must match chatbot-api EMBED_MODEL_ID."
+        ),
     )
     parser.add_argument(
         "--embed-dim",
@@ -632,6 +678,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--google-api-key",
         default=os.environ.get("GOOGLE_API_KEY"),
         help="Google API key. Falls back to GOOGLE_API_KEY env var.",
+    )
+    parser.add_argument(
+        "--openai-api-key",
+        default=os.environ.get("OPENAI_API_KEY"),
+        help="OpenAI API key. Falls back to OPENAI_API_KEY env var.",
+    )
+    parser.add_argument(
+        "--openai-api-base",
+        default=os.environ.get("OPENAI_API_BASE"),
+        help="Optional OpenAI-compatible API base URL. Falls back to OPENAI_API_BASE env var.",
     )
     return parser
 
@@ -656,8 +712,10 @@ def main() -> None:
         if args.embed_provider is None:
             args.embed_provider = "google"
 
-    if not args.google_api_key:
+    if args.embed_provider == "google" and not args.google_api_key:
         parser.error("--google-api-key (or GOOGLE_API_KEY env var) is required")
+    if args.embed_provider == "openai" and not args.openai_api_key:
+        parser.error("--openai-api-key (or OPENAI_API_KEY env var) is required")
 
     if args.host:
         os.environ["REDIS_HOST" if args.provider == "redis" else "QDRANT_HOST"] = (
@@ -680,6 +738,10 @@ def main() -> None:
         TOPICS if args.topic == "all" else {args.topic: TOPICS[args.topic]}
     )
 
+    api_key = (
+        args.openai_api_key if args.embed_provider == "openai" else args.google_api_key
+    )
+
     async def run_all() -> None:
         for topic, docs in selected.items():
             await populate(
@@ -688,7 +750,11 @@ def main() -> None:
                 provider=args.provider,
                 embed_dim=args.embed_dim,
                 embed_provider=args.embed_provider,
-                api_key=args.google_api_key,
+                api_key=api_key,
+                embed_model_id=args.embed_model_id,
+                api_base=args.openai_api_base
+                if args.embed_provider == "openai"
+                else None,
             )
 
         populated = list(selected.keys())
