@@ -1,11 +1,4 @@
-> ⚠️ **Draft – Not yet approved**
-> 
-> This document is part of the community bootstrap phase of the DOS68k project.
-> It is not binding and may change as the project governance and contribution
-> processes evolve.
-> 
 
-**Status:** Draft  
 **Version:** 0.1.0  
 **Last updated:** 2026-06-11  
 **Applies to:** Community bootstrap phase
@@ -25,7 +18,7 @@ All project interactions take place on GitHub:
 At this stage, the primary contribution channels are:
 
 - **Issues** for bug reports, improvement proposals, documentation feedback, and questions
-- **Discussions** for questions, ideas, governance topics, and broader conversations about the project
+- **Discussions** for questions, ideas and broader conversations about the project
 
 Please use **English** for all interactions.
 
@@ -68,11 +61,11 @@ Each Pull Request should:
 
 ## Governance and decisions
 
-Project governance, roles, and decision-making processes are described in
-[GOVERNANCE.md](./GOVERNANCE.md).
+Project governance, roles, and decision-making processes are currently being defined.
 
-For significant or cross-cutting proposals, contributors are encouraged
-to start with a GitHub Discussion, as outlined in the governance document.
+The repository may include governance-related documentation as working material, but governance participation processes are not yet open as a dedicated public workflow.
+
+Further information will be published as the project governance model evolves.
 
 ## License
 
