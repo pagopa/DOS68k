@@ -1,7 +1,6 @@
 > ⚠️ Draft – To be reviewed with the engineering team
 >
 > This template is intentionally lightweight and may evolve as technical workflows are introduced.
-> Where applicable, DOS68k aligns with pagoPA DX contribution practices.
 
 ## Description
 What does this PR change?
