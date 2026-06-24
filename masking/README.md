@@ -30,6 +30,6 @@ French) and runs the matching detection pipeline.
 
 This service reads **no environment variables**. Its detection behaviour —
 languages, entity mappings, scoring, and an allow-list of terms that are never
-masked (e.g. `PagoPA`, `IO`, `SEND`) — is set in `config/presidio.yaml`. To tune
-recognition or extend the allow-list, edit that file and rebuild the image.
+masked — is set in `config/presidio.yaml`. To tune recognition or extend the 
+allow-list, edit that file and rebuild the image.
 </content>
