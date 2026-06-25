@@ -38,9 +38,7 @@ When they occur:
 
 ## Code of Conduct
 
-A formal Code of Conduct will be introduced once approved at
-organizational level.
-These guidelines complement, but do not replace, that Code of Conduct.
+These guidelines complement, but do not replace, our [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ---
 
