@@ -1,0 +1,71 @@
+name: Feature / Enhancement Request
+description: Request a new feature or propose an actionable improvement to DOS68k.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - triage
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve DOS68k.
+
+        Use this template for actionable feature requests or enhancements that
+        may result in development work.
+
+        For questions, brainstorming, governance topics, or broader conversations,
+        please use GitHub Discussions.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: Describe the limitation, missing functionality, or user need.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or enhancement you would like to see.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Select the area most related to this request.
+      options:
+        - Chatbot
+        - Document ingestion
+        - Search / Retrieval
+        - LLM Provider
+        - Configuration
+        - Security
+        - Observability
+        - Frontend
+        - API
+        - Documentation
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe alternative solutions or workarounds, if any.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add links, examples, screenshots, references, or other supporting information.
+    validations:
+      required: false

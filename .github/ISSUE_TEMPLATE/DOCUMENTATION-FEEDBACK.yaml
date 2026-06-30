@@ -1,0 +1,44 @@
+name: Documentation Feedback
+description: Report missing, unclear, or incorrect documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve DOS68k documentation.
+
+  - type: input
+    id: page
+    attributes:
+      label: Documentation page or file
+      description: Provide the URL, file path, or section title.
+      placeholder: "Example: docs/overview.md"
+    validations:
+      required: false
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is unclear, missing, or incorrect?
+      description: Describe the documentation issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What would you expect to find?
+      description: Describe what information would make the documentation clearer or more complete.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: If you have a proposed wording or structure, add it here.
+    validations:
+      required: false
