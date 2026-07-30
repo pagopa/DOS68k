@@ -192,7 +192,7 @@ class RedisVectorDB(VectorDBInterface):
             vector=embedding_query,
             vector_field_name="vector",
             num_results=max_results,
-            return_fields=["id", "doc_id", "text"],
+            return_fields=["id", "doc_id", "text", "url", "title"],
             return_score=True,
             filter_expression=filter_expression,
         )
@@ -204,7 +204,12 @@ class RedisVectorDB(VectorDBInterface):
                 filename=result["doc_id"],
                 chunk_id=0,
                 content=result["text"],
-                score=1 - float(result["vector_distance"]), # Redis returns distance, we convert it to similarity score between 0 and 1
+                url=result.get("url"),
+                title=result.get("title"),
+                score=1
+                - float(
+                    result["vector_distance"]
+                ),  # Redis returns distance, we convert it to similarity score between 0 and 1
             )
             for result in results
             if (1 - float(result["vector_distance"])) >= score_threshold
@@ -223,7 +228,7 @@ class RedisVectorDB(VectorDBInterface):
         )
         query: FilterQuery = FilterQuery(
             filter_expression=filter_expression,
-            return_fields=["id", "filename", "content"],
+            return_fields=["id", "filename", "content", "url", "title"],
             num_results=max_results,
         )
         results = await index.query(query=query)
@@ -234,6 +239,8 @@ class RedisVectorDB(VectorDBInterface):
                 filename=r.get("doc_id", ""),
                 chunk_id=0,
                 content=r.get("text", ""),
+                url=r.get("url"),
+                title=r.get("title"),
                 score=None,
             )
             for r in results
@@ -322,6 +329,8 @@ class RedisVectorDB(VectorDBInterface):
                     metadata={
                         "filename": r.filename,
                         "chunk_id": r.chunk_id,
+                        "url": r.url,
+                        "title": r.title,
                         "score": r.score,
                     },
                 )

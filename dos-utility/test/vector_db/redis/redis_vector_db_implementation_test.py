@@ -333,6 +333,89 @@ async def test_redis_vector_db_semantic_search(monkeypatch: pytest.MonkeyPatch):
         assert len(results) <= max_results
 
 
+@pytest.mark.asyncio
+async def test_redis_vector_db_semantic_search_returns_url_and_title(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The 'url' and 'title' of each chunk must reach the caller — together they
+    are the reference cited as the source of the answer."""
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientMock)
+    monkeypatch.setattr(implementation, "AsyncSearchIndex", AsyncSearchIndexMock)
+
+    async with RedisVectorDB() as db:
+        results = await db.semantic_search(
+            index_name="test_index",
+            embedding_query=[0.1] * 128,
+            max_results=5,
+            score_threshold=0.0,
+        )
+
+        assert [(result.url, result.title) for result in results] == [
+            ("https://example.com/file1", "File 1"),
+            ("https://example.com/file2", "File 2"),
+            ("https://example.com/file3", "File 3"),
+        ]
+
+
+@pytest.mark.asyncio
+async def test_redis_vector_db_filter_search_returns_url_and_title(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientMock)
+    monkeypatch.setattr(implementation, "AsyncSearchIndex", AsyncSearchIndexMock)
+
+    async with RedisVectorDB() as db:
+        results = await db.filter_search(
+            index_name="test_index",
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="doc_id", operator=FilterOperator.EQ, value="file1.txt"
+                    )
+                ]
+            ),
+            max_results=5,
+        )
+
+        assert [(result.url, result.title) for result in results] == [
+            ("https://example.com/file1", "File 1"),
+            ("https://example.com/file2", "File 2"),
+            ("https://example.com/file3", "File 3"),
+        ]
+
+
+@pytest.mark.asyncio
+async def test_redis_vector_db_aquery_exposes_url_and_title_in_node_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """LlamaIndex consumers only see node metadata, so 'url' and 'title' must be
+    carried there."""
+    monkeypatch.setattr(
+        implementation, "get_redis_connection_pool", get_queue_pool_mock
+    )
+    monkeypatch.setattr(implementation, "RedisAsync", RedisClientMock)
+    monkeypatch.setattr(implementation, "AsyncSearchIndex", AsyncSearchIndexMock)
+
+    async with RedisVectorDB(index_name="test_index") as db:
+        result: VectorStoreQueryResult = await db.aquery(
+            query=VectorStoreQuery(query_embedding=[0.1] * 128, similarity_top_k=5)
+        )
+
+        assert [
+            (node.metadata["url"], node.metadata["title"]) for node in result.nodes
+        ] == [
+            ("https://example.com/file1", "File 1"),
+            ("https://example.com/file2", "File 2"),
+            ("https://example.com/file3", "File 3"),
+        ]
+
+
 def test_redis_client_property(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         implementation, "get_redis_connection_pool", get_queue_pool_mock

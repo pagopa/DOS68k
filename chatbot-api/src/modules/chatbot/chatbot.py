@@ -99,6 +99,8 @@ class Chatbot:
                                                 "filename": "test.md",
                                                 "chunk_id": 1,
                                                 "content": "some content",
+                                                "url": "https://example.com/doc",
+                                                "title": "Some doc title",
                                                 "score": 0.9,
                                             },
                                             ...,
@@ -115,12 +117,63 @@ class Chatbot:
                         "content": node.text,
                         "score": node.score,
                         "filename": node.metadata.get("filename", ""),
+                        "url": node.metadata.get("url"),
+                        "title": node.metadata.get("title"),
                     }
                 )
 
         sources.sort(key=lambda s: (s["score"] is None, -(s["score"] or 0)))
 
         return sources
+
+    def __get_references(
+        self: Self, structured: Dict[str, Any], context: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Build the list of sources to cite alongside the answer.
+
+        The agent picks the documents it actually used, but it can also hallucinate
+        or mangle a URL: only references whose URL appears in the retrieved context
+        are kept. When the agent cites nothing usable, every distinct URL in the
+        context is returned instead — the retrieved chunks are always real sources.
+
+        Args:
+            structured: The validated agent output as a dict.
+            context: The retrieved chunks, already sorted by descending score.
+
+        Returns:
+            List of dicts with keys: title, url. Deduplicated by URL.
+        """
+        context_urls: Dict[str, Optional[str]] = {}
+        for chunk in context:
+            url: Optional[str] = chunk.get("url")
+            if url and url not in context_urls:
+                context_urls[url] = chunk.get("title")
+
+        references: List[Dict[str, Any]] = []
+        cited: set = set()
+        for reference in structured.get("references") or []:
+            url: Optional[str] = reference.get("url")
+            if url not in context_urls or url in cited:
+                continue
+            cited.add(url)
+            references.append(
+                {
+                    "title": reference.get("title") or context_urls[url] or url,
+                    "url": url,
+                }
+            )
+
+        if references:
+            return references
+
+        logger.debug(
+            "No usable reference cited by the agent - falling back to the %d context URLs",
+            len(context_urls),
+        )
+
+        return [
+            {"title": title or url, "url": url} for url, title in context_urls.items()
+        ]
 
     def __get_response_json(self: Self, engine_response: AgentOutput) -> Dict[str, Any]:
         """Converts the agent's raw output into the API response dict.
@@ -131,7 +184,7 @@ class Chatbot:
                 model as a dict when parsing succeeded, or a non-dict value on failure.
 
         Returns:
-            Dict with keys: response, tags, contexts.
+            Dict with keys: response, tags, context, references.
         """
         structured: Optional[Dict[str, Any]] = (
             engine_response.structured_response
@@ -147,16 +200,21 @@ class Chatbot:
                 "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
+                "references": [],
             }
 
         logger.debug(
             "Structured output parsed successfully - tool_calls=%d",
             len(engine_response.tool_calls),
         )
+        context: List[Dict[str, Any]] = self.__get_context(
+            tool_calls=engine_response.tool_calls
+        )
         return {
             "response": structured["response"],
             "tags": [],  # Left missing for now
-            "context": self.__get_context(tool_calls=engine_response.tool_calls),
+            "context": context,
+            "references": self.__get_references(structured=structured, context=context),
         }
 
     def __messages_to_chathistory(
@@ -206,7 +264,7 @@ class Chatbot:
             messages: Chat history. Each dict has "question" and "answer" keys.
 
         Returns:
-            Dict with keys: response, tags, references, contexts.
+            Dict with keys: response, tags, context, references.
         """
         chat_history: List[ChatMessage] = self.__messages_to_chathistory(
             messages=messages
@@ -233,6 +291,7 @@ class Chatbot:
                 "response": FALLBACK_RESPONSE,
                 "tags": [],
                 "context": [],
+                "references": [],
             }
             logger.warning(f"Exception: {e}")
 

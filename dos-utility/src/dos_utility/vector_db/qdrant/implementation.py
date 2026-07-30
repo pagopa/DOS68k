@@ -201,6 +201,8 @@ class QdrantVectorDB(VectorDBInterface):
                 filename=point.payload["filename"],
                 chunk_id=point.payload["chunk_id"],
                 content=point.payload["content"],
+                url=point.payload.get("url"),
+                title=point.payload.get("title"),
                 score=point.score,
             )
             for point in result.points
@@ -226,6 +228,8 @@ class QdrantVectorDB(VectorDBInterface):
                 filename=r.payload.get("filename", ""),
                 chunk_id=r.payload.get("chunk_id", 0),
                 content=r.payload.get("content", ""),
+                url=r.payload.get("url"),
+                title=r.payload.get("title"),
                 score=None,
             )
             for r in records
@@ -331,7 +335,12 @@ class QdrantVectorDB(VectorDBInterface):
                 TextNode(
                     id_=r.id,
                     text=r.content,
-                    metadata={"filename": r.filename, "chunk_id": r.chunk_id},
+                    metadata={
+                        "filename": r.filename,
+                        "chunk_id": r.chunk_id,
+                        "url": r.url,
+                        "title": r.title,
+                    },
                 )
                 for r in results
             ],

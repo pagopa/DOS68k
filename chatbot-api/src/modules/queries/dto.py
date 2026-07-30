@@ -28,6 +28,17 @@ class Source(BaseModel):
     content: str
     score: Optional[float]
     filename: str
+    url: Annotated[Optional[str], Field(default=None)]
+    title: Annotated[Optional[str], Field(default=None)]
+
+
+class Reference(BaseModel):
+    model_config: ConfigDict = ConfigDict(
+        serialize_by_alias=True, validate_by_name=True
+    )
+
+    title: str
+    url: str
 
 
 class Scores(BaseModel):
@@ -50,6 +61,7 @@ class QueryResponseDTO(BaseModel):
     answer: str
     topic: List[str]
     context: List[Source]
+    references: Annotated[List[Reference], Field(default=[])]
     created_at: Annotated[str, Field(alias="createdAt")]
     expires_at: Annotated[Optional[str], Field(alias="expiresAt")]
     tracing_trace_id: Annotated[

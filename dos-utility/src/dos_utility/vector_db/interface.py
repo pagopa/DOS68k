@@ -15,7 +15,10 @@ class ObjectData(BaseModel):
     """Represents a single object to be stored in the vector database. Each object corresponds to a chunk of text from a file, along with its embedding vector."""
 
     filename: Annotated[
-        str, Field(description="The name of the file the object comes from.", alias="doc_id")
+        str,
+        Field(
+            description="The name of the file the object comes from.", alias="doc_id"
+        ),
     ]
     chunk_id: Annotated[
         int,
@@ -23,7 +26,9 @@ class ObjectData(BaseModel):
             description="The chunk ID within the file. If the file is not chunked set it to 0."
         ),
     ]
-    content: Annotated[str, Field(description="The content of the chunk.", alias="text")]
+    content: Annotated[
+        str, Field(description="The content of the chunk.", alias="text")
+    ]
     vector: Annotated[
         List[float],
         Field(
@@ -41,6 +46,20 @@ class SearchResult(BaseModel):
     ]
     chunk_id: Annotated[int, Field(description="Chunk identifier within the document")]
     content: Annotated[str, Field(description="Content of the document chunk")]
+    url: Annotated[
+        Optional[str],
+        Field(
+            default=None,
+            description="Source URL of the document chunk, when stored in the vector DB.",
+        ),
+    ]
+    title: Annotated[
+        Optional[str],
+        Field(
+            default=None,
+            description="Title of the source document, when stored in the vector DB.",
+        ),
+    ]
     score: Annotated[
         Optional[float],
         Field(

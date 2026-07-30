@@ -310,6 +310,7 @@ class MockChatbot:
         return {
             "response": self._response,
             "context": {},
+            "references": [],
         }
 
 

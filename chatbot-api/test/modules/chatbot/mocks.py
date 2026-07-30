@@ -1,4 +1,4 @@
-from typing import Self, Dict, Annotated
+from typing import Self, Dict, List, Any, Optional, Annotated
 from pydantic import Field
 from pathlib import Path
 from workflows import Context
@@ -77,14 +77,35 @@ def get_agent_yaml_settings_mock(file: Path) -> AgentYamlSettings:
     return AgentYamlSettings(name="TestAgent", description="Test agent description")
 
 
-def get_agent_mock(**kwargs) -> ReActAgent:
+DEFAULT_NODE_METADATA: List[Dict[str, Any]] = [
+    {
+        "filename": "file1.pdf",
+        "chunk_id": "1",
+        "url": "https://example.com/file1",
+        "title": "File 1",
+    }
+]
+
+
+def make_agent_mock(
+    structured_response: Any = None,
+    nodes_metadata: Optional[List[Dict[str, Any]]] = None,
+):
+    """Build a get_agent replacement whose run() returns the given structured
+    response and retrieved nodes."""
+    if structured_response is None:
+        structured_response = {"response": "Test answer"}
+    if nodes_metadata is None:
+        nodes_metadata = DEFAULT_NODE_METADATA
+
     class NodeMock:
-        metadata = {"filename": "file1.pdf", "chunk_id": "1"}
-        text = "some content"
-        score = 0.9
+        def __init__(self: Self, metadata: Dict[str, Any]):
+            self.metadata = metadata
+            self.text = "some content"
+            self.score = 0.9
 
     class RawOutputMock:
-        source_nodes = [NodeMock()]
+        source_nodes = [NodeMock(metadata) for metadata in nodes_metadata]
 
     class ToolOutputMock:
         raw_output = RawOutputMock()
@@ -93,8 +114,10 @@ def get_agent_mock(**kwargs) -> ReActAgent:
         tool_output = ToolOutputMock()
 
     class AgentOutputMock:
-        structured_response = {"response": "Test answer"}
-        tool_calls = [ToolCallMock()]
+        pass
+
+    AgentOutputMock.structured_response = structured_response
+    AgentOutputMock.tool_calls = [ToolCallMock()]
 
     class ReActAgentMock(ReActAgent):
         def __init__(self: Self):
@@ -105,7 +128,13 @@ def get_agent_mock(**kwargs) -> ReActAgent:
             # .structured_response and .tool_calls, so AgentOutput is not needed.
             return AgentOutputMock()
 
-    return ReActAgentMock()
+    def get_agent(**kwargs) -> ReActAgent:
+        return ReActAgentMock()
+
+    return get_agent
+
+
+get_agent_mock = make_agent_mock()
 
 
 def get_agent_run_exception_mock(**kwargs) -> ReActAgent:
